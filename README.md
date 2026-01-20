@@ -14,6 +14,7 @@ pip install -r requirements.txt
 3. 環境変数を設定します（下記例）。
    - `dotenv-example` を `.env` にコピーして値を設定してください。
    - もしくは `source activate.sh` で venv 有効化と `.env` の読み込みができます。
+   - `source activate.sh` 実行時に `.gcloud/` を作成し、このディレクトリ配下に gcloud 設定を保存します。
 
 ## 環境変数例
 
@@ -23,6 +24,17 @@ FIRESTORE_DATABASE=(default)
 GOOGLE_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
 DEV_USER_ID=local-user
 ```
+
+## GOOGLE_CLIENT_ID の取得方法
+`GOOGLE_CLIENT_ID` には Google OAuth の Web クライアント ID（`xxxx.apps.googleusercontent.com`）を設定します。
+
+1. GCP コンソールで「API とサービス」→「認証情報」へ移動
+2. 「認証情報を作成」→「OAuth クライアント ID」
+3. アプリケーションの種類は「ウェブ アプリケーション」
+4. 発行されたクライアント ID を `GOOGLE_CLIENT_ID` に設定
+
+## クライアントシークレットについて
+このAPIでは Google ID トークンを検証するため、クライアントシークレットは不要です（公開鍵検証のみ）。\n\n将来、OAuth の認可コードフローをサーバー側で扱う場合のみ、`GOOGLE_CLIENT_SECRET` を追加で環境変数として設定してください。
 
 ## GCP 初期設定
 1. gcloud をインストールしてログインします。
@@ -46,7 +58,7 @@ gcloud services enable firestore.googleapis.com
 4. Firestore を Native モードで作成します（未作成の場合）。
 
 ```bash
-gcloud firestore databases create --region=YOUR_REGION
+gcloud firestore databases create --location=YOUR_LOCATION
 ```
 
 5. ローカル実行時は Application Default Credentials を用意します。
