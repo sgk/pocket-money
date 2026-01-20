@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+google-cloud-firestore
+google-auth
+pydantic
+python-dotenv
+pytest
