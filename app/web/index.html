@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pocket Money Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Shippori+Mincho:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="backdrop"></div>
+
+    <section id="authScreen" class="auth-screen">
+      <div class="auth-card">
+        <div class="auth-brand">
+          <div class="logo">PM</div>
+          <div>
+            <p class="eyebrow">Pocket Money Studio</p>
+            <h2>Googleでログイン</h2>
+          </div>
+        </div>
+        <p class="lead">アカウントを選択してください。</p>
+        <div id="googleSignIn" class="signin-button"></div>
+        <p class="hint" id="signinHint"></p>
+      </div>
+    </section>
+
+    <div id="appShell">
+      <header class="hero">
+        <div class="brand">
+          <div class="logo">PM</div>
+          <div>
+            <p class="eyebrow">Pocket Money Studio</p>
+            <h1>お小遣い帳を、静かに強く。</h1>
+            <p class="lead">
+              資産・費目・取引をひとつの流れで管理。Firestore transaction
+              で残高を守るためのMVP UIです。
+            </p>
+          </div>
+        </div>
+        <div class="top-actions">
+          <div class="status" id="status">準備中</div>
+          <button class="ghost" id="refreshAll">更新</button>
+          <div class="user-menu" id="userMenu">
+            <button class="user-trigger" id="userTrigger" type="button">
+              <span class="avatar" id="userAvatar"></span>
+              <span class="avatar-fallback" id="userAvatarFallback">U</span>
+              <span class="user-email" id="userEmail">user@example.com</span>
+              <span class="chevron">▾</span>
+            </button>
+            <div class="user-dropdown" id="userDropdown">
+              <button class="dropdown-item" id="settingsNav">設定</button>
+              <button class="dropdown-item" id="logout">ログアウト</button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section id="settingsScreen" class="settings-screen hidden">
+        <div class="card settings-card">
+          <div class="card-head">
+            <h2>設定</h2>
+            <button class="ghost" id="settingsBack">戻る</button>
+          </div>
+          <p class="hint">この画面は準備中です。</p>
+        </div>
+      </section>
+
+      <main id="mainContent" class="grid">
+        <section class="card setup">
+          <div class="card-head">
+            <h2>はじめに</h2>
+          </div>
+          <p class="hint">
+            初回セットアップで、デフォルトの資産と費目を作成します。すでに作成済みなら何もしません。
+          </p>
+          <button id="bootstrap">初回セットアップ</button>
+        </section>
+
+        <section class="card assets">
+          <div class="card-head">
+            <h2>資産</h2>
+            <button class="ghost" id="refreshAssets">更新</button>
+          </div>
+          <div class="list" id="assetsList"></div>
+          <form id="assetForm" class="compact">
+            <div class="row">
+              <input type="text" id="assetName" placeholder="資産名" required />
+              <input type="text" id="assetType" placeholder="種別 (cash/bank)" />
+            </div>
+            <div class="row">
+              <input type="number" id="assetBalance" placeholder="初期残高" min="0" />
+              <input type="text" id="assetNote" placeholder="メモ" />
+            </div>
+            <button type="submit">資産を追加</button>
+          </form>
+        </section>
+
+        <section class="card categories">
+          <div class="card-head">
+            <h2>費目</h2>
+            <button class="ghost" id="refreshCategories">更新</button>
+          </div>
+          <div class="list" id="categoriesList"></div>
+          <form id="categoryForm" class="compact">
+            <div class="row">
+              <input type="text" id="categoryName" placeholder="費目名" required />
+              <input type="number" id="categorySort" placeholder="並び順" min="0" />
+            </div>
+            <button type="submit">費目を追加</button>
+          </form>
+        </section>
+
+        <section class="card transactions">
+          <div class="card-head">
+            <h2>取引</h2>
+            <button class="ghost" id="refreshTransactions">更新</button>
+          </div>
+          <div class="tabs" id="txTabs">
+            <button class="tab active" data-tab="expense">支出</button>
+            <button class="tab" data-tab="income">収入</button>
+            <button class="tab" data-tab="transfer">振替</button>
+          </div>
+          <div class="panels">
+            <form id="expenseForm" class="panel active">
+              <div class="row">
+                <input type="datetime-local" id="expenseDate" required />
+                <input type="number" id="expenseAmount" min="1" placeholder="金額" required />
+              </div>
+              <div class="row">
+                <select id="expenseAsset" required></select>
+                <select id="expenseCategory" required></select>
+              </div>
+              <div class="row">
+                <input type="text" id="expenseMerchant" placeholder="店舗" />
+                <input type="text" id="expenseMemo" placeholder="メモ" />
+              </div>
+              <button type="submit">支出を追加</button>
+            </form>
+
+            <form id="incomeForm" class="panel">
+              <div class="row">
+                <input type="datetime-local" id="incomeDate" required />
+                <input type="number" id="incomeAmount" min="1" placeholder="金額" required />
+              </div>
+              <div class="row">
+                <select id="incomeAsset" required></select>
+                <select id="incomeCategory" required></select>
+              </div>
+              <div class="row">
+                <input type="text" id="incomeSource" placeholder="入金元" />
+                <input type="text" id="incomeMemo" placeholder="メモ" />
+              </div>
+              <button type="submit">収入を追加</button>
+            </form>
+
+            <form id="transferForm" class="panel">
+              <div class="row">
+                <input type="datetime-local" id="transferDate" required />
+                <input type="number" id="transferAmount" min="1" placeholder="金額" required />
+              </div>
+              <div class="row">
+                <select id="transferFrom" required></select>
+                <select id="transferTo" required></select>
+              </div>
+              <div class="row">
+                <input type="number" id="transferFee" min="0" placeholder="手数料" />
+                <input type="text" id="transferMemo" placeholder="メモ" />
+              </div>
+              <button type="submit">振替を追加</button>
+            </form>
+          </div>
+          <div class="divider"></div>
+          <div class="list" id="transactionsList"></div>
+        </section>
+
+        <section class="card summary">
+          <div class="card-head">
+            <h2>月次サマリ</h2>
+            <button class="ghost" id="refreshSummary">更新</button>
+          </div>
+          <form id="summaryForm" class="compact">
+            <div class="row">
+              <input type="number" id="summaryYear" min="1970" placeholder="年" required />
+              <input type="number" id="summaryMonth" min="1" max="12" placeholder="月" required />
+            </div>
+            <button type="submit">集計する</button>
+          </form>
+          <div class="summary-grid" id="summaryGrid"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

@@ -73,6 +73,11 @@ gcloud auth application-default login
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
+## Web UI
+起動後に `http://localhost:8000/` へアクセスすると、簡易のWeb UIが利用できます。  
+ローカル開発では `DEV_USER_ID` を設定しておけば自動ログインで操作できます。  
+Google 認証で試す場合は、Web UI の「Google ログイン」ボタンから ID トークンを取得します（`GOOGLE_CLIENT_ID` が必要）。
+
 ## ローカル認証（dev トークン）
 本番では Google ID トークンで認証します。ローカル開発では環境変数で簡易ログインを行います。
 
