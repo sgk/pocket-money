@@ -7,22 +7,10 @@ import { Topbar } from "@/components/layout/topbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
 import type { Category } from "@/lib/types";
 
 type CategoryKind = "expense" | "income";
-
-type DropIndicator = {
-  id: string;
-  position: "before" | "after";
-} | null;
 
 const CATEGORY_KIND_LABEL: Record<CategoryKind, string> = {
   expense: "つかった",
@@ -36,46 +24,71 @@ const CategoryRow = ({
   category,
   kind,
   onToggleActive,
+  onUpdateCategory,
   onDragStart,
-  onDragOver,
-  onDrop,
   onDragEnd,
   isDragging,
-  indicator,
+  dragHandleProps,
 }: {
   category: Category;
   kind: CategoryKind;
   onToggleActive: (id: string, value: boolean) => void;
+  onUpdateCategory: (id: string, payload: { name: string; kind: CategoryKind }) => void;
   onDragStart: (event: React.DragEvent<HTMLDivElement>, id: string) => void;
-  onDragOver: (event: React.DragEvent<HTMLDivElement>, id: string) => void;
-  onDrop: (event: React.DragEvent<HTMLDivElement>, id: string) => void;
   onDragEnd: () => void;
   isDragging: boolean;
-  indicator: DropIndicator;
+  dragHandleProps: {
+    draggable: boolean;
+    onDragStart: (event: React.DragEvent<HTMLDivElement>) => void;
+  };
 }) => {
   const inactive = !category.isActive;
-  const showBefore = indicator?.id === category.id && indicator.position === "before";
-  const showAfter = indicator?.id === category.id && indicator.position === "after";
+  const [name, setName] = useState(category.name);
+  const [currentKind, setCurrentKind] = useState<CategoryKind>(normalizeKind(category));
+
+  useEffect(() => {
+    setName(category.name);
+    setCurrentKind(normalizeKind(category));
+  }, [category]);
+
+  const handleSave = () => {
+    if (name.trim() === "") {
+      setName(category.name);
+      toast.error("なまえを いれてね");
+      return;
+    }
+    if (name !== category.name || currentKind !== normalizeKind(category)) {
+      onUpdateCategory(category.id, { name: name.trim(), kind: currentKind });
+    }
+  };
+
   return (
     <div
-      className={`relative grid grid-cols-[1fr_96px] items-center gap-3 rounded-lg border px-3 py-2 text-sm ${
+      className={`grid grid-cols-[1fr_72px] items-center gap-2 rounded-lg border px-3 py-1 text-sm ${
         inactive ? "opacity-50" : ""
       } ${isDragging ? "opacity-40" : ""}`}
-      draggable
-      onDragStart={(event) => onDragStart(event, category.id)}
-      onDragOver={(event) => onDragOver(event, category.id)}
-      onDrop={(event) => onDrop(event, category.id)}
       onDragEnd={onDragEnd}
     >
-      {showBefore ? (
-        <span className="absolute left-2 right-2 top-0 h-0.5 -translate-y-1/2 rounded-full bg-sky-400" />
-      ) : null}
-      {showAfter ? (
-        <span className="absolute left-2 right-2 bottom-0 h-0.5 translate-y-1/2 rounded-full bg-sky-400" />
-      ) : null}
       <div className="flex items-center gap-2">
-        <span className="cursor-move text-muted-foreground">≡</span>
-        <span>{category.name}</span>
+        <div
+          className="cursor-grab text-muted-foreground"
+          {...dragHandleProps}
+          aria-label="ドラッグ"
+        >
+          ≡
+        </div>
+        <Input
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          className="h-9"
+          onBlur={handleSave}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              handleSave();
+            }
+          }}
+        />
       </div>
       <div className="text-center">
         <input
@@ -96,6 +109,8 @@ const CategoryList = ({
   setOrder,
   onReorder,
   onToggleActive,
+  onUpdateCategory,
+  onMoveAcross,
 }: {
   kind: CategoryKind;
   categories: Category[];
@@ -103,9 +118,16 @@ const CategoryList = ({
   setOrder: (next: string[]) => void;
   onReorder: (next: Category[]) => Promise<void>;
   onToggleActive: (id: string, value: boolean) => void;
+  onUpdateCategory: (id: string, payload: { name: string; kind: CategoryKind }) => void;
+  onMoveAcross: (
+    fromKind: CategoryKind,
+    dragId: string,
+    toKind: CategoryKind,
+    insertIndex: number
+  ) => Promise<void>;
 }) => {
   const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [indicator, setIndicator] = useState<DropIndicator>(null);
+  const [indicatorIndex, setIndicatorIndex] = useState<number | null>(null);
 
   const ordered = useMemo(() => {
     const list = categories
@@ -125,121 +147,132 @@ const CategoryList = ({
     setDraggingId(id);
   };
 
-  const handleDragOver = (event: React.DragEvent<HTMLDivElement>, id: string) => {
-    event.preventDefault();
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const position = event.clientY - bounds.top < bounds.height / 2 ? "before" : "after";
-    setIndicator({ id, position });
+  const handleDropAt = async (
+    dragKind: CategoryKind,
+    dragId: string,
+    insertIndex: number,
+    sameKind: boolean
+  ) => {
+    setIndicatorIndex(null);
+    if (sameKind) {
+      const next = [...ordered];
+      const fromIndex = next.findIndex((item) => item.id === dragId);
+      if (fromIndex < 0) {
+        return;
+      }
+      const [moved] = next.splice(fromIndex, 1);
+      const adjustedIndex = fromIndex < insertIndex ? insertIndex - 1 : insertIndex;
+      next.splice(adjustedIndex, 0, moved);
+      setOrder(next.map((item) => item.id));
+      await onReorder(next);
+      return;
+    }
+    await onMoveAcross(dragKind, dragId, kind, insertIndex);
   };
 
-  const handleDrop = async (event: React.DragEvent<HTMLDivElement>, id: string) => {
+  const handleDropOnSlot = async (event: React.DragEvent<HTMLDivElement>, index: number) => {
     event.preventDefault();
     const payload = event.dataTransfer.getData("text/plain");
-    const [dragKind, dragId] = payload.split(":");
-    const position = indicator?.id === id ? indicator.position : "after";
-    setIndicator(null);
-    if (!dragId || dragKind !== kind || dragId === id) {
+    const [dragKindRaw, dragId] = payload.split(":");
+    const dragKind = dragKindRaw as CategoryKind;
+    if (!dragId) {
       return;
     }
-    const next = [...ordered];
-    const fromIndex = next.findIndex((item) => item.id === dragId);
-    const toIndex = next.findIndex((item) => item.id === id);
-    if (fromIndex < 0 || toIndex < 0) {
+    await handleDropAt(dragKind, dragId, index, dragKind === kind);
+  };
+
+  const handleDragOverSlot = (event: React.DragEvent<HTMLDivElement>, index: number) => {
+    event.preventDefault();
+    setIndicatorIndex(index);
+  };
+
+  const handleDragOverRow = (event: React.DragEvent<HTMLDivElement>, index: number) => {
+    event.preventDefault();
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const before = event.clientY - bounds.top < bounds.height / 2;
+    setIndicatorIndex(before ? index : index + 1);
+  };
+
+  const handleDropOnRow = async (event: React.DragEvent<HTMLDivElement>, index: number) => {
+    event.preventDefault();
+    const payload = event.dataTransfer.getData("text/plain");
+    const [dragKindRaw, dragId] = payload.split(":");
+    const dragKind = dragKindRaw as CategoryKind;
+    if (!dragId) {
       return;
     }
-    const [moved] = next.splice(fromIndex, 1);
-    let insertIndex = toIndex;
-    if (position === "after") {
-      insertIndex = toIndex + (fromIndex < toIndex ? 0 : 1);
-    } else if (fromIndex < toIndex) {
-      insertIndex = toIndex - 1;
-    }
-    next.splice(insertIndex, 0, moved);
-    setOrder(next.map((item) => item.id));
-    await onReorder(next);
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const before = event.clientY - bounds.top < bounds.height / 2;
+    const insertIndex = before ? index : index + 1;
+    await handleDropAt(dragKind, dragId, insertIndex, dragKind === kind);
   };
 
   const handleDragEnd = () => {
     setDraggingId(null);
-    setIndicator(null);
+    setIndicatorIndex(null);
   };
 
   return (
-    <div className="grid gap-2">
-      <div className="grid grid-cols-[1fr_96px] text-xs text-muted-foreground">
+    <div className="grid gap-1">
+      <div className="flex items-center justify-between text-base">
         <span>{CATEGORY_KIND_LABEL[kind]}</span>
         <span className="text-center">つかう</span>
       </div>
-      {ordered.map((category) => (
-        <CategoryRow
-          key={category.id}
-          category={category}
-          kind={kind}
-          onToggleActive={onToggleActive}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-          onDragEnd={handleDragEnd}
-          isDragging={draggingId === category.id}
-          indicator={indicator}
-        />
-      ))}
       {ordered.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-          まだないよ
-        </div>
-      ) : null}
-    </div>
-  );
-};
-
-const CategoryRowEditor = ({
-  category,
-  onSave,
-}: {
-  category: Category;
-  onSave: (id: string, payload: { name: string; kind: CategoryKind }) => Promise<void>;
-}) => {
-  const [form, setForm] = useState({
-    name: category.name,
-    kind: normalizeKind(category),
-  });
-
-  useEffect(() => {
-    setForm({
-      name: category.name,
-      kind: normalizeKind(category),
-    });
-  }, [category]);
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">{category.name}</CardTitle>
-      </CardHeader>
-      <CardContent className="grid gap-3">
-        <Input
-          placeholder="なまえ"
-          value={form.name}
-          onChange={(event) => setForm({ ...form, name: event.target.value })}
-        />
-        <Select
-          value={form.kind}
-          onValueChange={(value) => setForm({ ...form, kind: value as CategoryKind })}
+        <div
+          className={`rounded-lg border border-dashed p-3 text-sm text-muted-foreground ${
+            indicatorIndex === 0 ? "border-sky-400 bg-sky-50 text-sky-700" : ""
+          }`}
+          onDragOver={(event) => handleDragOverSlot(event, 0)}
+          onDrop={(event) => handleDropOnSlot(event, 0)}
         >
-          <SelectTrigger>
-            <SelectValue placeholder="しゅるい" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="expense">つかった</SelectItem>
-            <SelectItem value="income">もらった</SelectItem>
-          </SelectContent>
-        </Select>
-        <div className="flex gap-2">
-          <Button onClick={() => onSave(category.id, form)}>ほぞん</Button>
+          ここにいれる
         </div>
-      </CardContent>
-    </Card>
+      ) : (
+        <div className="grid gap-1">
+          {ordered.map((category, index) => (
+            <div key={category.id} className="grid gap-0.5">
+              <div
+                className="relative h-0.5"
+                onDragOver={(event) => handleDragOverSlot(event, index)}
+                onDrop={(event) => handleDropOnSlot(event, index)}
+              >
+                {indicatorIndex === index ? (
+                  <span className="absolute left-2 right-2 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-sky-400" />
+                ) : null}
+              </div>
+              <div
+                onDragOver={(event) => handleDragOverRow(event, index)}
+                onDrop={(event) => handleDropOnRow(event, index)}
+              >
+                <CategoryRow
+                  category={category}
+                  kind={kind}
+                  onToggleActive={onToggleActive}
+                  onUpdateCategory={onUpdateCategory}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                  isDragging={draggingId === category.id}
+                  dragHandleProps={{
+                    draggable: true,
+                    onDragStart: (event) => handleDragStart(event, category.id),
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+          <div
+            className="relative h-0.5"
+            onDragOver={(event) => handleDragOverSlot(event, ordered.length)}
+            onDrop={(event) => handleDropOnSlot(event, ordered.length)}
+          >
+            {indicatorIndex === ordered.length ? (
+              <span className="absolute left-2 right-2 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-sky-400" />
+            ) : null}
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -276,6 +309,18 @@ export const CategoriesSettingsPage = () => {
     } finally {
       setSavingCount((count) => Math.max(0, count - 1));
     }
+  };
+
+  const getOrderedList = (kind: CategoryKind, order: string[]) => {
+    const list = categories
+      .filter((category) => normalizeKind(category) === kind)
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+    const ids = list.map((item) => item.id);
+    if (order.length !== ids.length || !order.every((id) => ids.includes(id))) {
+      return list;
+    }
+    const map = new Map(list.map((item) => [item.id, item]));
+    return order.map((id) => map.get(id)!).filter(Boolean);
   };
 
   const handleCreate = async () => {
@@ -342,7 +387,7 @@ export const CategoriesSettingsPage = () => {
     }
   };
 
-  const handleSaveCategory = async (id: string, payload: { name: string; kind: CategoryKind }) => {
+  const handleUpdateCategory = async (id: string, payload: { name: string; kind: CategoryKind }) => {
     if (!token) {
       toast.error("ログインしてね");
       return;
@@ -355,7 +400,61 @@ export const CategoriesSettingsPage = () => {
       await runSaving(async () => {
         await api.updateCategory(token, id, payload);
       });
-      toast.success("つかいみちを なおしたよ");
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+    } catch (error) {
+      toast.error((error as Error).message);
+    }
+  };
+
+  const handleMoveAcross = async (
+    fromKind: CategoryKind,
+    dragId: string,
+    toKind: CategoryKind,
+    insertIndex: number
+  ) => {
+    if (!token) {
+      toast.error("ログインしてね");
+      return;
+    }
+    const fromOrder = fromKind === "expense" ? expenseOrder : incomeOrder;
+    const toOrder = toKind === "expense" ? expenseOrder : incomeOrder;
+    const sourceList = getOrderedList(fromKind, fromOrder);
+    const targetList = getOrderedList(toKind, toOrder);
+    const moving = sourceList.find((item) => item.id === dragId);
+    if (!moving) {
+      return;
+    }
+    const nextSource = sourceList.filter((item) => item.id !== dragId);
+    const nextTarget = [...targetList];
+    const clampedIndex = Math.max(0, Math.min(insertIndex, nextTarget.length));
+    nextTarget.splice(clampedIndex, 0, moving);
+
+    if (fromKind === "expense") {
+      setExpenseOrder(nextSource.map((item) => item.id));
+    } else {
+      setIncomeOrder(nextSource.map((item) => item.id));
+    }
+    if (toKind === "expense") {
+      setExpenseOrder(nextTarget.map((item) => item.id));
+    } else {
+      setIncomeOrder(nextTarget.map((item) => item.id));
+    }
+
+    try {
+      await runSaving(async () => {
+        await Promise.all([
+          api.updateCategory(token, dragId, {
+            kind: toKind,
+            sortOrder: clampedIndex + 1,
+          }),
+          ...nextTarget.map((category, index) =>
+            api.updateCategory(token, category.id, { sortOrder: index + 1 })
+          ),
+          ...nextSource.map((category, index) =>
+            api.updateCategory(token, category.id, { sortOrder: index + 1 })
+          ),
+        ]);
+      });
       queryClient.invalidateQueries({ queryKey: ["categories"] });
     } catch (error) {
       toast.error((error as Error).message);
@@ -370,33 +469,49 @@ export const CategoriesSettingsPage = () => {
         <CardHeader>
           <CardTitle className="text-base">あたらしい つかいみち</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-3">
+        <CardContent className="grid gap-3 md:grid-cols-[1fr_auto_auto] md:items-center">
           <Input
             placeholder="なまえ"
             value={newCategory.name}
             onChange={(event) => setNewCategory({ ...newCategory, name: event.target.value })}
           />
-          <Select
-            value={newCategory.kind}
-            onValueChange={(value) =>
-              setNewCategory({ ...newCategory, kind: value as CategoryKind })
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="しゅるい" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="expense">つかった</SelectItem>
-              <SelectItem value="income">もらった</SelectItem>
-            </SelectContent>
-          </Select>
-          <div className="md:col-span-3">
+          <div className="flex items-center">
+            <div className="inline-flex overflow-hidden rounded-md border border-input">
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className={`rounded-none px-4 ${
+                  newCategory.kind === "expense"
+                    ? "bg-secondary text-secondary-foreground"
+                    : ""
+                }`}
+                onClick={() => setNewCategory({ ...newCategory, kind: "expense" })}
+              >
+                つかった
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className={`rounded-none border-l border-input px-4 ${
+                  newCategory.kind === "income"
+                    ? "bg-secondary text-secondary-foreground"
+                    : ""
+                }`}
+                onClick={() => setNewCategory({ ...newCategory, kind: "income" })}
+              >
+                もらった
+              </Button>
+            </div>
+          </div>
+          <div className="md:flex md:justify-end">
             <Button onClick={handleCreate}>たす</Button>
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6">
         <CategoryList
           kind="expense"
           categories={categories}
@@ -404,6 +519,8 @@ export const CategoriesSettingsPage = () => {
           setOrder={setExpenseOrder}
           onReorder={handleReorder}
           onToggleActive={handleToggleActive}
+          onUpdateCategory={handleUpdateCategory}
+          onMoveAcross={handleMoveAcross}
         />
         <CategoryList
           kind="income"
@@ -412,25 +529,10 @@ export const CategoriesSettingsPage = () => {
           setOrder={setIncomeOrder}
           onReorder={handleReorder}
           onToggleActive={handleToggleActive}
+          onUpdateCategory={handleUpdateCategory}
+          onMoveAcross={handleMoveAcross}
         />
       </div>
-
-      <section className="mt-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">なまえ・しゅるいの へんこう</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2">
-            {categories.map((category) => (
-              <CategoryRowEditor
-                key={category.id}
-                category={category}
-                onSave={handleSaveCategory}
-              />
-            ))}
-          </CardContent>
-        </Card>
-      </section>
 
       {isSaving ? (
         <div className="absolute inset-0 z-20 flex items-center justify-center rounded-lg bg-white/70 backdrop-blur-sm">
