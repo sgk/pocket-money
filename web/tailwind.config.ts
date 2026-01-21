@@ -30,8 +30,8 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        display: ["Noto Serif JP", "serif"],
-        ui: ["Zen Kaku Gothic New", "sans-serif"],
+        display: ["Kiwi Maru", "serif"],
+        ui: ["M PLUS Rounded 1c", "sans-serif"],
       },
       boxShadow: {
         elevated: "0 12px 30px -20px rgba(15, 23, 42, 0.5)",

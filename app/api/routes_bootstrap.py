@@ -10,9 +10,9 @@ router = APIRouter(prefix="/api", tags=["bootstrap"])
 
 
 DEFAULT_CATEGORIES = [
-    {"name": "Food", "sortOrder": 1},
-    {"name": "Transport", "sortOrder": 2},
-    {"name": "Salary", "sortOrder": 3},
+    {"name": "たべもの", "sortOrder": 1},
+    {"name": "のりもの", "sortOrder": 2},
+    {"name": "おこづかい", "sortOrder": 3},
 ]
 
 
@@ -40,7 +40,7 @@ def bootstrap(user=Depends(get_current_user)):
             transaction.set(
                 asset_ref,
                 {
-                    "name": "Wallet",
+                    "name": "おさいふ",
                     "type": "cash",
                     "currency": "JPY",
                     "isActive": True,

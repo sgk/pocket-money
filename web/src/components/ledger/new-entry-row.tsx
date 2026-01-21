@@ -94,26 +94,26 @@ export const NewEntryRow = ({
   const validateEntry = () => {
     const amount = Number(entry.amount);
     if (!amount || amount < 1) {
-      toast.error("金額は1円以上で入力してください");
+      toast.error("きんがくは 1えん いじょうで いれてね");
       return false;
     }
     if (entry.type === "expense" || entry.type === "income") {
       if (!entry.assetId) {
-        toast.error("資産を選択してください");
+        toast.error("ばしょを えらんでね");
         return false;
       }
       if (!entry.categoryId) {
-        toast.error("費目を選択してください");
+        toast.error("つかいみちを えらんでね");
         return false;
       }
     }
     if (entry.type === "transfer") {
       if (!entry.fromAssetId || !entry.toAssetId) {
-        toast.error("振替元と振替先を選択してください");
+        toast.error("うつす ばしょを えらんでね");
         return false;
       }
       if (entry.fromAssetId === entry.toAssetId) {
-        toast.error("振替元と振替先は同じにできません");
+        toast.error("おなじ ばしょには うつせないよ");
         return false;
       }
     }
@@ -122,7 +122,7 @@ export const NewEntryRow = ({
 
   const handleSubmit = async () => {
     if (!token) {
-      toast.error("ログインが必要です");
+      toast.error("ログインしてね");
       return;
     }
     if (!validateEntry()) {
@@ -169,7 +169,7 @@ export const NewEntryRow = ({
         storage.setLastAssetId(entry.fromAssetId);
       }
       if (created) {
-        toast.success("取引を追加しました");
+        toast.success("きろくを たしたよ");
         invalidate();
         resetEntry();
       }
@@ -212,7 +212,7 @@ export const NewEntryRow = ({
               onValueChange={(value) => setEntry({ ...entry, fromAssetId: value })}
             >
               <SelectTrigger>
-                <SelectValue placeholder="振替元" />
+                <SelectValue placeholder="うつすまえ" />
               </SelectTrigger>
               <SelectContent>
                 {assetOptions.map((asset) => (
@@ -227,7 +227,7 @@ export const NewEntryRow = ({
               onValueChange={(value) => setEntry({ ...entry, toAssetId: value })}
             >
               <SelectTrigger>
-                <SelectValue placeholder="振替先" />
+                <SelectValue placeholder="うつしたい" />
               </SelectTrigger>
               <SelectContent>
                 {assetOptions
@@ -240,7 +240,7 @@ export const NewEntryRow = ({
               </SelectContent>
             </Select>
             <Button type="button" variant="ghost" size="sm" onClick={swapTransfer}>
-              from/to入れ替え
+              いれかえ
             </Button>
           </div>
         ) : (
@@ -250,7 +250,7 @@ export const NewEntryRow = ({
             disabled={Boolean(fixedAssetId)}
           >
             <SelectTrigger>
-              <SelectValue placeholder="資産" />
+              <SelectValue placeholder="ばしょ" />
             </SelectTrigger>
             <SelectContent>
               {assetOptions.map((asset) => (
@@ -268,12 +268,12 @@ export const NewEntryRow = ({
           onValueChange={(value) => setEntry({ ...entry, type: value as TransactionType })}
         >
           <SelectTrigger>
-            <SelectValue placeholder="種別" />
+            <SelectValue placeholder="しゅるい" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="expense">支出</SelectItem>
-            <SelectItem value="income">収入</SelectItem>
-            <SelectItem value="transfer">振替</SelectItem>
+            <SelectItem value="expense">つかった</SelectItem>
+            <SelectItem value="income">もらった</SelectItem>
+            <SelectItem value="transfer">うつす</SelectItem>
           </SelectContent>
         </Select>
       </td>
@@ -281,14 +281,14 @@ export const NewEntryRow = ({
         {entry.type === "expense" ? (
           <Input
             list="merchant-suggest"
-            placeholder="相手"
+            placeholder="あいて"
             value={entry.merchant}
             onChange={(event) => setEntry({ ...entry, merchant: event.target.value })}
           />
         ) : entry.type === "income" ? (
           <Input
             list="source-suggest"
-            placeholder="相手"
+            placeholder="あいて"
             value={entry.source}
             onChange={(event) => setEntry({ ...entry, source: event.target.value })}
           />
@@ -310,7 +310,7 @@ export const NewEntryRow = ({
             onValueChange={(value) => setEntry({ ...entry, categoryId: value })}
           >
             <SelectTrigger>
-              <SelectValue placeholder="費目" />
+              <SelectValue placeholder="つかいみち" />
             </SelectTrigger>
             <SelectContent>
               {categories
@@ -329,7 +329,7 @@ export const NewEntryRow = ({
           <Input
             type="number"
             min={1}
-            placeholder="支出"
+            placeholder="つかった"
             value={entry.amount}
             onChange={(event) => setEntry({ ...entry, amount: event.target.value })}
           />
@@ -342,7 +342,7 @@ export const NewEntryRow = ({
           <Input
             type="number"
             min={1}
-            placeholder="収入"
+            placeholder="もらった"
             value={entry.amount}
             onChange={(event) => setEntry({ ...entry, amount: event.target.value })}
           />
@@ -350,7 +350,7 @@ export const NewEntryRow = ({
           <Input
             type="number"
             min={1}
-            placeholder="金額"
+            placeholder="きんがく"
             value={entry.amount}
             onChange={(event) => setEntry({ ...entry, amount: event.target.value })}
           />
@@ -363,7 +363,7 @@ export const NewEntryRow = ({
           <Input
             type="number"
             min={0}
-            placeholder="手数料"
+            placeholder="てすうりょう"
             value={entry.fee}
             onChange={(event) => setEntry({ ...entry, fee: event.target.value })}
           />
@@ -378,7 +378,7 @@ export const NewEntryRow = ({
       </td>
       <td className="p-2">
         <Button type="button" onClick={handleSubmit} disabled={isSaving}>
-          追加
+          たす
         </Button>
       </td>
     </tr>

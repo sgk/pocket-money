@@ -83,30 +83,30 @@ export const TransactionEditDialog = ({
 
   const handleSave = async () => {
     if (!token) {
-      toast.error("ログインが必要です");
+      toast.error("ログインしてね");
       return;
     }
     if (!form.amount || Number(form.amount) < 1) {
-      toast.error("金額は1円以上で入力してください");
+      toast.error("きんがくは 1えん いじょうで いれてね");
       return;
     }
     if (transaction.type === "expense" || transaction.type === "income") {
       if (!form.assetId) {
-        toast.error("資産を選択してください");
+        toast.error("ばしょを えらんでね");
         return;
       }
       if (!form.categoryId) {
-        toast.error("費目を選択してください");
+        toast.error("つかいみちを えらんでね");
         return;
       }
     }
     if (transaction.type === "transfer") {
       if (!form.fromAssetId || !form.toAssetId) {
-        toast.error("振替元と振替先を選択してください");
+        toast.error("うつす ばしょを えらんでね");
         return;
       }
       if (form.fromAssetId === form.toAssetId) {
-        toast.error("振替元と振替先は同じにできません");
+        toast.error("おなじ ばしょには うつせないよ");
         return;
       }
     }
@@ -141,7 +141,7 @@ export const TransactionEditDialog = ({
         };
       }
       await api.updateTransaction(token, transaction.id, payload);
-      toast.success("取引を更新しました");
+      toast.success("きろくを なおしたよ");
       invalidate();
       onOpenChange(false);
     } catch (error) {
@@ -151,16 +151,16 @@ export const TransactionEditDialog = ({
 
   const handleDelete = async () => {
     if (!token) {
-      toast.error("ログインが必要です");
+      toast.error("ログインしてね");
       return;
     }
-    const ok = window.confirm("この取引を削除しますか？");
+    const ok = window.confirm("この きろくを けす？");
     if (!ok) {
       return;
     }
     try {
       await api.deleteTransaction(token, transaction.id);
-      toast.success("取引を削除しました");
+      toast.success("きろくを けしたよ");
       invalidate();
       onOpenChange(false);
     } catch (error) {
@@ -172,7 +172,7 @@ export const TransactionEditDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>取引を編集</DialogTitle>
+          <DialogTitle>きろくを なおす</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4">
           <Input
@@ -193,7 +193,7 @@ export const TransactionEditDialog = ({
                 onValueChange={(value) => setForm({ ...form, assetId: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="資産" />
+                  <SelectValue placeholder="ばしょ" />
                 </SelectTrigger>
                 <SelectContent>
                   {assets.map((asset) => (
@@ -208,7 +208,7 @@ export const TransactionEditDialog = ({
                 onValueChange={(value) => setForm({ ...form, categoryId: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="費目" />
+                  <SelectValue placeholder="つかいみち" />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((category) => (
@@ -226,7 +226,7 @@ export const TransactionEditDialog = ({
                 onValueChange={(value) => setForm({ ...form, fromAssetId: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="振替元" />
+                  <SelectValue placeholder="うつすまえ" />
                 </SelectTrigger>
                 <SelectContent>
                   {assets.map((asset) => (
@@ -241,7 +241,7 @@ export const TransactionEditDialog = ({
                 onValueChange={(value) => setForm({ ...form, toAssetId: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="振替先" />
+                  <SelectValue placeholder="うつしたい" />
                 </SelectTrigger>
                 <SelectContent>
                   {assets.map((asset) => (
@@ -255,14 +255,14 @@ export const TransactionEditDialog = ({
           )}
           {transaction.type === "expense" ? (
             <Input
-              placeholder="相手"
+              placeholder="あいて"
               value={form.merchant ?? ""}
               onChange={(event) => setForm({ ...form, merchant: event.target.value })}
             />
           ) : null}
           {transaction.type === "income" ? (
             <Input
-              placeholder="相手"
+              placeholder="あいて"
               value={form.source ?? ""}
               onChange={(event) => setForm({ ...form, source: event.target.value })}
             />
@@ -271,7 +271,7 @@ export const TransactionEditDialog = ({
             <Input
               type="number"
               min={0}
-              placeholder="手数料"
+              placeholder="てすうりょう"
               value={form.fee ?? "0"}
               onChange={(event) => setForm({ ...form, fee: event.target.value })}
             />
@@ -284,9 +284,9 @@ export const TransactionEditDialog = ({
         </div>
         <DialogFooter>
           <Button variant="destructive" onClick={handleDelete}>
-            削除
+            けす
           </Button>
-          <Button onClick={handleSave}>保存</Button>
+          <Button onClick={handleSave}>ほぞん</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

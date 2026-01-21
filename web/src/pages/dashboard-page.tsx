@@ -31,7 +31,7 @@ export const DashboardPage = () => {
 
   return (
     <div>
-      <Topbar title="ダッシュボード" subtitle="今月の動きと資産残高" />
+      <Topbar title="まとめ" subtitle="いまのようすを みよう" />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {assets.map((asset) => (
@@ -44,7 +44,7 @@ export const DashboardPage = () => {
                 {formatJPY(asset.currentBalance)}
               </p>
               <p className="text-xs text-muted-foreground">
-                初期残高 {formatJPY(asset.initialBalance)}
+                はじめののこり {formatJPY(asset.initialBalance)}
               </p>
             </CardContent>
           </Card>
@@ -54,7 +54,7 @@ export const DashboardPage = () => {
       <section className="mt-8 grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">今月の収入</CardTitle>
+            <CardTitle className="text-base">こんげつ もらった</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-semibold text-emerald-600">
@@ -64,7 +64,7 @@ export const DashboardPage = () => {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">今月の支出</CardTitle>
+            <CardTitle className="text-base">こんげつ つかった</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-semibold text-rose-600">
@@ -74,7 +74,7 @@ export const DashboardPage = () => {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">差引</CardTitle>
+            <CardTitle className="text-base">のこり</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-semibold">
@@ -87,12 +87,12 @@ export const DashboardPage = () => {
       <section className="mt-8">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">最近の取引</CardTitle>
+            <CardTitle className="text-base">さいきんの きろく</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {recent.length === 0 ? (
-                <p className="text-sm text-muted-foreground">取引がありません</p>
+                <p className="text-sm text-muted-foreground">まだ きろくが ありません</p>
               ) : (
                 recent.map((tx) => (
                   <div

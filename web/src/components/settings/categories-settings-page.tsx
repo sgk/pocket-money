@@ -21,7 +21,7 @@ const CategoryRow = ({ category }: { category: Category }) => {
 
   const handleSave = async () => {
     if (!token) {
-      toast.error("ログインが必要です");
+      toast.error("ログインしてね");
       return;
     }
     try {
@@ -30,7 +30,7 @@ const CategoryRow = ({ category }: { category: Category }) => {
         sortOrder: Number(form.sortOrder || 0),
         isActive: form.isActive,
       });
-      toast.success("費目を更新しました");
+      toast.success("つかいみちを なおしたよ");
       queryClient.invalidateQueries({ queryKey: ["categories"] });
     } catch (error) {
       toast.error((error as Error).message);
@@ -39,16 +39,16 @@ const CategoryRow = ({ category }: { category: Category }) => {
 
   const handleDelete = async () => {
     if (!token) {
-      toast.error("ログインが必要です");
+      toast.error("ログインしてね");
       return;
     }
-    const ok = window.confirm("この費目を非アクティブにしますか？");
+    const ok = window.confirm("この つかいみちを おやすみする？");
     if (!ok) {
       return;
     }
     try {
       await api.deleteCategory(token, category.id);
-      toast.success("費目を非アクティブにしました");
+      toast.success("つかいみちを おやすみにしたよ");
       queryClient.invalidateQueries({ queryKey: ["categories"] });
     } catch (error) {
       toast.error((error as Error).message);
@@ -62,13 +62,13 @@ const CategoryRow = ({ category }: { category: Category }) => {
       </CardHeader>
       <CardContent className="grid gap-3">
         <Input
-          placeholder="名前"
+          placeholder="なまえ"
           value={form.name}
           onChange={(event) => setForm({ ...form, name: event.target.value })}
         />
         <Input
           type="number"
-          placeholder="並び順"
+          placeholder="ならび"
           value={form.sortOrder}
           onChange={(event) => setForm({ ...form, sortOrder: event.target.value })}
         />
@@ -78,12 +78,12 @@ const CategoryRow = ({ category }: { category: Category }) => {
             checked={form.isActive}
             onChange={(event) => setForm({ ...form, isActive: event.target.checked })}
           />
-          アクティブ
+          つかう
         </label>
         <div className="flex gap-2">
-          <Button onClick={handleSave}>保存</Button>
+          <Button onClick={handleSave}>ほぞん</Button>
           <Button variant="destructive" onClick={handleDelete}>
-            非アクティブ化
+            おやすみ
           </Button>
         </div>
       </CardContent>
@@ -102,11 +102,11 @@ export const CategoriesSettingsPage = () => {
 
   const handleCreate = async () => {
     if (!token) {
-      toast.error("ログインが必要です");
+      toast.error("ログインしてね");
       return;
     }
     if (!newCategory.name.trim()) {
-      toast.error("費目名を入力してください");
+      toast.error("なまえを いれてね");
       return;
     }
     try {
@@ -114,7 +114,7 @@ export const CategoriesSettingsPage = () => {
         name: newCategory.name,
         sortOrder: Number(newCategory.sortOrder || 0),
       });
-      toast.success("費目を追加しました");
+      toast.success("つかいみちを たしたよ");
       setNewCategory({ name: "", sortOrder: "0" });
       queryClient.invalidateQueries({ queryKey: ["categories"] });
     } catch (error) {
@@ -124,28 +124,28 @@ export const CategoriesSettingsPage = () => {
 
   return (
     <div>
-      <Topbar title="費目管理" subtitle="費目の追加と編集" />
+      <Topbar title="つかいみち設定" subtitle="つかいみちを ふやす / なおす" />
 
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="text-base">新規費目</CardTitle>
+          <CardTitle className="text-base">あたらしい つかいみち</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-3">
           <Input
-            placeholder="名前"
+            placeholder="なまえ"
             value={newCategory.name}
             onChange={(event) => setNewCategory({ ...newCategory, name: event.target.value })}
           />
           <Input
             type="number"
-            placeholder="並び順"
+            placeholder="ならび"
             value={newCategory.sortOrder}
             onChange={(event) =>
               setNewCategory({ ...newCategory, sortOrder: event.target.value })
             }
           />
           <div className="md:col-span-3">
-            <Button onClick={handleCreate}>追加</Button>
+            <Button onClick={handleCreate}>たす</Button>
           </div>
         </CardContent>
       </Card>

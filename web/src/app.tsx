@@ -7,7 +7,7 @@ import { RoutesConfig } from "@/routes";
 const LoadingScreen = () => (
   <div className="flex min-h-screen items-center justify-center">
     <div className="rounded-lg border bg-card p-6 shadow-sm">
-      <p className="text-sm text-muted-foreground">初期化中...</p>
+      <p className="text-sm text-muted-foreground">じゅんびちゅう...</p>
     </div>
   </div>
 );

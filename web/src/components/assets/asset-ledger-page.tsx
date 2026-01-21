@@ -75,8 +75,8 @@ export const AssetLedgerPage = () => {
   return (
     <div>
       <Topbar
-        title={asset?.name ? `${asset.name} 元帳` : "資産元帳"}
-        subtitle={asset ? `残高 ${formatJPY(asset.currentBalance)}` : undefined}
+        title={asset?.name ? `${asset.name} のノート` : "おかねノート"}
+        subtitle={asset ? `のこり ${formatJPY(asset.currentBalance)}` : undefined}
       >
         <Filters
           filters={filters}
@@ -96,23 +96,23 @@ export const AssetLedgerPage = () => {
       <section className="mt-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">今月のサマリー</CardTitle>
+            <CardTitle className="text-base">こんげつのまとめ</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-3">
             <div>
-              <p className="text-xs text-muted-foreground">収入</p>
+              <p className="text-xs text-muted-foreground">もらった</p>
               <p className="text-lg font-semibold text-emerald-600">
                 {formatJPY(assetSummary.incomeTotal)}
               </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">支出</p>
+              <p className="text-xs text-muted-foreground">つかった</p>
               <p className="text-lg font-semibold text-rose-600">
                 {formatJPY(assetSummary.expenseTotal)}
               </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">差引</p>
+              <p className="text-xs text-muted-foreground">のこり</p>
               <p className="text-lg font-semibold">{formatJPY(assetSummary.net)}</p>
             </div>
           </CardContent>

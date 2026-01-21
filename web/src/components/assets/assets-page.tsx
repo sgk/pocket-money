@@ -9,7 +9,7 @@ export const AssetsPage = () => {
 
   return (
     <div>
-      <Topbar title="資産一覧" subtitle="資産ごとの元帳に移動できます" />
+      <Topbar title="おかねのばしょ" subtitle="ばしょごとのノートをみよう" />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {assets.map((asset) => (
           <Link key={asset.id} to={`/assets/${asset.id}/ledger`}>
@@ -22,7 +22,7 @@ export const AssetsPage = () => {
                   {formatJPY(asset.currentBalance)}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  初期残高 {formatJPY(asset.initialBalance)}
+                  はじめののこり {formatJPY(asset.initialBalance)}
                 </p>
               </CardContent>
             </Card>

@@ -21,10 +21,10 @@ export type LedgerFiltersState = {
 };
 
 const presets = [
-  { value: "this-month", label: "今月" },
-  { value: "last-month", label: "先月" },
-  { value: "last-30", label: "過去30日" },
-  { value: "custom", label: "任意" },
+  { value: "this-month", label: "こんげつ" },
+  { value: "last-month", label: "せんげつ" },
+  { value: "last-30", label: "さいきん30にち" },
+  { value: "custom", label: "えらぶ" },
 ] as const;
 
 type PresetValue = (typeof presets)[number]["value"];
@@ -74,7 +74,7 @@ export const Filters = ({
     <div className="flex flex-wrap gap-2">
       <Select value={preset} onValueChange={(value) => setPreset(value as PresetValue)}>
         <SelectTrigger className="w-32">
-          <SelectValue placeholder="期間" />
+        <SelectValue placeholder="きかん" />
         </SelectTrigger>
         <SelectContent>
           {presets.map((item) => (
@@ -101,18 +101,18 @@ export const Filters = ({
         onValueChange={(value) => setFilters({ ...filters, type: value as TransactionType })}
       >
         <SelectTrigger className="w-32">
-          <SelectValue placeholder="種別" />
+        <SelectValue placeholder="しゅるい" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">すべて</SelectItem>
-          <SelectItem value="expense">支出</SelectItem>
-          <SelectItem value="income">収入</SelectItem>
-          <SelectItem value="transfer">振替</SelectItem>
+          <SelectItem value="all">ぜんぶ</SelectItem>
+          <SelectItem value="expense">つかった</SelectItem>
+          <SelectItem value="income">もらった</SelectItem>
+          <SelectItem value="transfer">うつす</SelectItem>
         </SelectContent>
       </Select>
 
       <Input
-        placeholder="検索（相手/メモ）"
+        placeholder="さがす（あいて/メモ）"
         value={filters.search}
         onChange={(event) => setFilters({ ...filters, search: event.target.value })}
       />
@@ -125,10 +125,10 @@ export const Filters = ({
           }
         >
           <SelectTrigger className="w-40">
-            <SelectValue placeholder="資産" />
+            <SelectValue placeholder="ばしょ" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">すべての資産</SelectItem>
+            <SelectItem value="all">ぜんぶ</SelectItem>
             {assets.map((asset) => (
               <SelectItem key={asset.id} value={asset.id}>
                 {asset.name}
@@ -146,10 +146,10 @@ export const Filters = ({
         disabled={!isCategoryEnabled}
       >
         <SelectTrigger className="w-40">
-          <SelectValue placeholder="費目" />
+        <SelectValue placeholder="つかいみち" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">すべての費目</SelectItem>
+          <SelectItem value="all">ぜんぶ</SelectItem>
           {categories.map((category) => (
             <SelectItem key={category.id} value={category.id}>
               {category.name}

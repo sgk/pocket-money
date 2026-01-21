@@ -14,9 +14,9 @@ import { NewEntryRow } from "@/components/ledger/new-entry-row";
 import { TransactionEditDialog } from "@/components/ledger/transaction-edit-dialog";
 
 const typeLabel = {
-  expense: "支出",
-  income: "収入",
-  transfer: "振替",
+  expense: "つかった",
+  income: "もらった",
+  transfer: "うつす",
 } as const;
 
 export const LedgerTable = ({
@@ -67,12 +67,12 @@ export const LedgerTable = ({
   const columns = useMemo<ColumnDef<Transaction>[]>(
     () => [
       {
-        header: "日付",
+        header: "ひづけ",
         accessorKey: "occurredAt",
         cell: ({ row }) => formatDate(row.original.occurredAt),
       },
       {
-        header: "資産",
+        header: "ばしょ",
         cell: ({ row }) => {
           const tx = row.original;
           if (tx.type === "transfer") {
@@ -84,13 +84,13 @@ export const LedgerTable = ({
         },
       },
       {
-        header: "種別",
+        header: "しゅるい",
         cell: ({ row }) => (
           <Badge variant={row.original.type}>{typeLabel[row.original.type]}</Badge>
         ),
       },
       {
-        header: "相手/内容",
+        header: "あいて/ないよう",
         cell: ({ row }) => {
           const tx = row.original;
           if (tx.type === "expense") {
@@ -103,7 +103,7 @@ export const LedgerTable = ({
         },
       },
       {
-        header: "費目",
+        header: "つかいみち",
         cell: ({ row }) => {
           const tx = row.original;
           if (tx.type === "transfer") {
@@ -113,14 +113,14 @@ export const LedgerTable = ({
         },
       },
       {
-        header: "支出",
+        header: "つかった",
         cell: ({ row }) =>
           row.original.type === "expense"
             ? formatJPYPlain(row.original.amount)
             : "",
       },
       {
-        header: "収入",
+        header: "もらった",
         cell: ({ row }) =>
           row.original.type === "income"
             ? formatJPYPlain(row.original.amount)
@@ -131,17 +131,17 @@ export const LedgerTable = ({
         cell: ({ row }) => {
           const tx = row.original;
           if (tx.type === "transfer") {
-            return tx.fee ? `手数料 ${formatJPYPlain(tx.fee)}` : "-";
+            return tx.fee ? `てすうりょう ${formatJPYPlain(tx.fee)}` : "-";
           }
           return tx.memo ?? "";
         },
       },
       {
-        header: "操作",
+        header: "ボタン",
         cell: ({ row }) => (
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={() => setEditing(row.original)}>
-              編集
+              なおす
             </Button>
           </div>
         ),

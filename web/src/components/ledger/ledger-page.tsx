@@ -50,7 +50,7 @@ export const LedgerPage = () => {
 
   return (
     <div>
-      <Topbar title="全資産元帳" subtitle="すべての資産の動きを一覧で確認">
+      <Topbar title="おかねノート（ぜんぶ）" subtitle="ぜんぶまとめて みよう">
         <Filters
           filters={filters}
           setFilters={setFilters}
@@ -65,23 +65,23 @@ export const LedgerPage = () => {
       <section className="mt-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">今月のサマリー</CardTitle>
+            <CardTitle className="text-base">こんげつのまとめ</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-3">
             <div>
-              <p className="text-xs text-muted-foreground">収入</p>
+              <p className="text-xs text-muted-foreground">もらった</p>
               <p className="text-lg font-semibold text-emerald-600">
                 {formatJPY(summary?.incomeTotal ?? 0)}
               </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">支出</p>
+              <p className="text-xs text-muted-foreground">つかった</p>
               <p className="text-lg font-semibold text-rose-600">
                 {formatJPY(summary?.expenseTotal ?? 0)}
               </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">差引</p>
+              <p className="text-xs text-muted-foreground">のこり</p>
               <p className="text-lg font-semibold">{formatJPY(summary?.net ?? 0)}</p>
             </div>
           </CardContent>

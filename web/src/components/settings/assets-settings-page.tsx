@@ -24,7 +24,7 @@ const AssetRow = ({ asset }: { asset: Asset }) => {
 
   const handleSave = async () => {
     if (!token) {
-      toast.error("ログインが必要です");
+      toast.error("ログインしてね");
       return;
     }
     try {
@@ -35,7 +35,7 @@ const AssetRow = ({ asset }: { asset: Asset }) => {
         sortOrder: Number(form.sortOrder || 0),
         isActive: form.isActive,
       });
-      toast.success("資産を更新しました");
+      toast.success("ばしょを なおしたよ");
       queryClient.invalidateQueries({ queryKey: ["assets"] });
     } catch (error) {
       toast.error((error as Error).message);
@@ -44,16 +44,16 @@ const AssetRow = ({ asset }: { asset: Asset }) => {
 
   const handleDelete = async () => {
     if (!token) {
-      toast.error("ログインが必要です");
+      toast.error("ログインしてね");
       return;
     }
-    const ok = window.confirm("この資産を非アクティブにしますか？");
+    const ok = window.confirm("この ばしょを おやすみする？");
     if (!ok) {
       return;
     }
     try {
       await api.deleteAsset(token, asset.id);
-      toast.success("資産を非アクティブにしました");
+      toast.success("ばしょを おやすみにしたよ");
       queryClient.invalidateQueries({ queryKey: ["assets"] });
     } catch (error) {
       toast.error((error as Error).message);
@@ -67,12 +67,12 @@ const AssetRow = ({ asset }: { asset: Asset }) => {
       </CardHeader>
       <CardContent className="grid gap-3">
         <Input
-          placeholder="名前"
+          placeholder="なまえ"
           value={form.name}
           onChange={(event) => setForm({ ...form, name: event.target.value })}
         />
         <Input
-          placeholder="種別"
+          placeholder="しゅるい"
           value={form.type}
           onChange={(event) => setForm({ ...form, type: event.target.value })}
         />
@@ -83,12 +83,12 @@ const AssetRow = ({ asset }: { asset: Asset }) => {
         />
         <Input
           type="number"
-          placeholder="並び順"
+          placeholder="ならび"
           value={form.sortOrder}
           onChange={(event) => setForm({ ...form, sortOrder: event.target.value })}
         />
         <div className="text-sm text-muted-foreground">
-          現在残高: {formatJPY(asset.currentBalance)}
+          いまののこり: {formatJPY(asset.currentBalance)}
         </div>
         <label className="flex items-center gap-2 text-sm">
           <input
@@ -96,12 +96,12 @@ const AssetRow = ({ asset }: { asset: Asset }) => {
             checked={form.isActive}
             onChange={(event) => setForm({ ...form, isActive: event.target.checked })}
           />
-          アクティブ
+          つかう
         </label>
         <div className="flex gap-2">
-          <Button onClick={handleSave}>保存</Button>
+          <Button onClick={handleSave}>ほぞん</Button>
           <Button variant="destructive" onClick={handleDelete}>
-            非アクティブ化
+            おやすみ
           </Button>
         </div>
       </CardContent>
@@ -121,11 +121,11 @@ export const AssetsSettingsPage = () => {
 
   const handleCreate = async () => {
     if (!token) {
-      toast.error("ログインが必要です");
+      toast.error("ログインしてね");
       return;
     }
     if (!newAsset.name.trim()) {
-      toast.error("資産名を入力してください");
+      toast.error("なまえを いれてね");
       return;
     }
     try {
@@ -134,7 +134,7 @@ export const AssetsSettingsPage = () => {
         type: newAsset.type || undefined,
         initialBalance: Number(newAsset.initialBalance || 0),
       });
-      toast.success("資産を追加しました");
+      toast.success("ばしょを たしたよ");
       setNewAsset({ name: "", type: "", initialBalance: "0" });
       queryClient.invalidateQueries({ queryKey: ["assets"] });
     } catch (error) {
@@ -144,33 +144,33 @@ export const AssetsSettingsPage = () => {
 
   return (
     <div>
-      <Topbar title="資産管理" subtitle="資産の追加と編集" />
+      <Topbar title="おかねばしょ設定" subtitle="ばしょを ふやす / なおす" />
 
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="text-base">新規資産</CardTitle>
+          <CardTitle className="text-base">あたらしい ばしょ</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-3">
           <Input
-            placeholder="名前"
+            placeholder="なまえ"
             value={newAsset.name}
             onChange={(event) => setNewAsset({ ...newAsset, name: event.target.value })}
           />
           <Input
-            placeholder="種別"
+            placeholder="しゅるい"
             value={newAsset.type}
             onChange={(event) => setNewAsset({ ...newAsset, type: event.target.value })}
           />
           <Input
             type="number"
-            placeholder="初期残高"
+            placeholder="はじめののこり"
             value={newAsset.initialBalance}
             onChange={(event) =>
               setNewAsset({ ...newAsset, initialBalance: event.target.value })
             }
           />
           <div className="md:col-span-3">
-            <Button onClick={handleCreate}>追加</Button>
+            <Button onClick={handleCreate}>たす</Button>
           </div>
         </CardContent>
       </Card>

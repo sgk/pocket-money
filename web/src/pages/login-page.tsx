@@ -51,7 +51,7 @@ export const LoginPage = () => {
         client_id: clientId,
         callback: (response) => {
           if (!response.credential) {
-            toast.error("Googleログインに失敗しました");
+            toast.error("ログインにしっぱいしました");
             return;
           }
           setToken(response.credential);
@@ -81,7 +81,7 @@ export const LoginPage = () => {
 
   const handleDevLogin = () => {
     if (!devUid.trim()) {
-      toast.error("UIDを入力してください");
+      toast.error("なまえをいれてね");
       return;
     }
     setToken(`dev:${devUid.trim()}`);
@@ -97,13 +97,13 @@ export const LoginPage = () => {
         <CardContent className="space-y-4">
           <div>
             <p className="text-sm text-muted-foreground">
-              Google アカウントでログインしてください。
+              Googleでログインしよう。
             </p>
             <div className="mt-4" ref={googleButtonRef} />
           </div>
           {allowDevAuth ? (
             <div className="rounded-md border border-dashed p-4">
-              <p className="text-sm text-muted-foreground">開発用ログイン</p>
+              <p className="text-sm text-muted-foreground">テストログイン</p>
               <div className="mt-2 flex gap-2">
                 <Input
                   placeholder="dev uid"
@@ -118,7 +118,7 @@ export const LoginPage = () => {
           ) : null}
           {!clientId ? (
             <p className="text-xs text-destructive">
-              VITE_GOOGLE_CLIENT_ID が未設定です
+              GoogleのIDが未設定です
             </p>
           ) : null}
         </CardContent>
