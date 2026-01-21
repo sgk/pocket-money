@@ -17,7 +17,6 @@ export const AssetLedgerPage = () => {
   const [filters, setFilters] = useState<LedgerFiltersState>({
     from: formatDate(startOfCurrentMonth()),
     to: formatDate(startOfNextMonth()),
-    type: "all",
     search: "",
   });
 
@@ -78,12 +77,7 @@ export const AssetLedgerPage = () => {
         title={asset?.name ? `${asset.name} のノート` : "おかねノート"}
         subtitle={asset ? `のこり ${formatJPY(asset.currentBalance)}` : undefined}
       >
-        <Filters
-          filters={filters}
-          setFilters={setFilters}
-          assets={assets}
-          categories={categories}
-        />
+        <Filters filters={filters} setFilters={setFilters} />
       </Topbar>
 
       <LedgerTable

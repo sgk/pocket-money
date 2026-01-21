@@ -13,18 +13,12 @@ export const LedgerPage = () => {
   const [filters, setFilters] = useState<LedgerFiltersState>({
     from: formatDate(startOfCurrentMonth()),
     to: formatDate(startOfNextMonth()),
-    type: "all",
     search: "",
-    assetId: undefined,
-    categoryId: undefined,
   });
 
   const { data } = useTransactions({
     from: filters.from,
     to: filters.to,
-    type: filters.type,
-    assetId: filters.assetId,
-    categoryId: filters.categoryId,
   });
   const transactions = data.items;
 
@@ -51,13 +45,7 @@ export const LedgerPage = () => {
   return (
     <div>
       <Topbar title="おかねノート（ぜんぶ）" subtitle="ぜんぶまとめて みよう">
-        <Filters
-          filters={filters}
-          setFilters={setFilters}
-          assets={assets}
-          categories={categories}
-          showAssetFilter
-        />
+        <Filters filters={filters} setFilters={setFilters} />
       </Topbar>
 
       <LedgerTable transactions={filtered} assets={assets} categories={categories} />

@@ -180,7 +180,7 @@ export const NewEntryRow = ({
     }
   };
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLTableRowElement>) => {
     if (event.key === "Enter") {
       event.preventDefault();
       handleSubmit();
@@ -202,7 +202,12 @@ export const NewEntryRow = ({
   return (
     <tr onKeyDown={handleKeyDown} className="bg-secondary/30">
       <td className="p-2">
-        <Input ref={dateRef} type="date" value={entry.date} onChange={(event) => setEntry({ ...entry, date: event.target.value })} />
+        <Input
+          ref={dateRef}
+          type="date"
+          value={entry.date}
+          onChange={(event) => setEntry({ ...entry, date: event.target.value })}
+        />
       </td>
       <td className="p-2">
         {entry.type === "transfer" ? (

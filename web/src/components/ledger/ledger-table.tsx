@@ -13,6 +13,11 @@ import { Button } from "@/components/ui/button";
 import { NewEntryRow } from "@/components/ledger/new-entry-row";
 import { TransactionEditDialog } from "@/components/ledger/transaction-edit-dialog";
 
+type ColumnMeta = {
+  headerClassName?: string;
+  cellClassName?: string;
+};
+
 const typeLabel = {
   expense: "つかった",
   income: "もらった",
@@ -70,6 +75,10 @@ export const LedgerTable = ({
         header: "ひづけ",
         accessorKey: "occurredAt",
         cell: ({ row }) => formatDate(row.original.occurredAt),
+        meta: {
+          headerClassName: "min-w-[120px] whitespace-nowrap",
+          cellClassName: "min-w-[120px] whitespace-nowrap",
+        },
       },
       {
         header: "ばしょ",
@@ -82,12 +91,20 @@ export const LedgerTable = ({
           }
           return assetMap.get(tx.assetId) ?? "";
         },
+        meta: {
+          headerClassName: "min-w-[180px] whitespace-nowrap",
+          cellClassName: "min-w-[180px] whitespace-nowrap",
+        },
       },
       {
         header: "しゅるい",
         cell: ({ row }) => (
           <Badge variant={row.original.type}>{typeLabel[row.original.type]}</Badge>
         ),
+        meta: {
+          headerClassName: "min-w-[110px] whitespace-nowrap",
+          cellClassName: "min-w-[110px] whitespace-nowrap",
+        },
       },
       {
         header: "あいて/ないよう",
@@ -101,6 +118,10 @@ export const LedgerTable = ({
           }
           return tx.memo ?? "";
         },
+        meta: {
+          headerClassName: "min-w-[180px] whitespace-nowrap",
+          cellClassName: "min-w-[180px] whitespace-nowrap",
+        },
       },
       {
         header: "つかいみち",
@@ -111,6 +132,10 @@ export const LedgerTable = ({
           }
           return categoryMap.get(tx.categoryId) ?? "";
         },
+        meta: {
+          headerClassName: "min-w-[160px] whitespace-nowrap",
+          cellClassName: "min-w-[160px] whitespace-nowrap",
+        },
       },
       {
         header: "つかった",
@@ -118,6 +143,10 @@ export const LedgerTable = ({
           row.original.type === "expense"
             ? formatJPYPlain(row.original.amount)
             : "",
+        meta: {
+          headerClassName: "min-w-[120px] whitespace-nowrap text-right",
+          cellClassName: "min-w-[120px] whitespace-nowrap text-right",
+        },
       },
       {
         header: "もらった",
@@ -125,6 +154,10 @@ export const LedgerTable = ({
           row.original.type === "income"
             ? formatJPYPlain(row.original.amount)
             : "",
+        meta: {
+          headerClassName: "min-w-[120px] whitespace-nowrap text-right",
+          cellClassName: "min-w-[120px] whitespace-nowrap text-right",
+        },
       },
       {
         header: "メモ",
@@ -134,6 +167,10 @@ export const LedgerTable = ({
             return tx.fee ? `てすうりょう ${formatJPYPlain(tx.fee)}` : "-";
           }
           return tx.memo ?? "";
+        },
+        meta: {
+          headerClassName: "min-w-[160px] whitespace-nowrap",
+          cellClassName: "min-w-[160px] whitespace-nowrap",
         },
       },
       {
@@ -145,6 +182,10 @@ export const LedgerTable = ({
             </Button>
           </div>
         ),
+        meta: {
+          headerClassName: "min-w-[110px] whitespace-nowrap",
+          cellClassName: "min-w-[110px] whitespace-nowrap",
+        },
       },
     ],
     [assetMap, categoryMap]
@@ -166,12 +207,18 @@ export const LedgerTable = ({
 
   return (
     <div className="overflow-x-auto rounded-lg border bg-card/80 shadow-sm">
-      <table className="w-full border-collapse text-sm">
+      <table className="min-w-[1100px] w-full border-collapse text-sm">
         <thead className="bg-secondary/50">
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
-                <th key={header.id} className="p-3 text-left font-medium">
+                <th
+                  key={header.id}
+                  className={`p-3 text-left font-medium ${
+                    (header.column.columnDef.meta as ColumnMeta | undefined)?.headerClassName ??
+                    ""
+                  }`}
+                >
                   {flexRender(header.column.columnDef.header, header.getContext())}
                 </th>
               ))}
@@ -193,7 +240,12 @@ export const LedgerTable = ({
               onClick={() => setSelectedId(row.original.id)}
             >
               {row.getVisibleCells().map((cell) => (
-                <td key={cell.id} className="p-3 align-top">
+                <td
+                  key={cell.id}
+                  className={`p-3 align-top ${
+                    (cell.column.columnDef.meta as ColumnMeta | undefined)?.cellClassName ?? ""
+                  }`}
+                >
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
               ))}

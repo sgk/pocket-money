@@ -9,15 +9,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatDate, startOfCurrentMonth, startOfNextMonth, startOfPrevMonth } from "@/lib/date";
-import type { Asset, Category, TransactionType } from "@/lib/types";
-
 export type LedgerFiltersState = {
   from: string;
   to: string;
-  type: TransactionType;
   search: string;
-  assetId?: string;
-  categoryId?: string;
 };
 
 const presets = [
@@ -32,15 +27,9 @@ type PresetValue = (typeof presets)[number]["value"];
 export const Filters = ({
   filters,
   setFilters,
-  assets,
-  categories,
-  showAssetFilter,
 }: {
   filters: LedgerFiltersState;
   setFilters: Dispatch<SetStateAction<LedgerFiltersState>>;
-  assets: Asset[];
-  categories: Category[];
-  showAssetFilter?: boolean;
 }) => {
   const [preset, setPreset] = useState<PresetValue>("this-month");
 
@@ -68,95 +57,44 @@ export const Filters = ({
     setFilters({ ...filters, from: nextFrom, to: nextTo });
   }, [preset, filters, setFilters]);
 
-  const isCategoryEnabled = filters.type === "expense" || filters.type === "income" || filters.type === "all";
-
   return (
-    <div className="flex flex-wrap gap-2">
-      <Select value={preset} onValueChange={(value) => setPreset(value as PresetValue)}>
-        <SelectTrigger className="w-32">
-        <SelectValue placeholder="きかん" />
-        </SelectTrigger>
-        <SelectContent>
-          {presets.map((item) => (
-            <SelectItem key={item.value} value={item.value}>
-              {item.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      <Input
-        type="date"
-        value={filters.from}
-        onChange={(event) => setFilters({ ...filters, from: event.target.value })}
-      />
-      <Input
-        type="date"
-        value={filters.to}
-        onChange={(event) => setFilters({ ...filters, to: event.target.value })}
-      />
-
-      <Select
-        value={filters.type}
-        onValueChange={(value) => setFilters({ ...filters, type: value as TransactionType })}
-      >
-        <SelectTrigger className="w-32">
-        <SelectValue placeholder="しゅるい" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">ぜんぶ</SelectItem>
-          <SelectItem value="expense">つかった</SelectItem>
-          <SelectItem value="income">もらった</SelectItem>
-          <SelectItem value="transfer">うつす</SelectItem>
-        </SelectContent>
-      </Select>
-
-      <Input
-        placeholder="さがす（あいて/メモ）"
-        value={filters.search}
-        onChange={(event) => setFilters({ ...filters, search: event.target.value })}
-      />
-
-      {showAssetFilter ? (
-        <Select
-          value={filters.assetId ?? "all"}
-          onValueChange={(value) =>
-            setFilters({ ...filters, assetId: value === "all" ? undefined : value })
-          }
-        >
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="ばしょ" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">ぜんぶ</SelectItem>
-            {assets.map((asset) => (
-              <SelectItem key={asset.id} value={asset.id}>
-                {asset.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      ) : null}
-
-      <Select
-        value={filters.categoryId ?? "all"}
-        onValueChange={(value) =>
-          setFilters({ ...filters, categoryId: value === "all" ? undefined : value })
-        }
-        disabled={!isCategoryEnabled}
-      >
-        <SelectTrigger className="w-40">
-        <SelectValue placeholder="つかいみち" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">ぜんぶ</SelectItem>
-          {categories.map((category) => (
-            <SelectItem key={category.id} value={category.id}>
-              {category.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+    <div className="grid gap-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-muted-foreground">きかん</span>
+          <Select value={preset} onValueChange={(value) => setPreset(value as PresetValue)}>
+            <SelectTrigger className="w-full sm:w-32">
+              <SelectValue placeholder="きかん" />
+            </SelectTrigger>
+            <SelectContent>
+              {presets.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input
+            type="date"
+            value={filters.from}
+            onChange={(event) => setFilters({ ...filters, from: event.target.value })}
+            className="w-full sm:w-40 md:w-44"
+          />
+          <Input
+            type="date"
+            value={filters.to}
+            onChange={(event) => setFilters({ ...filters, to: event.target.value })}
+            className="w-full sm:w-40 md:w-44"
+          />
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-muted-foreground">さがす</span>
+        <Input
+          placeholder="さがす（あいて/メモ）"
+          value={filters.search}
+          onChange={(event) => setFilters({ ...filters, search: event.target.value })}
+          className="w-full sm:w-80"
+        />
+      </div>
     </div>
   );
 };
