@@ -4,7 +4,7 @@ import { Topbar } from "@/components/layout/topbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAssets, useMonthlySummary, useTransactions } from "@/lib/query";
 import { formatJPY } from "@/lib/money";
-import { formatDate } from "@/lib/date";
+import { formatDateSlash } from "@/lib/date";
 
 export const DashboardPage = () => {
   const { data: assets = [] } = useAssets();
@@ -115,7 +115,7 @@ export const DashboardPage = () => {
                         {formatJPY(tx.amount)}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {formatDate(tx.occurredAt)}
+                        {formatDateSlash(tx.occurredAt)}
                       </p>
                     </div>
                   </div>
