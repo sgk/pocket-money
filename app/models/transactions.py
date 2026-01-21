@@ -7,14 +7,14 @@ from pydantic import BaseModel, Field
 class TransactionBase(BaseModel):
     type: str
     occurredAt: datetime
-    amount: int = Field(..., ge=1)
+    amount: int = Field(...)
     memo: Optional[str] = None
     dayOrder: Optional[int] = Field(None, ge=0)
 
 
 class ExpenseCreate(BaseModel):
     occurredAt: datetime
-    amount: int = Field(..., ge=1)
+    amount: int = Field(...)
     memo: Optional[str] = None
     assetId: str
     categoryName: str
@@ -24,7 +24,7 @@ class ExpenseCreate(BaseModel):
 
 class IncomeCreate(BaseModel):
     occurredAt: datetime
-    amount: int = Field(..., ge=1)
+    amount: int = Field(...)
     memo: Optional[str] = None
     assetId: str
     categoryName: str
@@ -34,7 +34,7 @@ class IncomeCreate(BaseModel):
 
 class TransferCreate(BaseModel):
     occurredAt: datetime
-    amount: int = Field(..., ge=1)
+    amount: int = Field(...)
     memo: Optional[str] = None
     fromAssetId: str
     toAssetId: str
@@ -46,7 +46,7 @@ class TransferCreate(BaseModel):
 class TransactionUpdate(BaseModel):
     type: Optional[str] = None
     occurredAt: Optional[datetime] = None
-    amount: Optional[int] = Field(None, ge=1)
+    amount: Optional[int] = None
     memo: Optional[str] = None
     assetId: Optional[str] = None
     categoryName: Optional[str] = None

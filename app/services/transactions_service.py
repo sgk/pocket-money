@@ -33,8 +33,8 @@ def _validate_common(tx: dict):
     if tx.get("occurredAt") is None:
         raise AppError(400, "occurredAt is required")
     amount = tx.get("amount")
-    if amount is None or int(amount) < 1:
-        raise AppError(400, "amount must be >= 1")
+    if amount is None:
+        raise AppError(400, "amount is required")
     fee = int(tx.get("fee", 0) or 0)
     if fee < 0:
         raise AppError(400, "fee must be >= 0")

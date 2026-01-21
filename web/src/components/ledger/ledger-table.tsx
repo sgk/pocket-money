@@ -97,8 +97,8 @@ const EditableRow = ({
       toast.error("ログインしてね");
       return;
     }
-    if (!form.amount || Number(form.amount) < 1) {
-      toast.error("きんがくは 1えん いじょうで いれてね");
+    if (form.amount === "" || Number.isNaN(Number(form.amount))) {
+      toast.error("きんがくを いれてね");
       return;
     }
     if (transaction.type === "expense" || transaction.type === "income") {
@@ -340,7 +340,6 @@ const EditableRow = ({
       <td className="p-2">
         <Input
           type="number"
-          min={1}
           placeholder="きんがく"
           value={form.amount}
           onChange={(event) => setForm({ ...form, amount: event.target.value })}

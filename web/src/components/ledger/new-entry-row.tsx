@@ -125,8 +125,8 @@ export const NewEntryRow = ({
 
   const validateEntry = () => {
     const amount = Number(entry.amount);
-    if (!amount || amount < 1) {
-      toast.error("きんがくは 1えん いじょうで いれてね");
+    if (Number.isNaN(amount) || entry.amount === "") {
+      toast.error("きんがくを いれてね");
       return false;
     }
     if (entry.type === "expense" || entry.type === "income") {
@@ -361,7 +361,6 @@ export const NewEntryRow = ({
       <td className="p-2">
         <Input
           type="number"
-          min={1}
           placeholder="きんがく"
           value={entry.amount}
           onChange={(event) => setEntry({ ...entry, amount: event.target.value })}
