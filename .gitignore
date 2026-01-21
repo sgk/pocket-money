@@ -8,3 +8,13 @@ lib/
 lib64
 include/
 pyvenv.cfg
+node_modules/
+web/node_modules/
+web/dist/
+web/.env
+web/.env.*.local
+web/.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*

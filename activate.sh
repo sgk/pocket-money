@@ -16,7 +16,13 @@ source "$VENV_DIR/bin/activate"
 
 if [ -n "${PS1-}" ]; then
   _BASE_PROMPT="${_OLD_VIRTUAL_PROMPT-${PS1}}"
-  PS1="(${_PROMPT_NAME}) ${_BASE_PROMPT}"
+  case "$PS1" in
+    "(${_PROMPT_NAME}) "*)
+      : ;;
+    *)
+      PS1="(${_PROMPT_NAME}) ${_BASE_PROMPT}"
+      ;;
+  esac
 fi
 
 mkdir -p .gcloud

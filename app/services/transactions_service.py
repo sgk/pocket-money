@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from typing import Dict, Optional
 
 from google.cloud import firestore as fs
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 from app.core import firestore
 from app.core.errors import AppError
@@ -275,11 +276,11 @@ def list_transactions(
         "occurredAt", direction=fs.Query.DESCENDING
     )
     if from_dt:
-        query = query.where("occurredAt", ">=", from_dt)
+        query = query.where(filter=FieldFilter("occurredAt", ">=", from_dt))
     if to_dt:
-        query = query.where("occurredAt", "<=", to_dt)
+        query = query.where(filter=FieldFilter("occurredAt", "<=", to_dt))
     if tx_type:
-        query = query.where("type", "==", tx_type)
+        query = query.where(filter=FieldFilter("type", "==", tx_type))
     if cursor:
         cursor_snap = firestore.transaction_doc(uid, cursor).get()
         if not cursor_snap.exists:

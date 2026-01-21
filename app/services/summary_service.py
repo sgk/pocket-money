@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 from typing import Dict
 
+from google.cloud.firestore_v1.base_query import FieldFilter
+
 from app.core import firestore
 from app.services.transactions_service import tx_effect
 
@@ -14,8 +16,8 @@ def get_month_summary(uid: str, year: int, month: int) -> dict:
 
     query = (
         firestore.transactions_collection(uid)
-        .where("occurredAt", ">=", start)
-        .where("occurredAt", "<", end)
+        .where(filter=FieldFilter("occurredAt", ">=", start))
+        .where(filter=FieldFilter("occurredAt", "<", end))
     )
 
     expense_total = 0

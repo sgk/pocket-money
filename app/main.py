@@ -1,4 +1,8 @@
+from pathlib import Path
+
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.routes_assets import router as assets_router
 from app.api.routes_bootstrap import router as bootstrap_router
@@ -36,3 +40,48 @@ try:
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
 except Exception:
     pass
+
+dist_dir = Path(__file__).resolve().parent.parent / "web" / "dist"
+index_file = dist_dir / "index.html"
+
+
+def serve_index():
+    return FileResponse(index_file)
+
+
+@app.get("/")
+def spa_root():
+    return serve_index()
+
+
+@app.get("/login")
+def spa_login():
+    return serve_index()
+
+
+@app.get("/ledger")
+def spa_ledger():
+    return serve_index()
+
+
+@app.get("/assets")
+def spa_assets():
+    return serve_index()
+
+
+@app.get("/assets/{asset_id}/ledger")
+def spa_asset_ledger(asset_id: str):
+    return serve_index()
+
+
+@app.get("/settings/assets")
+def spa_settings_assets():
+    return serve_index()
+
+
+@app.get("/settings/categories")
+def spa_settings_categories():
+    return serve_index()
+
+
+app.mount("/", StaticFiles(directory=dist_dir), name="static")
