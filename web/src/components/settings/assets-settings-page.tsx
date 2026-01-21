@@ -35,7 +35,7 @@ const AssetRow = ({ asset }: { asset: Asset }) => {
         sortOrder: Number(form.sortOrder || 0),
         isActive: form.isActive,
       });
-      toast.success("ばしょを なおしたよ");
+      toast.success("いれものを なおしたよ");
       queryClient.invalidateQueries({ queryKey: ["assets"] });
     } catch (error) {
       toast.error((error as Error).message);
@@ -47,13 +47,13 @@ const AssetRow = ({ asset }: { asset: Asset }) => {
       toast.error("ログインしてね");
       return;
     }
-    const ok = window.confirm("この ばしょを おやすみする？");
+    const ok = window.confirm("この いれものを おやすみする？");
     if (!ok) {
       return;
     }
     try {
       await api.deleteAsset(token, asset.id);
-      toast.success("ばしょを おやすみにしたよ");
+      toast.success("いれものを おやすみにしたよ");
       queryClient.invalidateQueries({ queryKey: ["assets"] });
     } catch (error) {
       toast.error((error as Error).message);
@@ -134,7 +134,7 @@ export const AssetsSettingsPage = () => {
         type: newAsset.type || undefined,
         initialBalance: Number(newAsset.initialBalance || 0),
       });
-      toast.success("ばしょを たしたよ");
+      toast.success("いれものを たしたよ");
       setNewAsset({ name: "", type: "", initialBalance: "0" });
       queryClient.invalidateQueries({ queryKey: ["assets"] });
     } catch (error) {
@@ -144,11 +144,11 @@ export const AssetsSettingsPage = () => {
 
   return (
     <div>
-      <Topbar title="おかねばしょ設定" subtitle="ばしょを ふやす / なおす" />
+      <Topbar title="いれもの設定" subtitle="いれものを ふやす / なおす" />
 
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="text-base">あたらしい ばしょ</CardTitle>
+          <CardTitle className="text-base">あたらしい いれもの</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-3">
           <Input

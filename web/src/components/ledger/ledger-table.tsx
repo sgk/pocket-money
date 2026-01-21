@@ -6,10 +6,8 @@ import {
   type ColumnDef,
 } from "@tanstack/react-table";
 import type { Asset, Category, Transaction } from "@/lib/types";
-import { formatDate } from "@/lib/date";
+import { formatDate, toDateKey } from "@/lib/date";
 import { formatJPYPlain } from "@/lib/money";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { NewEntryRow } from "@/components/ledger/new-entry-row";
 import { TransactionEditDialog } from "@/components/ledger/transaction-edit-dialog";
 
@@ -17,12 +15,6 @@ type ColumnMeta = {
   headerClassName?: string;
   cellClassName?: string;
 };
-
-const typeLabel = {
-  expense: "つかった",
-  income: "もらった",
-  transfer: "うつす",
-} as const;
 
 export const LedgerTable = ({
   transactions,
@@ -46,6 +38,8 @@ export const LedgerTable = ({
     () => new Map(categories.map((category) => [category.id, category.name])),
     [categories]
   );
+
+  const assetName = (assetId: string) => assetMap.get(assetId) ?? "";
 
   const suggestions = useMemo(() => {
     const merchants = new Set<string>();
@@ -74,22 +68,20 @@ export const LedgerTable = ({
       {
         header: "ひづけ",
         accessorKey: "occurredAt",
-        cell: ({ row }) => formatDate(row.original.occurredAt),
+        cell: ({ row }) => toDateKey(row.original.occurredAt),
         meta: {
           headerClassName: "min-w-[120px] whitespace-nowrap",
           cellClassName: "min-w-[120px] whitespace-nowrap",
         },
       },
       {
-        header: "ばしょ",
+        header: "いれもの",
         cell: ({ row }) => {
           const tx = row.original;
           if (tx.type === "transfer") {
-            return `${assetMap.get(tx.fromAssetId) ?? ""} → ${
-              assetMap.get(tx.toAssetId) ?? ""
-            }`;
+            return `${assetName(tx.fromAssetId)} → ${assetName(tx.toAssetId)}`;
           }
-          return assetMap.get(tx.assetId) ?? "";
+          return assetName(tx.assetId);
         },
         meta: {
           headerClassName: "min-w-[180px] whitespace-nowrap",
@@ -97,17 +89,7 @@ export const LedgerTable = ({
         },
       },
       {
-        header: "しゅるい",
-        cell: ({ row }) => (
-          <Badge variant={row.original.type}>{typeLabel[row.original.type]}</Badge>
-        ),
-        meta: {
-          headerClassName: "min-w-[110px] whitespace-nowrap",
-          cellClassName: "min-w-[110px] whitespace-nowrap",
-        },
-      },
-      {
-        header: "あいて/ないよう",
+        header: "あいて",
         cell: ({ row }) => {
           const tx = row.original;
           if (tx.type === "expense") {
@@ -116,21 +98,7 @@ export const LedgerTable = ({
           if (tx.type === "income") {
             return tx.source ?? "";
           }
-          return tx.memo ?? "";
-        },
-        meta: {
-          headerClassName: "min-w-[180px] whitespace-nowrap",
-          cellClassName: "min-w-[180px] whitespace-nowrap",
-        },
-      },
-      {
-        header: "つかいみち",
-        cell: ({ row }) => {
-          const tx = row.original;
-          if (tx.type === "transfer") {
-            return "-";
-          }
-          return categoryMap.get(tx.categoryId) ?? "";
+          return "-";
         },
         meta: {
           headerClassName: "min-w-[160px] whitespace-nowrap",
@@ -138,25 +106,20 @@ export const LedgerTable = ({
         },
       },
       {
-        header: "つかった",
-        cell: ({ row }) =>
-          row.original.type === "expense"
-            ? formatJPYPlain(row.original.amount)
-            : "",
-        meta: {
-          headerClassName: "min-w-[120px] whitespace-nowrap text-right",
-          cellClassName: "min-w-[120px] whitespace-nowrap text-right",
+        header: "うごき",
+        cell: ({ row }) => {
+          const tx = row.original;
+          if (tx.type === "expense") {
+            return `つかった: ${categoryMap.get(tx.categoryId) ?? ""}`;
+          }
+          if (tx.type === "income") {
+            return `もらった: ${categoryMap.get(tx.categoryId) ?? ""}`;
+          }
+          return `いどう: ${assetName(tx.toAssetId)}`;
         },
-      },
-      {
-        header: "もらった",
-        cell: ({ row }) =>
-          row.original.type === "income"
-            ? formatJPYPlain(row.original.amount)
-            : "",
         meta: {
-          headerClassName: "min-w-[120px] whitespace-nowrap text-right",
-          cellClassName: "min-w-[120px] whitespace-nowrap text-right",
+          headerClassName: "min-w-[200px] whitespace-nowrap",
+          cellClassName: "min-w-[200px] whitespace-nowrap",
         },
       },
       {
@@ -174,17 +137,19 @@ export const LedgerTable = ({
         },
       },
       {
-        header: "ボタン",
-        cell: ({ row }) => (
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => setEditing(row.original)}>
-              なおす
-            </Button>
-          </div>
-        ),
+        header: "きんがく",
+        cell: ({ row }) => formatJPYPlain(row.original.amount),
         meta: {
-          headerClassName: "min-w-[110px] whitespace-nowrap",
-          cellClassName: "min-w-[110px] whitespace-nowrap",
+          headerClassName: "min-w-[120px] whitespace-nowrap text-right",
+          cellClassName: "min-w-[120px] whitespace-nowrap text-right",
+        },
+      },
+      {
+        header: "ざんだか",
+        cell: () => "-",
+        meta: {
+          headerClassName: "min-w-[120px] whitespace-nowrap text-right",
+          cellClassName: "min-w-[120px] whitespace-nowrap text-right",
         },
       },
     ],
@@ -238,6 +203,7 @@ export const LedgerTable = ({
                 selectedId === row.original.id ? "bg-secondary/40" : ""
               }`}
               onClick={() => setSelectedId(row.original.id)}
+              onDoubleClick={() => setEditing(row.original)}
             >
               {row.getVisibleCells().map((cell) => (
                 <td

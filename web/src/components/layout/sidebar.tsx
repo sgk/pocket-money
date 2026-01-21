@@ -41,7 +41,7 @@ export const Sidebar = () => {
         })}
         {activeAssets.length === 0 ? (
           <div className="rounded-md bg-secondary px-3 py-2 text-xs text-muted-foreground">
-            ばしょがないよ
+            いれものがないよ
           </div>
         ) : (
           activeAssets.map((asset) => (

@@ -9,7 +9,7 @@ export const AssetsPage = () => {
 
   return (
     <div>
-      <Topbar title="おかねのばしょ" subtitle="ばしょごとのノートをみよう" />
+      <Topbar title="いれもの" subtitle="いれものごとのノートをみよう" />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {assets.map((asset) => (
           <Link key={asset.id} to={`/assets/${asset.id}/ledger`}>

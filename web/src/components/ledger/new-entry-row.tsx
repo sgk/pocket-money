@@ -59,6 +59,19 @@ export const NewEntryRow = ({
     () => assets.filter((asset) => asset.isActive),
     [assets]
   );
+  const categoryOptions = useMemo(
+    () => categories.filter((category) => category.isActive),
+    [categories]
+  );
+
+  const categoryValue =
+    entry.type === "transfer"
+      ? entry.toAssetId
+        ? `transfer:${entry.toAssetId}`
+        : ""
+      : entry.categoryId
+        ? `${entry.type}:${entry.categoryId}`
+        : "";
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
@@ -99,7 +112,7 @@ export const NewEntryRow = ({
     }
     if (entry.type === "expense" || entry.type === "income") {
       if (!entry.assetId) {
-        toast.error("ばしょを えらんでね");
+        toast.error("いれものを えらんでね");
         return false;
       }
       if (!entry.categoryId) {
@@ -109,11 +122,11 @@ export const NewEntryRow = ({
     }
     if (entry.type === "transfer") {
       if (!entry.fromAssetId || !entry.toAssetId) {
-        toast.error("うつす ばしょを えらんでね");
+        toast.error("うつす いれものを えらんでね");
         return false;
       }
       if (entry.fromAssetId === entry.toAssetId) {
-        toast.error("おなじ ばしょには うつせないよ");
+        toast.error("おなじ いれものには うつせないよ");
         return false;
       }
     }
@@ -191,14 +204,6 @@ export const NewEntryRow = ({
     }
   };
 
-  const swapTransfer = () => {
-    setEntry((prev) => ({
-      ...prev,
-      fromAssetId: prev.toAssetId,
-      toAssetId: prev.fromAssetId,
-    }));
-  };
-
   return (
     <tr onKeyDown={handleKeyDown} className="bg-secondary/30">
       <td className="p-2">
@@ -211,13 +216,14 @@ export const NewEntryRow = ({
       </td>
       <td className="p-2">
         {entry.type === "transfer" ? (
-          <div className="space-y-2">
+          <div>
             <Select
               value={entry.fromAssetId}
               onValueChange={(value) => setEntry({ ...entry, fromAssetId: value })}
+              disabled={Boolean(fixedAssetId)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="うつすまえ" />
+                <SelectValue placeholder="いれもの" />
               </SelectTrigger>
               <SelectContent>
                 {assetOptions.map((asset) => (
@@ -227,26 +233,6 @@ export const NewEntryRow = ({
                 ))}
               </SelectContent>
             </Select>
-            <Select
-              value={entry.toAssetId}
-              onValueChange={(value) => setEntry({ ...entry, toAssetId: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="うつしたい" />
-              </SelectTrigger>
-              <SelectContent>
-                {assetOptions
-                  .filter((asset) => asset.id !== entry.fromAssetId)
-                  .map((asset) => (
-                    <SelectItem key={asset.id} value={asset.id}>
-                      {asset.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-            <Button type="button" variant="ghost" size="sm" onClick={swapTransfer}>
-              いれかえ
-            </Button>
           </div>
         ) : (
           <Select
@@ -255,7 +241,7 @@ export const NewEntryRow = ({
             disabled={Boolean(fixedAssetId)}
           >
             <SelectTrigger>
-              <SelectValue placeholder="ばしょ" />
+              <SelectValue placeholder="いれもの" />
             </SelectTrigger>
             <SelectContent>
               {assetOptions.map((asset) => (
@@ -266,21 +252,6 @@ export const NewEntryRow = ({
             </SelectContent>
           </Select>
         )}
-      </td>
-      <td className="p-2">
-        <Select
-          value={entry.type}
-          onValueChange={(value) => setEntry({ ...entry, type: value as TransactionType })}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="しゅるい" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="expense">つかった</SelectItem>
-            <SelectItem value="income">もらった</SelectItem>
-            <SelectItem value="transfer">うつす</SelectItem>
-          </SelectContent>
-        </Select>
       </td>
       <td className="p-2">
         {entry.type === "expense" ? (
@@ -298,88 +269,71 @@ export const NewEntryRow = ({
             onChange={(event) => setEntry({ ...entry, source: event.target.value })}
           />
         ) : (
-          <Input
-            list="memo-suggest"
-            placeholder="メモ"
-            value={entry.memo}
-            onChange={(event) => setEntry({ ...entry, memo: event.target.value })}
-          />
-        )}
-      </td>
-      <td className="p-2">
-        {entry.type === "transfer" ? (
-          <span className="text-xs text-muted-foreground">-</span>
-        ) : (
-          <Select
-            value={entry.categoryId}
-            onValueChange={(value) => setEntry({ ...entry, categoryId: value })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="つかいみち" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories
-                .filter((category) => category.isActive)
-                .map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-        )}
-      </td>
-      <td className="p-2">
-        {entry.type === "expense" ? (
-          <Input
-            type="number"
-            min={1}
-            placeholder="つかった"
-            value={entry.amount}
-            onChange={(event) => setEntry({ ...entry, amount: event.target.value })}
-          />
-        ) : (
           <span className="text-xs text-muted-foreground">-</span>
         )}
       </td>
       <td className="p-2">
-        {entry.type === "income" ? (
-          <Input
-            type="number"
-            min={1}
-            placeholder="もらった"
-            value={entry.amount}
-            onChange={(event) => setEntry({ ...entry, amount: event.target.value })}
-          />
-        ) : entry.type === "transfer" ? (
-          <Input
-            type="number"
-            min={1}
-            placeholder="きんがく"
-            value={entry.amount}
-            onChange={(event) => setEntry({ ...entry, amount: event.target.value })}
-          />
-        ) : (
-          <span className="text-xs text-muted-foreground">-</span>
-        )}
+        <Select
+          value={categoryValue}
+          onValueChange={(value) => {
+            const [type, id] = value.split(":");
+            if (type === "transfer") {
+              setEntry({
+                ...entry,
+                type: "transfer",
+                toAssetId: id ?? "",
+                categoryId: "",
+              });
+            } else if (type === "expense" || type === "income") {
+              setEntry({
+                ...entry,
+                type: type as TransactionType,
+                categoryId: id ?? "",
+                toAssetId: "",
+              });
+            }
+          }}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="うごき" />
+          </SelectTrigger>
+          <SelectContent>
+            {categoryOptions.map((category) => (
+              <SelectItem key={`expense:${category.id}`} value={`expense:${category.id}`}>
+                つかった: {category.name}
+              </SelectItem>
+            ))}
+            {categoryOptions.map((category) => (
+              <SelectItem key={`income:${category.id}`} value={`income:${category.id}`}>
+                もらった: {category.name}
+              </SelectItem>
+            ))}
+            {assetOptions
+              .filter((asset) => asset.id !== entry.fromAssetId)
+              .map((asset) => (
+                <SelectItem key={`transfer:${asset.id}`} value={`transfer:${asset.id}`}>
+                  いどう: {asset.name}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
       </td>
       <td className="p-2">
-        {entry.type === "transfer" ? (
-          <Input
-            type="number"
-            min={0}
-            placeholder="てすうりょう"
-            value={entry.fee}
-            onChange={(event) => setEntry({ ...entry, fee: event.target.value })}
-          />
-        ) : (
-          <Input
-            list="memo-suggest"
-            placeholder="メモ"
-            value={entry.memo}
-            onChange={(event) => setEntry({ ...entry, memo: event.target.value })}
-          />
-        )}
+        <Input
+          list="memo-suggest"
+          placeholder="メモ"
+          value={entry.memo}
+          onChange={(event) => setEntry({ ...entry, memo: event.target.value })}
+        />
+      </td>
+      <td className="p-2">
+        <Input
+          type="number"
+          min={1}
+          placeholder="きんがく"
+          value={entry.amount}
+          onChange={(event) => setEntry({ ...entry, amount: event.target.value })}
+        />
       </td>
       <td className="p-2">
         <Button type="button" onClick={handleSubmit} disabled={isSaving}>

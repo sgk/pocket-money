@@ -8,7 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { formatDate, startOfCurrentMonth, startOfNextMonth, startOfPrevMonth } from "@/lib/date";
+import { formatDate, startOfCurrentMonth, startOfPrevMonth } from "@/lib/date";
+import { endOfMonth } from "date-fns";
 export type LedgerFiltersState = {
   from: string;
   to: string;
@@ -19,7 +20,7 @@ const presets = [
   { value: "this-month", label: "こんげつ" },
   { value: "last-month", label: "せんげつ" },
   { value: "last-30", label: "さいきん30にち" },
-  { value: "custom", label: "えらぶ" },
+  { value: "custom", label: "そのた" },
 ] as const;
 
 type PresetValue = (typeof presets)[number]["value"];
@@ -41,11 +42,11 @@ export const Filters = ({
     let nextTo = filters.to;
     if (preset === "this-month") {
       nextFrom = formatDate(startOfCurrentMonth());
-      nextTo = formatDate(startOfNextMonth());
+      nextTo = formatDate(endOfMonth(new Date()));
     }
     if (preset === "last-month") {
       nextFrom = formatDate(startOfPrevMonth());
-      nextTo = formatDate(startOfCurrentMonth());
+      nextTo = formatDate(endOfMonth(startOfPrevMonth()));
     }
     if (preset === "last-30") {
       nextFrom = formatDate(addDays(new Date(), -30));
@@ -76,13 +77,19 @@ export const Filters = ({
           <Input
             type="date"
             value={filters.from}
-            onChange={(event) => setFilters({ ...filters, from: event.target.value })}
+            onChange={(event) => {
+              setFilters({ ...filters, from: event.target.value });
+              setPreset("custom");
+            }}
             className="w-full sm:w-40 md:w-44"
           />
           <Input
             type="date"
             value={filters.to}
-            onChange={(event) => setFilters({ ...filters, to: event.target.value })}
+            onChange={(event) => {
+              setFilters({ ...filters, to: event.target.value });
+              setPreset("custom");
+            }}
             className="w-full sm:w-40 md:w-44"
           />
       </div>

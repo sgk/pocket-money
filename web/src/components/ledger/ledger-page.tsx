@@ -3,7 +3,7 @@ import { Topbar } from "@/components/layout/topbar";
 import { Filters, type LedgerFiltersState } from "@/components/ledger/filters";
 import { LedgerTable } from "@/components/ledger/ledger-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatDate, startOfCurrentMonth, startOfNextMonth } from "@/lib/date";
+import { formatDate, startOfCurrentMonth, startOfNextMonth, toDateKey } from "@/lib/date";
 import { formatJPY } from "@/lib/money";
 import { useAssets, useCategories, useMonthlySummary, useTransactions } from "@/lib/query";
 
@@ -20,17 +20,26 @@ export const LedgerPage = () => {
     from: filters.from,
     to: filters.to,
   });
-  const transactions = data.items;
+  const transactions = data?.items ?? [];
 
   const now = new Date();
   const { data: summary } = useMonthlySummary(now.getFullYear(), now.getMonth() + 1);
 
   const filtered = useMemo(() => {
     const keyword = filters.search.trim().toLowerCase();
-    if (!keyword) {
-      return transactions;
-    }
+    const from = filters.from ? toDateKey(filters.from) : null;
+    const to = filters.to ? toDateKey(filters.to) : null;
     return transactions.filter((tx) => {
+      const txDate = toDateKey(tx.occurredAt);
+      if (from && txDate < from) {
+        return false;
+      }
+      if (to && txDate > to) {
+        return false;
+      }
+      if (!keyword) {
+        return true;
+      }
       const target = [tx.memo];
       if (tx.type === "expense") {
         target.push(tx.merchant);
@@ -40,11 +49,11 @@ export const LedgerPage = () => {
       }
       return target.filter(Boolean).some((value) => value!.toLowerCase().includes(keyword));
     });
-  }, [transactions, filters.search]);
+  }, [transactions, filters.search, filters.from, filters.to]);
 
   return (
     <div>
-      <Topbar title="おかねノート（ぜんぶ）" subtitle="ぜんぶまとめて みよう">
+      <Topbar title="いれもの（ぜんぶ）" subtitle="ぜんぶまとめて みよう">
         <Filters filters={filters} setFilters={setFilters} />
       </Topbar>
 

@@ -4,7 +4,7 @@ import { Topbar } from "@/components/layout/topbar";
 import { Filters, type LedgerFiltersState } from "@/components/ledger/filters";
 import { LedgerTable } from "@/components/ledger/ledger-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatDate, startOfCurrentMonth, startOfNextMonth } from "@/lib/date";
+import { formatDate, startOfCurrentMonth, startOfNextMonth, toDateKey } from "@/lib/date";
 import { formatJPY } from "@/lib/money";
 import { useAssets, useCategories, useTransactions } from "@/lib/query";
 
@@ -25,19 +25,28 @@ export const AssetLedgerPage = () => {
     to: filters.to,
     type: filters.type,
   });
-  const transactions = data.items;
+  const transactions = data?.items ?? [];
 
   const filtered = useMemo(() => {
     if (!assetId) {
       return [];
     }
     const keyword = filters.search.trim().toLowerCase();
+    const from = filters.from ? toDateKey(filters.from) : null;
+    const to = filters.to ? toDateKey(filters.to) : null;
     return transactions.filter((tx) => {
       const belongs =
         tx.type === "transfer"
           ? tx.fromAssetId === assetId || tx.toAssetId === assetId
           : tx.assetId === assetId;
       if (!belongs) {
+        return false;
+      }
+      const txDate = toDateKey(tx.occurredAt);
+      if (from && txDate < from) {
+        return false;
+      }
+      if (to && txDate > to) {
         return false;
       }
       if (!keyword) {
@@ -52,7 +61,7 @@ export const AssetLedgerPage = () => {
       }
       return target.filter(Boolean).some((value) => value!.toLowerCase().includes(keyword));
     });
-  }, [transactions, filters.search, assetId]);
+  }, [transactions, filters.search, filters.from, filters.to, assetId]);
 
   const assetSummary = useMemo(() => {
     return filtered.reduce(
@@ -74,7 +83,7 @@ export const AssetLedgerPage = () => {
   return (
     <div>
       <Topbar
-        title={asset?.name ? `${asset.name} のノート` : "おかねノート"}
+        title={asset?.name ? `いれもの（${asset.name}）` : "いれもの"}
         subtitle={asset ? `のこり ${formatJPY(asset.currentBalance)}` : undefined}
       >
         <Filters filters={filters} setFilters={setFilters} />

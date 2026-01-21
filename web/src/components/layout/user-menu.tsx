@@ -52,7 +52,7 @@ export const UserMenu = () => {
             className="block rounded-md px-3 py-2 hover:bg-secondary"
             onClick={() => setOpen(false)}
           >
-            おかねばしょ設定
+            いれもの設定
           </Link>
           <Link
             to="/settings/categories"

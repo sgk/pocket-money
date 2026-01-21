@@ -92,7 +92,7 @@ export const TransactionEditDialog = ({
     }
     if (transaction.type === "expense" || transaction.type === "income") {
       if (!form.assetId) {
-        toast.error("ばしょを えらんでね");
+        toast.error("いれものを えらんでね");
         return;
       }
       if (!form.categoryId) {
@@ -102,11 +102,11 @@ export const TransactionEditDialog = ({
     }
     if (transaction.type === "transfer") {
       if (!form.fromAssetId || !form.toAssetId) {
-        toast.error("うつす ばしょを えらんでね");
+        toast.error("うつす いれものを えらんでね");
         return;
       }
       if (form.fromAssetId === form.toAssetId) {
-        toast.error("おなじ ばしょには うつせないよ");
+        toast.error("おなじ いれものには うつせないよ");
         return;
       }
     }
@@ -193,7 +193,7 @@ export const TransactionEditDialog = ({
                 onValueChange={(value) => setForm({ ...form, assetId: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="ばしょ" />
+                  <SelectValue placeholder="いれもの" />
                 </SelectTrigger>
                 <SelectContent>
                   {assets.map((asset) => (
