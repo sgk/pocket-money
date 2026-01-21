@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useCategories } from "@/lib/query";
@@ -25,6 +26,7 @@ const CategoryRow = ({
   kind,
   onToggleActive,
   onUpdateCategory,
+  onDeleteCategory,
   onDragEnd,
   isDragging,
   dragHandleProps,
@@ -33,6 +35,7 @@ const CategoryRow = ({
   kind: CategoryKind;
   onToggleActive: (id: string, value: boolean) => void;
   onUpdateCategory: (id: string, payload: { name: string }) => Promise<boolean>;
+  onDeleteCategory: (id: string) => void;
   onDragEnd: () => void;
   isDragging: boolean;
   dragHandleProps: {
@@ -77,7 +80,7 @@ const CategoryRow = ({
 
   return (
     <div
-      className={`grid grid-cols-[1fr_72px] items-center gap-2 rounded-lg border px-3 py-0.5 text-sm ${
+      className={`grid grid-cols-[1fr_72px_40px] items-center gap-2 rounded-lg border px-3 py-0.5 text-sm ${
         inactive ? "opacity-50" : ""
       } ${isDragging ? "opacity-40" : ""}`}
       onDragEnd={onDragEnd}
@@ -111,6 +114,18 @@ const CategoryRow = ({
           aria-label={`${CATEGORY_KIND_LABEL[kind]} ${category.name}`}
         />
       </div>
+      <div className="flex items-center justify-center">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-rose-600 hover:text-rose-700"
+          onClick={() => onDeleteCategory(category.id)}
+          aria-label={`${category.name} を けす`}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 };
@@ -123,6 +138,7 @@ const CategoryList = ({
   onReorder,
   onToggleActive,
   onUpdateCategory,
+  onDeleteCategory,
   onMoveAcross,
 }: {
   kind: CategoryKind;
@@ -132,6 +148,7 @@ const CategoryList = ({
   onReorder: (next: Category[]) => Promise<void>;
   onToggleActive: (id: string, value: boolean) => void;
   onUpdateCategory: (id: string, payload: { name: string }) => Promise<boolean>;
+  onDeleteCategory: (id: string) => void;
   onMoveAcross: (
     fromKind: CategoryKind,
     dragId: string,
@@ -230,9 +247,10 @@ const CategoryList = ({
 
   return (
     <div className="grid gap-0.5">
-      <div className="grid grid-cols-[1fr_72px] items-center gap-2 px-3 text-base">
+      <div className="grid grid-cols-[1fr_72px_40px] items-center gap-2 px-3 text-base">
         <span>{CATEGORY_KIND_LABEL[kind]}</span>
         <span className="text-center">ゆうこう</span>
+        <span className="text-center">けす</span>
       </div>
       {ordered.length === 0 ? (
         <div
@@ -266,6 +284,7 @@ const CategoryList = ({
                   kind={kind}
                   onToggleActive={onToggleActive}
                   onUpdateCategory={onUpdateCategory}
+                  onDeleteCategory={onDeleteCategory}
                   onDragEnd={handleDragEnd}
                   isDragging={draggingId === category.id}
                   dragHandleProps={{
@@ -405,6 +424,25 @@ export const CategoriesSettingsPage = () => {
             })
           )
         );
+      });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+    } catch (error) {
+      toast.error((error as Error).message);
+    }
+  };
+
+  const handleDeleteCategory = async (id: string) => {
+    if (!token) {
+      toast.error("ログインしてね");
+      return;
+    }
+    const ok = window.confirm("この つかいみちを けす？");
+    if (!ok) {
+      return;
+    }
+    try {
+      await runSaving(async () => {
+        await api.deleteCategory(token, id);
       });
       queryClient.invalidateQueries({ queryKey: ["categories"] });
     } catch (error) {
@@ -569,6 +607,7 @@ export const CategoriesSettingsPage = () => {
           onReorder={handleReorder}
           onToggleActive={handleToggleActive}
           onUpdateCategory={handleUpdateCategory}
+          onDeleteCategory={handleDeleteCategory}
           onMoveAcross={handleMoveAcross}
         />
         <CategoryList
@@ -579,6 +618,7 @@ export const CategoriesSettingsPage = () => {
           onReorder={handleReorder}
           onToggleActive={handleToggleActive}
           onUpdateCategory={handleUpdateCategory}
+          onDeleteCategory={handleDeleteCategory}
           onMoveAcross={handleMoveAcross}
         />
       </div>
