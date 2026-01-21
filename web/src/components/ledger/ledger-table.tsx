@@ -6,7 +6,7 @@ import {
   type ColumnDef,
 } from "@tanstack/react-table";
 import type { Asset, Category, Transaction } from "@/lib/types";
-import { formatDate, toDateKey } from "@/lib/date";
+import { formatDateSlash } from "@/lib/date";
 import { formatJPYPlain } from "@/lib/money";
 import { NewEntryRow } from "@/components/ledger/new-entry-row";
 import { TransactionEditDialog } from "@/components/ledger/transaction-edit-dialog";
@@ -68,7 +68,7 @@ export const LedgerTable = ({
       {
         header: "ひづけ",
         accessorKey: "occurredAt",
-        cell: ({ row }) => toDateKey(row.original.occurredAt),
+        cell: ({ row }) => formatDateSlash(row.original.occurredAt),
         meta: {
           headerClassName: "min-w-[120px] whitespace-nowrap",
           cellClassName: "min-w-[120px] whitespace-nowrap",

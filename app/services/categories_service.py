@@ -27,6 +27,7 @@ def create_category(uid: str, payload: CategoryCreate) -> dict:
         "name": payload.name,
         "isActive": True,
         "sortOrder": payload.sortOrder,
+        "kind": payload.kind,
         "createdAt": now,
         "updatedAt": now,
     }

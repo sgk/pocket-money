@@ -10,9 +10,10 @@ router = APIRouter(prefix="/api", tags=["bootstrap"])
 
 
 DEFAULT_CATEGORIES = [
-    {"name": "たべもの", "sortOrder": 1},
-    {"name": "のりもの", "sortOrder": 2},
-    {"name": "おこづかい", "sortOrder": 3},
+    {"name": "たべもの", "sortOrder": 1, "kind": "expense"},
+    {"name": "のりもの", "sortOrder": 2, "kind": "expense"},
+    {"name": "ぶんぼうぐ", "sortOrder": 3, "kind": "expense"},
+    {"name": "おこづかい", "sortOrder": 10, "kind": "income"},
 ]
 
 
@@ -61,6 +62,7 @@ def bootstrap(user=Depends(get_current_user)):
                         "name": cat["name"],
                         "isActive": True,
                         "sortOrder": cat["sortOrder"],
+                        "kind": cat["kind"],
                         "createdAt": now,
                         "updatedAt": now,
                     },

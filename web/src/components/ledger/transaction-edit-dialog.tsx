@@ -50,6 +50,11 @@ export const TransactionEditDialog = ({
     fee?: string;
   } | null>(null);
 
+  const expenseCategories = categories.filter((category) => category.kind !== "income");
+  const incomeCategories = categories.filter((category) => category.kind === "income");
+  const categoryOptions =
+    transaction?.type === "income" ? incomeCategories : expenseCategories;
+
   useEffect(() => {
     if (!transaction) {
       setForm(null);
@@ -211,7 +216,7 @@ export const TransactionEditDialog = ({
                   <SelectValue placeholder="つかいみち" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((category) => (
+                  {categoryOptions.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
                     </SelectItem>

@@ -63,6 +63,14 @@ export const NewEntryRow = ({
     () => categories.filter((category) => category.isActive),
     [categories]
   );
+  const expenseCategories = useMemo(
+    () => categoryOptions.filter((category) => category.kind !== "income"),
+    [categoryOptions]
+  );
+  const incomeCategories = useMemo(
+    () => categoryOptions.filter((category) => category.kind === "income"),
+    [categoryOptions]
+  );
 
   const categoryValue =
     entry.type === "transfer"
@@ -306,12 +314,12 @@ export const NewEntryRow = ({
             <SelectValue placeholder="うごき" />
           </SelectTrigger>
           <SelectContent>
-            {categoryOptions.map((category) => (
+            {expenseCategories.map((category) => (
               <SelectItem key={`expense:${category.id}`} value={`expense:${category.id}`}>
                 つかった: {category.name}
               </SelectItem>
             ))}
-            {categoryOptions.map((category) => (
+            {incomeCategories.map((category) => (
               <SelectItem key={`income:${category.id}`} value={`income:${category.id}`}>
                 もらった: {category.name}
               </SelectItem>

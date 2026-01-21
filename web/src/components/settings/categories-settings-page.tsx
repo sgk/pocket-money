@@ -7,6 +7,13 @@ import { Topbar } from "@/components/layout/topbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
 import type { Category } from "@/lib/types";
 
@@ -17,6 +24,7 @@ const CategoryRow = ({ category }: { category: Category }) => {
     name: category.name,
     sortOrder: String(category.sortOrder ?? 0),
     isActive: category.isActive,
+    kind: category.kind ?? "expense",
   });
 
   const handleSave = async () => {
@@ -29,6 +37,7 @@ const CategoryRow = ({ category }: { category: Category }) => {
         name: form.name,
         sortOrder: Number(form.sortOrder || 0),
         isActive: form.isActive,
+        kind: form.kind,
       });
       toast.success("つかいみちを なおしたよ");
       queryClient.invalidateQueries({ queryKey: ["categories"] });
@@ -72,6 +81,20 @@ const CategoryRow = ({ category }: { category: Category }) => {
           value={form.sortOrder}
           onChange={(event) => setForm({ ...form, sortOrder: event.target.value })}
         />
+        <Select
+          value={form.kind}
+          onValueChange={(value) =>
+            setForm({ ...form, kind: value as "expense" | "income" })
+          }
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="しゅるい" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="expense">つかった</SelectItem>
+            <SelectItem value="income">もらった</SelectItem>
+          </SelectContent>
+        </Select>
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
@@ -98,6 +121,7 @@ export const CategoriesSettingsPage = () => {
   const [newCategory, setNewCategory] = useState({
     name: "",
     sortOrder: "0",
+    kind: "expense" as "expense" | "income",
   });
 
   const handleCreate = async () => {
@@ -113,9 +137,10 @@ export const CategoriesSettingsPage = () => {
       await api.createCategory(token, {
         name: newCategory.name,
         sortOrder: Number(newCategory.sortOrder || 0),
+        kind: newCategory.kind,
       });
       toast.success("つかいみちを たしたよ");
-      setNewCategory({ name: "", sortOrder: "0" });
+      setNewCategory({ name: "", sortOrder: "0", kind: "expense" });
       queryClient.invalidateQueries({ queryKey: ["categories"] });
     } catch (error) {
       toast.error((error as Error).message);
@@ -144,6 +169,20 @@ export const CategoriesSettingsPage = () => {
               setNewCategory({ ...newCategory, sortOrder: event.target.value })
             }
           />
+          <Select
+            value={newCategory.kind}
+            onValueChange={(value) =>
+              setNewCategory({ ...newCategory, kind: value as "expense" | "income" })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="しゅるい" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="expense">つかった</SelectItem>
+              <SelectItem value="income">もらった</SelectItem>
+            </SelectContent>
+          </Select>
           <div className="md:col-span-3">
             <Button onClick={handleCreate}>たす</Button>
           </div>
