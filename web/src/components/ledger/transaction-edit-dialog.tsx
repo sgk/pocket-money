@@ -42,7 +42,7 @@ export const TransactionEditDialog = ({
     amount: string;
     memo: string;
     assetId?: string;
-    categoryId?: string;
+    categoryName?: string;
     merchant?: string;
     source?: string;
     fromAssetId?: string;
@@ -50,10 +50,23 @@ export const TransactionEditDialog = ({
     fee?: string;
   } | null>(null);
 
-  const expenseCategories = categories.filter((category) => category.kind !== "income");
-  const incomeCategories = categories.filter((category) => category.kind === "income");
-  const categoryOptions =
+  const expenseCategories = categories.filter(
+    (category) => category.kind !== "income" && category.name !== "その他"
+  );
+  const incomeCategories = categories.filter(
+    (category) => category.kind === "income" && category.name !== "その他"
+  );
+  const baseCategoryOptions =
     transaction?.type === "income" ? incomeCategories : expenseCategories;
+  const categoryOptions =
+    form?.categoryName && form.categoryName !== "その他"
+      ? baseCategoryOptions.some((category) => category.name === form.categoryName)
+        ? baseCategoryOptions
+        : [
+            { id: "custom", name: form.categoryName, isActive: true, sortOrder: 0 },
+            ...baseCategoryOptions,
+          ]
+      : baseCategoryOptions;
 
   useEffect(() => {
     if (!transaction) {
@@ -75,7 +88,7 @@ export const TransactionEditDialog = ({
         amount: String(transaction.amount),
         memo: transaction.memo ?? "",
         assetId: transaction.assetId,
-        categoryId: transaction.categoryId,
+        categoryName: transaction.categoryName,
         merchant: transaction.type === "expense" ? transaction.merchant ?? "" : undefined,
         source: transaction.type === "income" ? transaction.source ?? "" : undefined,
       });
@@ -100,7 +113,7 @@ export const TransactionEditDialog = ({
         toast.error("いれものを えらんでね");
         return;
       }
-      if (!form.categoryId) {
+      if (!form.categoryName) {
         toast.error("つかいみちを えらんでね");
         return;
       }
@@ -125,7 +138,7 @@ export const TransactionEditDialog = ({
         payload = {
           ...payload,
           assetId: form.assetId,
-          categoryId: form.categoryId,
+          categoryName: form.categoryName,
           merchant: form.merchant || undefined,
         };
       }
@@ -133,7 +146,7 @@ export const TransactionEditDialog = ({
         payload = {
           ...payload,
           assetId: form.assetId,
-          categoryId: form.categoryId,
+          categoryName: form.categoryName,
           source: form.source || undefined,
         };
       }
@@ -209,18 +222,19 @@ export const TransactionEditDialog = ({
                 </SelectContent>
               </Select>
               <Select
-                value={form.categoryId ?? ""}
-                onValueChange={(value) => setForm({ ...form, categoryId: value })}
+                value={form.categoryName ?? ""}
+                onValueChange={(value) => setForm({ ...form, categoryName: value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="つかいみち" />
                 </SelectTrigger>
                 <SelectContent>
                   {categoryOptions.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
+                    <SelectItem key={category.name} value={category.name}>
                       {category.name}
                     </SelectItem>
                   ))}
+                  <SelectItem value="その他">その他</SelectItem>
                 </SelectContent>
               </Select>
             </div>

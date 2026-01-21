@@ -37,7 +37,7 @@ def list_transactions(
     to_dt: Optional[str] = Query(None, alias="to"),
     tx_type: Optional[str] = Query(None, alias="type"),
     asset_id: Optional[str] = Query(None, alias="assetId"),
-    category_id: Optional[str] = Query(None, alias="categoryId"),
+    category_name: Optional[str] = Query(None, alias="categoryName"),
     limit: int = Query(50, ge=1, le=200),
     cursor: Optional[str] = None,
 ):
@@ -47,7 +47,7 @@ def list_transactions(
         _parse_dt(to_dt),
         tx_type,
         asset_id,
-        category_id,
+        category_name,
         limit,
         cursor,
     )

@@ -2,13 +2,12 @@ import { useMemo } from "react";
 import { addMonths } from "date-fns";
 import { Topbar } from "@/components/layout/topbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAssets, useCategories, useMonthlySummary, useTransactions } from "@/lib/query";
+import { useAssets, useMonthlySummary, useTransactions } from "@/lib/query";
 import { formatJPY } from "@/lib/money";
 import { formatDate } from "@/lib/date";
 
 export const DashboardPage = () => {
   const { data: assets = [] } = useAssets();
-  const { data: categories = [] } = useCategories();
   const now = new Date();
   const { data: summary } = useMonthlySummary(now.getFullYear(), now.getMonth() + 1);
   const { data } = useTransactions({
@@ -21,10 +20,6 @@ export const DashboardPage = () => {
   const assetMap = useMemo(
     () => new Map(assets.map((asset) => [asset.id, asset.name])),
     [assets]
-  );
-  const categoryMap = useMemo(
-    () => new Map(categories.map((category) => [category.id, category.name])),
-    [categories]
   );
 
   const recent = transactions.slice(0, 10);
@@ -109,13 +104,9 @@ export const DashboardPage = () => {
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {tx.type === "expense"
-                          ? `${categoryMap.get(tx.categoryId) ?? ""} / ${
-                              tx.merchant ?? ""
-                            }`
+                          ? `${tx.categoryName ?? ""} / ${tx.merchant ?? ""}`
                           : tx.type === "income"
-                            ? `${categoryMap.get(tx.categoryId) ?? ""} / ${
-                                tx.source ?? ""
-                              }`
+                            ? `${tx.categoryName ?? ""} / ${tx.source ?? ""}`
                             : tx.memo ?? ""}
                       </p>
                     </div>

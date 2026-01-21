@@ -16,7 +16,7 @@ class ExpenseCreate(BaseModel):
     amount: int = Field(..., ge=1)
     memo: Optional[str] = None
     assetId: str
-    categoryId: str
+    categoryName: str
     merchant: Optional[str] = None
 
 
@@ -25,7 +25,7 @@ class IncomeCreate(BaseModel):
     amount: int = Field(..., ge=1)
     memo: Optional[str] = None
     assetId: str
-    categoryId: str
+    categoryName: str
     source: Optional[str] = None
 
 
@@ -45,7 +45,7 @@ class TransactionUpdate(BaseModel):
     amount: Optional[int] = Field(None, ge=1)
     memo: Optional[str] = None
     assetId: Optional[str] = None
-    categoryId: Optional[str] = None
+    categoryName: Optional[str] = None
     merchant: Optional[str] = None
     source: Optional[str] = None
     fromAssetId: Optional[str] = None
@@ -64,7 +64,7 @@ class TransactionOut(BaseModel):
     updatedAt: datetime
     createdBy: str
     assetId: Optional[str] = None
-    categoryId: Optional[str] = None
+    categoryName: Optional[str] = None
     merchant: Optional[str] = None
     source: Optional[str] = None
     fromAssetId: Optional[str] = None

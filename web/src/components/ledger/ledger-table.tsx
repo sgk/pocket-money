@@ -34,11 +34,6 @@ export const LedgerTable = ({
     () => new Map(assets.map((asset) => [asset.id, asset.name])),
     [assets]
   );
-  const categoryMap = useMemo(
-    () => new Map(categories.map((category) => [category.id, category.name])),
-    [categories]
-  );
-
   const assetName = (assetId: string) => assetMap.get(assetId) ?? "";
 
   const suggestions = useMemo(() => {
@@ -110,10 +105,10 @@ export const LedgerTable = ({
         cell: ({ row }) => {
           const tx = row.original;
           if (tx.type === "expense") {
-            return `つかった: ${categoryMap.get(tx.categoryId) ?? ""}`;
+            return `つかった: ${tx.categoryName ?? ""}`;
           }
           if (tx.type === "income") {
-            return `もらった: ${categoryMap.get(tx.categoryId) ?? ""}`;
+            return `もらった: ${tx.categoryName ?? ""}`;
           }
           return `いどう: ${assetName(tx.toAssetId)}`;
         },
@@ -153,7 +148,7 @@ export const LedgerTable = ({
         },
       },
     ],
-    [assetMap, categoryMap]
+    [assetMap]
   );
 
   const sorted = useMemo(

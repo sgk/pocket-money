@@ -22,7 +22,7 @@ const emptyEntry = () => ({
   amount: "",
   fee: "0",
   assetId: storage.getLastAssetId() ?? "",
-  categoryId: storage.getLastCategoryId() ?? "",
+  categoryName: storage.getLastCategoryName() ?? "",
   merchant: "",
   source: "",
   memo: "",
@@ -60,7 +60,10 @@ export const NewEntryRow = ({
     [assets]
   );
   const categoryOptions = useMemo(
-    () => categories.filter((category) => category.isActive),
+    () =>
+      categories.filter(
+        (category) => category.isActive && category.name !== "その他"
+      ),
     [categories]
   );
   const expenseCategories = useMemo(
@@ -75,10 +78,10 @@ export const NewEntryRow = ({
   const categoryValue =
     entry.type === "transfer"
       ? entry.toAssetId
-        ? `transfer:${entry.toAssetId}`
+        ? `transfer::${entry.toAssetId}`
         : ""
-      : entry.categoryId
-        ? `${entry.type}:${entry.categoryId}`
+      : entry.categoryName
+        ? `${entry.type}::${entry.categoryName}`
         : "";
 
   useEffect(() => {
@@ -131,7 +134,7 @@ export const NewEntryRow = ({
         toast.error("いれものを えらんでね");
         return false;
       }
-      if (!entry.categoryId) {
+      if (!entry.categoryName) {
         toast.error("つかいみちを えらんでね");
         return false;
       }
@@ -169,23 +172,23 @@ export const NewEntryRow = ({
         const payload = {
           ...payloadBase,
           assetId: entry.assetId,
-          categoryId: entry.categoryId,
+          categoryName: entry.categoryName,
           merchant: entry.merchant || undefined,
         };
         created = await api.createExpense(token, payload);
         storage.setLastAssetId(entry.assetId);
-        storage.setLastCategoryId(entry.categoryId);
+        storage.setLastCategoryName(entry.categoryName);
       }
       if (entry.type === "income") {
         const payload = {
           ...payloadBase,
           assetId: entry.assetId,
-          categoryId: entry.categoryId,
+          categoryName: entry.categoryName,
           source: entry.source || undefined,
         };
         created = await api.createIncome(token, payload);
         storage.setLastAssetId(entry.assetId);
-        storage.setLastCategoryId(entry.categoryId);
+        storage.setLastCategoryName(entry.categoryName);
       }
       if (entry.type === "transfer") {
         const payload = {
@@ -292,19 +295,20 @@ export const NewEntryRow = ({
         <Select
           value={categoryValue}
           onValueChange={(value) => {
-            const [type, id] = value.split(":");
+            const [type, ...rest] = value.split("::");
+            const id = rest.join("::");
             if (type === "transfer") {
               setEntry({
                 ...entry,
                 type: "transfer",
                 toAssetId: id ?? "",
-                categoryId: "",
+                categoryName: "",
               });
             } else if (type === "expense" || type === "income") {
               setEntry({
                 ...entry,
                 type: type as TransactionType,
-                categoryId: id ?? "",
+                categoryName: id ?? "",
                 toAssetId: "",
               });
             }
@@ -315,19 +319,31 @@ export const NewEntryRow = ({
           </SelectTrigger>
           <SelectContent>
             {expenseCategories.map((category) => (
-              <SelectItem key={`expense:${category.id}`} value={`expense:${category.id}`}>
+              <SelectItem
+                key={`expense:${category.name}`}
+                value={`expense::${category.name}`}
+              >
                 つかった: {category.name}
               </SelectItem>
             ))}
+            <SelectItem key="expense:その他" value="expense::その他">
+              つかった: その他
+            </SelectItem>
             {incomeCategories.map((category) => (
-              <SelectItem key={`income:${category.id}`} value={`income:${category.id}`}>
+              <SelectItem
+                key={`income:${category.name}`}
+                value={`income::${category.name}`}
+              >
                 もらった: {category.name}
               </SelectItem>
             ))}
+            <SelectItem key="income:その他" value="income::その他">
+              もらった: その他
+            </SelectItem>
             {assetOptions
               .filter((asset) => asset.id !== entry.fromAssetId)
               .map((asset) => (
-                <SelectItem key={`transfer:${asset.id}`} value={`transfer:${asset.id}`}>
+                <SelectItem key={`transfer:${asset.id}`} value={`transfer::${asset.id}`}>
                   いどう: {asset.name}
                 </SelectItem>
               ))}

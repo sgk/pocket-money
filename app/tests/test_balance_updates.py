@@ -20,7 +20,7 @@ def test_expense_create_update_delete():
         "occurredAt": NOW,
         "amount": 200,
         "assetId": "a1",
-        "categoryId": "c1",
+        "categoryName": "しょくひ",
     }
     deltas = compute_balance_deltas(None, expense)
     balances = apply_deltas(balances, deltas)
@@ -44,14 +44,14 @@ def test_expense_asset_change():
         "occurredAt": NOW,
         "amount": 200,
         "assetId": "a1",
-        "categoryId": "c1",
+        "categoryName": "しょくひ",
     }
     new_tx = {
         "type": "expense",
         "occurredAt": NOW,
         "amount": 300,
         "assetId": "a2",
-        "categoryId": "c1",
+        "categoryName": "しょくひ",
     }
     deltas = compute_balance_deltas(old_tx, new_tx)
     balances = apply_deltas(balances, deltas)
@@ -66,7 +66,7 @@ def test_income_create_update_delete():
         "occurredAt": NOW,
         "amount": 400,
         "assetId": "a1",
-        "categoryId": "c1",
+        "categoryName": "きゅうよ",
     }
     deltas = compute_balance_deltas(None, income)
     balances = apply_deltas(balances, deltas)

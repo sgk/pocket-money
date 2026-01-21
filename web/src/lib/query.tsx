@@ -37,7 +37,7 @@ type TransactionsFilters = {
   to?: string;
   type?: TransactionType;
   assetId?: string;
-  categoryId?: string;
+  categoryName?: string;
   limit?: number;
 };
 

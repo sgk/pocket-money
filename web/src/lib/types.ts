@@ -29,14 +29,14 @@ export type TxBase = {
 export type TxExpense = TxBase & {
   type: "expense";
   assetId: string;
-  categoryId: string;
+  categoryName: string;
   merchant?: string;
 };
 
 export type TxIncome = TxBase & {
   type: "income";
   assetId: string;
-  categoryId: string;
+  categoryName: string;
   source?: string;
 };
 
@@ -53,7 +53,7 @@ export type MonthlySummary = {
   incomeTotal: number;
   expenseTotal: number;
   net: number;
-  byCategory: Array<{ categoryId: string; amount: number }>;
+  byCategory: Record<string, { expense: number; income: number }>;
 };
 
 export type TransactionType = Transaction["type"] | "all";

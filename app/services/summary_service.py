@@ -33,15 +33,15 @@ def get_month_summary(uid: str, year: int, month: int) -> dict:
 
         if tx_type == "expense":
             expense_total += amount
-            category_id = tx.get("categoryId")
-            if category_id:
-                bucket = by_category.setdefault(category_id, {"expense": 0, "income": 0})
+            category_name = tx.get("categoryName")
+            if category_name:
+                bucket = by_category.setdefault(category_name, {"expense": 0, "income": 0})
                 bucket["expense"] += amount
         elif tx_type == "income":
             income_total += amount
-            category_id = tx.get("categoryId")
-            if category_id:
-                bucket = by_category.setdefault(category_id, {"expense": 0, "income": 0})
+            category_name = tx.get("categoryName")
+            if category_name:
+                bucket = by_category.setdefault(category_name, {"expense": 0, "income": 0})
                 bucket["income"] += amount
         elif tx_type == "transfer":
             transfer_total += amount

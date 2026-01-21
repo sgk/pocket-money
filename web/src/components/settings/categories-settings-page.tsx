@@ -25,7 +25,6 @@ const CategoryRow = ({
   kind,
   onToggleActive,
   onUpdateCategory,
-  onDragStart,
   onDragEnd,
   isDragging,
   dragHandleProps,
@@ -33,8 +32,7 @@ const CategoryRow = ({
   category: Category;
   kind: CategoryKind;
   onToggleActive: (id: string, value: boolean) => void;
-  onUpdateCategory: (id: string, payload: { name: string; kind: CategoryKind }) => void;
-  onDragStart: (event: React.DragEvent<HTMLDivElement>, id: string) => void;
+  onUpdateCategory: (id: string, payload: { name: string }) => void;
   onDragEnd: () => void;
   isDragging: boolean;
   dragHandleProps: {
@@ -44,11 +42,9 @@ const CategoryRow = ({
 }) => {
   const inactive = !category.isActive;
   const [name, setName] = useState(category.name);
-  const [currentKind, setCurrentKind] = useState<CategoryKind>(normalizeKind(category));
 
   useEffect(() => {
     setName(category.name);
-    setCurrentKind(normalizeKind(category));
   }, [category]);
 
   const handleSave = () => {
@@ -57,14 +53,14 @@ const CategoryRow = ({
       toast.error("なまえを いれてね");
       return;
     }
-    if (name !== category.name || currentKind !== normalizeKind(category)) {
-      onUpdateCategory(category.id, { name: name.trim(), kind: currentKind });
+    if (name !== category.name) {
+      onUpdateCategory(category.id, { name: name.trim() });
     }
   };
 
   return (
     <div
-      className={`grid grid-cols-[1fr_72px] items-center gap-2 rounded-lg border px-3 py-1 text-sm ${
+      className={`grid grid-cols-[1fr_72px] items-center gap-2 rounded-lg border px-3 py-0.5 text-sm ${
         inactive ? "opacity-50" : ""
       } ${isDragging ? "opacity-40" : ""}`}
       onDragEnd={onDragEnd}
@@ -80,7 +76,7 @@ const CategoryRow = ({
         <Input
           value={name}
           onChange={(event) => setName(event.target.value)}
-          className="h-9"
+          className="h-8"
           onBlur={handleSave}
           onKeyDown={(event) => {
             if (event.key === "Enter") {
@@ -118,7 +114,7 @@ const CategoryList = ({
   setOrder: (next: string[]) => void;
   onReorder: (next: Category[]) => Promise<void>;
   onToggleActive: (id: string, value: boolean) => void;
-  onUpdateCategory: (id: string, payload: { name: string; kind: CategoryKind }) => void;
+  onUpdateCategory: (id: string, payload: { name: string }) => void;
   onMoveAcross: (
     fromKind: CategoryKind,
     dragId: string,
@@ -131,7 +127,10 @@ const CategoryList = ({
 
   const ordered = useMemo(() => {
     const list = categories
-      .filter((category) => normalizeKind(category) === kind)
+      .filter(
+        (category) =>
+          normalizeKind(category) === kind && category.name !== "その他"
+      )
       .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
     const ids = list.map((item) => item.id);
     if (order.length !== ids.length || !order.every((id) => ids.includes(id))) {
@@ -213,7 +212,7 @@ const CategoryList = ({
   };
 
   return (
-    <div className="grid gap-1">
+    <div className="grid gap-0.5">
       <div className="flex items-center justify-between text-base">
         <span>{CATEGORY_KIND_LABEL[kind]}</span>
         <span className="text-center">つかう</span>
@@ -229,7 +228,7 @@ const CategoryList = ({
           ここにいれる
         </div>
       ) : (
-        <div className="grid gap-1">
+        <div className="grid gap-0.5">
           {ordered.map((category, index) => (
             <div key={category.id} className="grid gap-0.5">
               <div
@@ -250,7 +249,6 @@ const CategoryList = ({
                   kind={kind}
                   onToggleActive={onToggleActive}
                   onUpdateCategory={onUpdateCategory}
-                  onDragStart={handleDragStart}
                   onDragEnd={handleDragEnd}
                   isDragging={draggingId === category.id}
                   dragHandleProps={{
@@ -291,11 +289,15 @@ export const CategoriesSettingsPage = () => {
 
   useEffect(() => {
     const expenseIds = categories
-      .filter((category) => normalizeKind(category) === "expense")
+      .filter(
+        (category) => normalizeKind(category) === "expense" && category.name !== "その他"
+      )
       .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
       .map((category) => category.id);
     const incomeIds = categories
-      .filter((category) => normalizeKind(category) === "income")
+      .filter(
+        (category) => normalizeKind(category) === "income" && category.name !== "その他"
+      )
       .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
       .map((category) => category.id);
     setExpenseOrder(expenseIds);
@@ -313,7 +315,9 @@ export const CategoriesSettingsPage = () => {
 
   const getOrderedList = (kind: CategoryKind, order: string[]) => {
     const list = categories
-      .filter((category) => normalizeKind(category) === kind)
+      .filter(
+        (category) => normalizeKind(category) === kind && category.name !== "その他"
+      )
       .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
     const ids = list.map((item) => item.id);
     if (order.length !== ids.length || !order.every((id) => ids.includes(id))) {
@@ -330,6 +334,10 @@ export const CategoriesSettingsPage = () => {
     }
     if (!newCategory.name.trim()) {
       toast.error("なまえを いれてね");
+      return;
+    }
+    if (newCategory.name.trim() === "その他") {
+      toast.error("「その他」は つかえないよ");
       return;
     }
     try {
@@ -387,18 +395,37 @@ export const CategoriesSettingsPage = () => {
     }
   };
 
-  const handleUpdateCategory = async (id: string, payload: { name: string; kind: CategoryKind }) => {
+  const handleUpdateCategory = async (id: string, payload: { name: string }) => {
     if (!token) {
       toast.error("ログインしてね");
       return;
     }
-    if (!payload.name.trim()) {
+    const nextName = payload.name.trim();
+    if (!nextName) {
       toast.error("なまえを いれてね");
       return;
     }
+    if (nextName === "その他") {
+      toast.error("「その他」は つかえないよ");
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      return;
+    }
+    const conflicts = categories.filter(
+      (category) => category.id !== id && category.name === nextName
+    );
+    if (conflicts.length > 0) {
+      const ok = window.confirm("おなじ なまえがあるよ。まとめていい？");
+      if (!ok) {
+        queryClient.invalidateQueries({ queryKey: ["categories"] });
+        return;
+      }
+    }
     try {
       await runSaving(async () => {
-        await api.updateCategory(token, id, payload);
+        await api.updateCategory(token, id, { name: nextName });
+        if (conflicts.length > 0) {
+          await Promise.all(conflicts.map((item) => api.deleteCategory(token, item.id)));
+        }
       });
       queryClient.invalidateQueries({ queryKey: ["categories"] });
     } catch (error) {
@@ -469,7 +496,7 @@ export const CategoriesSettingsPage = () => {
         <CardHeader>
           <CardTitle className="text-base">あたらしい つかいみち</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-[1fr_auto_auto] md:items-center">
+        <CardContent className="grid gap-3 grid-cols-[1fr_auto_auto] items-center">
           <Input
             placeholder="なまえ"
             value={newCategory.name}
@@ -505,7 +532,7 @@ export const CategoriesSettingsPage = () => {
               </Button>
             </div>
           </div>
-          <div className="md:flex md:justify-end">
+          <div className="flex justify-end">
             <Button onClick={handleCreate}>たす</Button>
           </div>
         </CardContent>

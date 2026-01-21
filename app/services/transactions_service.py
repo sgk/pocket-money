@@ -10,8 +10,8 @@ from app.models.transactions import ExpenseCreate, IncomeCreate, TransferCreate,
 
 
 FIELDS_BY_TYPE = {
-    "expense": {"assetId", "categoryId", "merchant"},
-    "income": {"assetId", "categoryId", "source"},
+    "expense": {"assetId", "categoryName", "merchant"},
+    "income": {"assetId", "categoryName", "source"},
     "transfer": {"fromAssetId", "toAssetId", "fee", "feeCategoryId"},
 }
 
@@ -41,10 +41,12 @@ def _validate_tx_payload(tx: dict):
     tx_type = tx.get("type")
     if tx_type == "expense":
         _require(tx.get("assetId"), "assetId is required")
-        _require(tx.get("categoryId"), "categoryId is required")
+        if not tx.get("categoryName"):
+            raise AppError(400, "categoryName is required")
     elif tx_type == "income":
         _require(tx.get("assetId"), "assetId is required")
-        _require(tx.get("categoryId"), "categoryId is required")
+        if not tx.get("categoryName"):
+            raise AppError(400, "categoryName is required")
     elif tx_type == "transfer":
         _require(tx.get("fromAssetId"), "fromAssetId is required")
         _require(tx.get("toAssetId"), "toAssetId is required")
@@ -125,7 +127,6 @@ def _validate_refs_for_tx(transaction: fs.Transaction, uid: str, tx: dict):
     tx_type = tx.get("type")
     if tx_type in {"expense", "income"}:
         _get_asset(transaction, uid, tx["assetId"])
-        _get_category(transaction, uid, tx["categoryId"])
     elif tx_type == "transfer":
         _get_asset(transaction, uid, tx["fromAssetId"])
         _get_asset(transaction, uid, tx["toAssetId"])
@@ -268,7 +269,7 @@ def list_transactions(
     to_dt: Optional[datetime],
     tx_type: Optional[str],
     asset_id: Optional[str],
-    category_id: Optional[str],
+    category_name: Optional[str],
     limit: int,
     cursor: Optional[str],
 ) -> dict:
@@ -293,9 +294,25 @@ def list_transactions(
     for doc in query.stream():
         data = doc.to_dict()
         data["id"] = doc.id
+        if "categoryName" not in data and data.get("categoryId"):
+            cat_id = data.get("categoryId")
+            cat_snap = firestore.category_doc(uid, cat_id).get()
+            if cat_snap.exists:
+                cat_data = cat_snap.to_dict()
+                cat_name = cat_data.get("name")
+                if cat_name:
+                    data["categoryName"] = cat_name
+                    doc.reference.update(
+                        {
+                            "categoryName": cat_name,
+                            "categoryId": fs.DELETE_FIELD,
+                            "updatedAt": _now(),
+                        }
+                    )
+                    data.pop("categoryId", None)
         items.append(data)
 
-    if asset_id or category_id:
+    if asset_id or category_name:
         filtered = []
         for item in items:
             if asset_id:
@@ -305,7 +322,7 @@ def list_transactions(
                 else:
                     if item.get("assetId") != asset_id:
                         continue
-            if category_id and item.get("categoryId") != category_id:
+            if category_name and item.get("categoryName") != category_name:
                 continue
             filtered.append(item)
         items = filtered

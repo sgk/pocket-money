@@ -1,5 +1,5 @@
 const LAST_ASSET_KEY = "ledger.lastAsset";
-const LAST_CATEGORY_KEY = "ledger.lastCategory";
+const LAST_CATEGORY_KEY = "ledger.lastCategoryName";
 
 export const storage = {
   getLastAssetId() {
@@ -8,10 +8,10 @@ export const storage = {
   setLastAssetId(value: string) {
     localStorage.setItem(LAST_ASSET_KEY, value);
   },
-  getLastCategoryId() {
+  getLastCategoryName() {
     return localStorage.getItem(LAST_CATEGORY_KEY);
   },
-  setLastCategoryId(value: string) {
+  setLastCategoryName(value: string) {
     localStorage.setItem(LAST_CATEGORY_KEY, value);
   },
 };

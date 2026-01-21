@@ -76,7 +76,7 @@ export const api = {
       to?: string;
       type?: string;
       assetId?: string;
-      categoryId?: string;
+      categoryName?: string;
       limit?: number;
       cursor?: string;
     }
