@@ -96,6 +96,14 @@ export const NewEntryRow = ({
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
+  useEffect(() => {
+    const base = emptyEntry();
+    const next = fixedAssetId
+      ? { ...base, assetId: fixedAssetId, fromAssetId: fixedAssetId }
+      : base;
+    setEntry(next);
+  }, [fixedAssetId]);
+
   const resetEntry = () => {
     const base = emptyEntry();
     const next = fixedAssetId
@@ -335,9 +343,9 @@ export const NewEntryRow = ({
           onChange={(event) => setEntry({ ...entry, amount: event.target.value })}
         />
       </td>
-      <td className="p-2">
+      <td className="p-2 text-center">
         <Button type="button" onClick={handleSubmit} disabled={isSaving}>
-          たす
+          ついか
         </Button>
       </td>
     </tr>

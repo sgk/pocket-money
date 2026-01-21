@@ -140,7 +140,7 @@ export const LedgerTable = ({
         header: "きんがく",
         cell: ({ row }) => formatJPYPlain(row.original.amount),
         meta: {
-          headerClassName: "min-w-[120px] whitespace-nowrap text-right",
+          headerClassName: "min-w-[120px] whitespace-nowrap",
           cellClassName: "min-w-[120px] whitespace-nowrap text-right",
         },
       },
@@ -148,7 +148,7 @@ export const LedgerTable = ({
         header: "ざんだか",
         cell: () => "-",
         meta: {
-          headerClassName: "min-w-[120px] whitespace-nowrap text-right",
+          headerClassName: "min-w-[120px] whitespace-nowrap",
           cellClassName: "min-w-[120px] whitespace-nowrap text-right",
         },
       },
@@ -172,14 +172,14 @@ export const LedgerTable = ({
 
   return (
     <div className="overflow-x-auto rounded-lg border bg-card/80 shadow-sm">
-      <table className="min-w-[1100px] w-full border-collapse text-sm">
+      <table className="ledger-table min-w-[1100px] w-full border-collapse text-sm">
         <thead className="bg-secondary/50">
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
                 <th
                   key={header.id}
-                  className={`p-3 text-left font-medium ${
+                  className={`p-3 text-center font-medium ${
                     (header.column.columnDef.meta as ColumnMeta | undefined)?.headerClassName ??
                     ""
                   }`}
