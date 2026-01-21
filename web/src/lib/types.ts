@@ -62,4 +62,5 @@ export type TransactionType = Transaction["type"] | "all";
 export type TransactionsResponse = {
   items: Transaction[];
   nextCursor?: string | null;
+  openingBalances?: Record<string, number>;
 };

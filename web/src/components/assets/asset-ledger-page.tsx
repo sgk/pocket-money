@@ -5,6 +5,7 @@ import { Filters, type LedgerFiltersState } from "@/components/ledger/filters";
 import { LedgerTable } from "@/components/ledger/ledger-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate, startOfCurrentMonth, startOfNextMonth, toDateKey } from "@/lib/date";
+import { computeRunningBalances } from "@/lib/balance";
 import { formatJPY } from "@/lib/money";
 import { useAssets, useCategories, useTransactions } from "@/lib/query";
 
@@ -24,8 +25,21 @@ export const AssetLedgerPage = () => {
     from: filters.from,
     to: filters.to,
     type: filters.type,
+    assetId,
+    includeOpeningBalances: true,
   });
   const transactions = data?.items ?? [];
+  const openingBalances = data?.openingBalances ?? {};
+
+  const balancesById = useMemo(() => {
+    if (!assetId) {
+      return {};
+    }
+    return computeRunningBalances(transactions, openingBalances, {
+      type: "asset",
+      assetId,
+    });
+  }, [transactions, openingBalances, assetId]);
 
   const filtered = useMemo(() => {
     if (!assetId) {
@@ -94,6 +108,7 @@ export const AssetLedgerPage = () => {
         assets={assets}
         categories={categories}
         fixedAssetId={assetId}
+        balancesById={balancesById}
       />
 
       <section className="mt-6">

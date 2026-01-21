@@ -79,6 +79,7 @@ export const api = {
       categoryName?: string;
       limit?: number;
       cursor?: string;
+      includeOpeningBalances?: boolean;
     }
   ) => fetchJson<TransactionsResponse>(token, "/api/transactions", {}, params),
   createExpense: (token: string, payload: Record<string, unknown>) =>

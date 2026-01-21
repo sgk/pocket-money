@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 from google.cloud import firestore as fs
 from google.cloud.firestore_v1.base_query import FieldFilter
@@ -20,8 +20,166 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _to_utc(dt: datetime) -> datetime:
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
+def _month_start(dt: datetime) -> datetime:
+    dt = _to_utc(dt)
+    return datetime(dt.year, dt.month, 1, tzinfo=timezone.utc)
+
+
+def _month_key(dt: datetime) -> str:
+    dt = _to_utc(dt)
+    return dt.strftime("%Y-%m-01")
+
+
+def _next_month(dt: datetime) -> datetime:
+    dt = _to_utc(dt)
+    if dt.month == 12:
+        return datetime(dt.year + 1, 1, 1, tzinfo=timezone.utc)
+    return datetime(dt.year, dt.month + 1, 1, tzinfo=timezone.utc)
+
+
+def _prev_month(dt: datetime) -> datetime:
+    dt = _to_utc(dt)
+    if dt.month == 1:
+        return datetime(dt.year - 1, 12, 1, tzinfo=timezone.utc)
+    return datetime(dt.year, dt.month - 1, 1, tzinfo=timezone.utc)
+
+
 def _default_day_order(now: datetime) -> int:
     return int(now.timestamp() * 1000)
+
+
+def _merge_dirty_from(existing: Optional[datetime], candidate: datetime) -> datetime:
+    candidate = _month_start(candidate)
+    if not existing:
+        return candidate
+    existing = _to_utc(existing)
+    return candidate if candidate < existing else existing
+
+
+def _queue_balance_dirty(
+    transaction: fs.Transaction,
+    user_ref,
+    existing_dirty: Optional[datetime],
+    candidate: Optional[datetime],
+):
+    if candidate is None:
+        return
+    next_dirty = _merge_dirty_from(existing_dirty, candidate)
+    if not existing_dirty or next_dirty != existing_dirty:
+        transaction.set(user_ref, {"balanceDirtyFrom": next_dirty}, merge=True)
+
+
+def _seed_balances(uid: str, as_of: datetime) -> Dict[str, int]:
+    balances: Dict[str, int] = {}
+    for doc in firestore.assets_collection(uid).stream():
+        data = doc.to_dict()
+        created_at = data.get("createdAt")
+        include = True
+        if created_at:
+            include = _to_utc(created_at) <= as_of
+        balances[doc.id] = int(data.get("initialBalance", 0)) if include else 0
+    return balances
+
+
+def _apply_tx_effect(balances: Dict[str, int], tx: dict):
+    effect = tx_effect(tx)
+    for asset_id, delta in effect.items():
+        balances[asset_id] = balances.get(asset_id, 0) + int(delta)
+
+
+def _compute_balances_until(uid: str, end_dt: datetime) -> Dict[str, int]:
+    end_dt = _to_utc(end_dt)
+    balances = _seed_balances(uid, end_dt)
+    query = (
+        firestore.transactions_collection(uid)
+        .where(filter=FieldFilter("occurredAt", "<", end_dt))
+        .order_by("occurredAt")
+    )
+    for doc in query.stream():
+        _apply_tx_effect(balances, doc.to_dict())
+    return balances
+
+
+def _apply_transactions_between(
+    uid: str, start_dt: datetime, end_dt: datetime, balances: Dict[str, int]
+) -> Dict[str, int]:
+    start_dt = _to_utc(start_dt)
+    end_dt = _to_utc(end_dt)
+    query = (
+        firestore.transactions_collection(uid)
+        .where(filter=FieldFilter("occurredAt", ">=", start_dt))
+        .where(filter=FieldFilter("occurredAt", "<", end_dt))
+        .order_by("occurredAt")
+    )
+    for doc in query.stream():
+        _apply_tx_effect(balances, doc.to_dict())
+    return balances
+
+
+def _get_snapshot(uid: str, month_start: datetime) -> Optional[dict]:
+    ref = firestore.balance_snapshot_doc(uid, _month_key(month_start))
+    snap = ref.get()
+    if not snap.exists:
+        return None
+    data = snap.to_dict()
+    data["id"] = snap.id
+    return data
+
+
+def _save_snapshot(uid: str, month_start: datetime, balances: Dict[str, int]):
+    ref = firestore.balance_snapshot_doc(uid, _month_key(month_start))
+    total = sum(balances.values())
+    ref.set(
+        {
+            "monthStart": month_start,
+            "byAsset": balances,
+            "total": total,
+            "updatedAt": _now(),
+        }
+    )
+
+
+def _ensure_snapshots(uid: str, target_month: datetime):
+    target_month = _month_start(target_month)
+    user_ref = firestore.user_doc(uid)
+    user_snap = user_ref.get()
+    dirty_from = None
+    if user_snap.exists:
+        dirty_from = user_snap.to_dict().get("balanceDirtyFrom")
+    if dirty_from:
+        dirty_from = _month_start(_to_utc(dirty_from))
+
+    snapshot = _get_snapshot(uid, target_month)
+    start_month = None
+    if dirty_from and dirty_from <= target_month:
+        start_month = dirty_from
+    elif not snapshot:
+        start_month = target_month
+
+    if not start_month:
+        return
+
+    prev_snapshot = _get_snapshot(uid, _prev_month(start_month))
+    if prev_snapshot:
+        balances = {k: int(v) for k, v in prev_snapshot.get("byAsset", {}).items()}
+    else:
+        balances = _compute_balances_until(uid, start_month)
+
+    month = start_month
+    while month <= target_month:
+        month_end = _next_month(month)
+        balances = _apply_transactions_between(uid, month, month_end, balances)
+        _save_snapshot(uid, month, balances)
+        month = month_end
+
+    if dirty_from and dirty_from <= target_month:
+        user_ref.update({"balanceDirtyFrom": fs.DELETE_FIELD})
 
 
 def _require(value, message: str):
@@ -152,6 +310,9 @@ def _validate_refs_for_tx(transaction: fs.Transaction, uid: str, tx: dict):
 def create_expense(uid: str, payload: ExpenseCreate) -> dict:
     def _work(transaction: fs.Transaction):
         now = _now()
+        user_ref = firestore.user_doc(uid)
+        user_snap = user_ref.get(transaction=transaction)
+        existing_dirty = user_snap.to_dict().get("balanceDirtyFrom") if user_snap.exists else None
         data = payload.dict()
         if data.get("dayOrder") is None:
             data["dayOrder"] = _default_day_order(now)
@@ -163,6 +324,9 @@ def create_expense(uid: str, payload: ExpenseCreate) -> dict:
         _validate_refs_for_tx(transaction, uid, data)
         deltas = compute_balance_deltas(None, data)
         _apply_balance_deltas(transaction, uid, deltas, now)
+        _queue_balance_dirty(
+            transaction, user_ref, existing_dirty, _month_start(data["occurredAt"])
+        )
         doc_ref = firestore.transactions_collection(uid).document()
         transaction.set(doc_ref, data)
         data["id"] = doc_ref.id
@@ -174,6 +338,9 @@ def create_expense(uid: str, payload: ExpenseCreate) -> dict:
 def create_income(uid: str, payload: IncomeCreate) -> dict:
     def _work(transaction: fs.Transaction):
         now = _now()
+        user_ref = firestore.user_doc(uid)
+        user_snap = user_ref.get(transaction=transaction)
+        existing_dirty = user_snap.to_dict().get("balanceDirtyFrom") if user_snap.exists else None
         data = payload.dict()
         if data.get("dayOrder") is None:
             data["dayOrder"] = _default_day_order(now)
@@ -185,6 +352,9 @@ def create_income(uid: str, payload: IncomeCreate) -> dict:
         _validate_refs_for_tx(transaction, uid, data)
         deltas = compute_balance_deltas(None, data)
         _apply_balance_deltas(transaction, uid, deltas, now)
+        _queue_balance_dirty(
+            transaction, user_ref, existing_dirty, _month_start(data["occurredAt"])
+        )
         doc_ref = firestore.transactions_collection(uid).document()
         transaction.set(doc_ref, data)
         data["id"] = doc_ref.id
@@ -196,6 +366,9 @@ def create_income(uid: str, payload: IncomeCreate) -> dict:
 def create_transfer(uid: str, payload: TransferCreate) -> dict:
     def _work(transaction: fs.Transaction):
         now = _now()
+        user_ref = firestore.user_doc(uid)
+        user_snap = user_ref.get(transaction=transaction)
+        existing_dirty = user_snap.to_dict().get("balanceDirtyFrom") if user_snap.exists else None
         data = payload.dict()
         if data.get("dayOrder") is None:
             data["dayOrder"] = _default_day_order(now)
@@ -207,6 +380,9 @@ def create_transfer(uid: str, payload: TransferCreate) -> dict:
         _validate_refs_for_tx(transaction, uid, data)
         deltas = compute_balance_deltas(None, data)
         _apply_balance_deltas(transaction, uid, deltas, now)
+        _queue_balance_dirty(
+            transaction, user_ref, existing_dirty, _month_start(data["occurredAt"])
+        )
         doc_ref = firestore.transactions_collection(uid).document()
         transaction.set(doc_ref, data)
         data["id"] = doc_ref.id
@@ -217,6 +393,15 @@ def create_transfer(uid: str, payload: TransferCreate) -> dict:
 
 def update_transaction(uid: str, tx_id: str, payload: TransactionUpdate) -> dict:
     patch = payload.dict(exclude_unset=True)
+    balance_fields = {
+        "occurredAt",
+        "amount",
+        "type",
+        "assetId",
+        "fromAssetId",
+        "toAssetId",
+        "fee",
+    }
 
     def _work(transaction: fs.Transaction):
         now = _now()
@@ -225,6 +410,9 @@ def update_transaction(uid: str, tx_id: str, payload: TransactionUpdate) -> dict
         if not snap.exists:
             raise AppError(404, "Transaction not found")
         old_tx = snap.to_dict()
+        user_ref = firestore.user_doc(uid)
+        user_snap = user_ref.get(transaction=transaction)
+        existing_dirty = user_snap.to_dict().get("balanceDirtyFrom") if user_snap.exists else None
 
         new_tx = dict(old_tx)
         for key, value in patch.items():
@@ -242,6 +430,12 @@ def update_transaction(uid: str, tx_id: str, payload: TransactionUpdate) -> dict
 
         deltas = compute_balance_deltas(old_tx, new_tx)
         _apply_balance_deltas(transaction, uid, deltas, now)
+
+        if any(field in patch for field in balance_fields):
+            old_month = _month_start(_to_utc(old_tx["occurredAt"]))
+            new_month = _month_start(_to_utc(new_tx["occurredAt"]))
+            dirty_from = old_month if old_month <= new_month else new_month
+            _queue_balance_dirty(transaction, user_ref, existing_dirty, dirty_from)
 
         updates = {}
         for key, value in patch.items():
@@ -274,8 +468,14 @@ def delete_transaction(uid: str, tx_id: str) -> dict:
         if not snap.exists:
             raise AppError(404, "Transaction not found")
         old_tx = snap.to_dict()
+        user_ref = firestore.user_doc(uid)
+        user_snap = user_ref.get(transaction=transaction)
+        existing_dirty = user_snap.to_dict().get("balanceDirtyFrom") if user_snap.exists else None
         deltas = compute_balance_deltas(old_tx, None)
         _apply_balance_deltas(transaction, uid, deltas, now)
+        _queue_balance_dirty(
+            transaction, user_ref, existing_dirty, _month_start(old_tx["occurredAt"])
+        )
         transaction.delete(tx_ref)
         old_tx["id"] = tx_id
         return old_tx
@@ -292,6 +492,7 @@ def list_transactions(
     category_name: Optional[str],
     limit: int,
     cursor: Optional[str],
+    include_opening_balances: bool,
 ) -> dict:
     query = firestore.transactions_collection(uid).order_by(
         "occurredAt", direction=fs.Query.DESCENDING
@@ -348,4 +549,20 @@ def list_transactions(
         items = filtered
 
     next_cursor = items[-1]["id"] if items else None
-    return {"items": items, "nextCursor": next_cursor}
+    result = {"items": items, "nextCursor": next_cursor}
+
+    if include_opening_balances and from_dt:
+        from_dt = _to_utc(from_dt)
+        month_start = _month_start(from_dt)
+        _ensure_snapshots(uid, month_start)
+        snapshot = _get_snapshot(uid, month_start)
+        balances = (
+            {k: int(v) for k, v in snapshot.get("byAsset", {}).items()}
+            if snapshot
+            else _compute_balances_until(uid, month_start)
+        )
+        if from_dt > month_start:
+            balances = _apply_transactions_between(uid, month_start, from_dt, balances)
+        result["openingBalances"] = balances
+
+    return result

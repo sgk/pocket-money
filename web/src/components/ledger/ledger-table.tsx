@@ -388,11 +388,13 @@ export const LedgerTable = ({
   assets,
   categories,
   fixedAssetId,
+  balancesById,
 }: {
   transactions: Transaction[];
   assets: Asset[];
   categories: Category[];
   fixedAssetId?: string;
+  balancesById?: Record<string, number>;
 }) => {
   const { token } = useAuth();
   const invalidate = useInvalidateLedger();
@@ -514,14 +516,23 @@ export const LedgerTable = ({
       },
       {
         header: "ざんだか",
-        cell: () => "-",
+        cell: ({ row }) => {
+          if (!balancesById) {
+            return "-";
+          }
+          const value = balancesById[row.original.id];
+          if (value === undefined) {
+            return "-";
+          }
+          return formatJPYPlain(value);
+        },
         meta: {
           headerClassName: "min-w-[120px] whitespace-nowrap",
           cellClassName: "min-w-[120px] whitespace-nowrap text-right",
         },
       },
     ],
-    [assetMap]
+    [assetMap, balancesById]
   );
 
   const sorted = useMemo(() => {

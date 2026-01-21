@@ -39,6 +39,7 @@ type TransactionsFilters = {
   assetId?: string;
   categoryName?: string;
   limit?: number;
+  includeOpeningBalances?: boolean;
 };
 
 export const useTransactions = (filters: TransactionsFilters) => {
@@ -47,6 +48,12 @@ export const useTransactions = (filters: TransactionsFilters) => {
     queryKey: ["transactions", filters],
     queryFn: () =>
       api.getTransactions(token ?? "", {
+        from: filters.from,
+        to: filters.to,
+        type: filters.type,
+        assetId: filters.assetId,
+        categoryName: filters.categoryName,
+        includeOpeningBalances: filters.includeOpeningBalances,
         limit: filters.limit ?? 200,
       }),
     enabled: Boolean(token),

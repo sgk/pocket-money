@@ -63,3 +63,11 @@ def transactions_collection(uid: str):
 
 def transaction_doc(uid: str, tx_id: str):
     return transactions_collection(uid).document(tx_id)
+
+
+def balance_snapshots_collection(uid: str):
+    return user_doc(uid).collection("balanceSnapshots")
+
+
+def balance_snapshot_doc(uid: str, month_key: str):
+    return balance_snapshots_collection(uid).document(month_key)

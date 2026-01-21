@@ -40,6 +40,7 @@ def list_transactions(
     category_name: Optional[str] = Query(None, alias="categoryName"),
     limit: int = Query(50, ge=1, le=200),
     cursor: Optional[str] = None,
+    include_opening_balances: bool = Query(False, alias="includeOpeningBalances"),
 ):
     return transactions_service.list_transactions(
         user.uid,
@@ -50,6 +51,7 @@ def list_transactions(
         category_name,
         limit,
         cursor,
+        include_opening_balances,
     )
 
 
