@@ -103,7 +103,7 @@ const CategoryRow = ({
           }}
         />
       </div>
-      <div className="text-center">
+      <div className="flex items-center justify-center">
         <input
           type="checkbox"
           checked={category.isActive}
@@ -230,9 +230,9 @@ const CategoryList = ({
 
   return (
     <div className="grid gap-0.5">
-      <div className="flex items-center justify-between text-base">
+      <div className="grid grid-cols-[1fr_72px] items-center gap-2 px-3 text-base">
         <span>{CATEGORY_KIND_LABEL[kind]}</span>
-        <span className="text-center">つかう</span>
+        <span className="text-center">ゆうこう</span>
       </div>
       {ordered.length === 0 ? (
         <div
