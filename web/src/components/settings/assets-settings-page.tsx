@@ -83,13 +83,13 @@ const AssetRow = ({
 
   return (
     <div
-      className={`flex flex-wrap items-center gap-2 rounded-lg border bg-card/80 px-3 py-1.5 text-sm ${
+      className={`flex flex-wrap items-center gap-2 rounded-lg border bg-card/80 px-3 py-1.5 text-sm md:grid md:grid-cols-[16px_minmax(200px,2fr)_minmax(140px,1fr)_minmax(200px,2fr)_112px_64px_32px] md:items-center ${
         inactive ? "opacity-50" : ""
       } ${isDragging ? "opacity-40" : ""}`}
       onDragEnd={onDragEnd}
     >
       <div
-        className="cursor-grab text-muted-foreground"
+        className="w-4 cursor-grab text-muted-foreground"
         {...dragHandleProps}
         aria-label="ドラッグ"
       >
@@ -100,29 +100,29 @@ const AssetRow = ({
         value={form.name}
         onChange={(event) => handleChange({ name: event.target.value })}
         onBlur={handleSave}
-        className="h-8 w-40"
+        className="h-8 w-full min-w-0"
       />
       <Input
         placeholder="しゅるい"
         value={form.type}
         onChange={(event) => handleChange({ type: event.target.value })}
         onBlur={handleSave}
-        className="h-8 w-28"
+        className="h-8 w-full min-w-0"
       />
       <Input
         placeholder="メモ"
         value={form.note}
         onChange={(event) => handleChange({ note: event.target.value })}
         onBlur={handleSave}
-        className="h-8 w-48"
+        className="h-8 w-full min-w-0"
       />
       <Link
         to={`/assets/${asset.id}/ledger`}
-        className="w-28 text-right text-sm font-semibold text-sky-700 underline-offset-4 hover:underline"
+        className="w-full text-right text-sm font-semibold text-sky-700 underline-offset-4 hover:underline"
       >
         {formatJPY(asset.currentBalance)}
       </Link>
-      <label className="flex w-16 items-center justify-center">
+      <label className="flex items-center justify-center">
         <input
           type="checkbox"
           checked={form.isActive}
@@ -133,7 +133,7 @@ const AssetRow = ({
           }}
         />
       </label>
-      <div className="flex w-8 items-center justify-center">
+      <div className="flex items-center justify-center">
         <Button
           type="button"
           variant="ghost"
@@ -157,6 +157,7 @@ export const AssetsSettingsPage = () => {
     name: "",
     type: "",
     initialBalance: "0",
+    note: "",
   });
   const [order, setOrder] = useState<string[]>([]);
   const [savingCount, setSavingCount] = useState(0);
@@ -265,11 +266,12 @@ export const AssetsSettingsPage = () => {
           name: newAsset.name,
           type: newAsset.type || undefined,
           initialBalance: Number(newAsset.initialBalance || 0),
+          note: newAsset.note || undefined,
           sortOrder: nextSortOrder,
         });
       });
       toast.success("いれものを たしたよ");
-      setNewAsset({ name: "", type: "", initialBalance: "0" });
+      setNewAsset({ name: "", type: "", initialBalance: "0", note: "" });
       queryClient.invalidateQueries({ queryKey: ["assets"] });
     } catch (error) {
       toast.error((error as Error).message);
@@ -367,7 +369,7 @@ export const AssetsSettingsPage = () => {
         <CardHeader>
           <CardTitle className="text-base">あたらしい いれもの</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-3">
+        <CardContent className="grid gap-2 md:grid-cols-[1.1fr_0.9fr_1.1fr_auto_auto] items-center">
           <Input
             placeholder="なまえ"
             value={newAsset.name}
@@ -379,16 +381,25 @@ export const AssetsSettingsPage = () => {
             onChange={(event) => setNewAsset({ ...newAsset, type: event.target.value })}
           />
           <Input
-            type="number"
-            placeholder="はじめののこり"
-            value={newAsset.initialBalance}
-            onChange={(event) =>
-              setNewAsset({ ...newAsset, initialBalance: event.target.value })
-            }
+            placeholder="メモ"
+            value={newAsset.note}
+            onChange={(event) => setNewAsset({ ...newAsset, note: event.target.value })}
           />
-          <div className="md:col-span-3">
-            <Button onClick={handleCreate}>たす</Button>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">ざんだか</span>
+            <Input
+              type="number"
+              placeholder="0"
+              value={newAsset.initialBalance}
+              onChange={(event) =>
+                setNewAsset({ ...newAsset, initialBalance: event.target.value })
+              }
+              className="h-8 w-32"
+            />
           </div>
+          <Button onClick={handleCreate} className="justify-self-end">
+            たす
+          </Button>
         </CardContent>
       </Card>
 
@@ -404,14 +415,14 @@ export const AssetsSettingsPage = () => {
         </div>
       ) : (
         <div className="grid gap-1.5">
-          <div className="flex flex-wrap items-center gap-2 px-3 text-xs text-muted-foreground">
-            <span className="w-4" />
-            <span className="w-40">なまえ</span>
-            <span className="w-28">しゅるい</span>
-            <span className="w-48">メモ</span>
-            <span className="w-28 text-right">ざんだか</span>
-            <span className="w-16 text-center">ゆうこう</span>
-            <span className="w-8 text-center">けす</span>
+          <div className="grid grid-cols-[16px_minmax(200px,2fr)_minmax(140px,1fr)_minmax(200px,2fr)_112px_64px_32px] items-center gap-2 px-3 text-xs text-muted-foreground">
+            <span />
+            <span>なまえ</span>
+            <span>しゅるい</span>
+            <span>メモ</span>
+            <span className="text-right">ざんだか</span>
+            <span className="text-center">ゆうこう</span>
+            <span className="text-center">けす</span>
           </div>
           {orderedAssets.map((asset, index) => (
             <div key={asset.id} className="grid gap-1.5">
