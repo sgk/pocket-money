@@ -24,6 +24,7 @@ export type TxBase = {
   occurredAt: string;
   amount: number;
   memo?: string;
+  dayOrder?: number;
 };
 
 export type TxExpense = TxBase & {

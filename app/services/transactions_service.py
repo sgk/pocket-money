@@ -20,6 +20,10 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _default_day_order(now: datetime) -> int:
+    return int(now.timestamp() * 1000)
+
+
 def _require(value, message: str):
     if value is None:
         raise AppError(400, message)
@@ -105,20 +109,30 @@ def compute_balance_deltas(old_tx: Optional[dict], new_tx: Optional[dict]) -> Di
 def _apply_balance_deltas(
     transaction: fs.Transaction, uid: str, deltas: Dict[str, int], now: datetime
 ):
-    for asset_id, delta in deltas.items():
-        if delta == 0:
-            continue
-        asset_ref = firestore.asset_doc(uid, asset_id)
-        snap = asset_ref.get(transaction=transaction)
+    asset_ids = [asset_id for asset_id, delta in deltas.items() if delta != 0]
+    if not asset_ids:
+        return
+    asset_refs = {asset_id: firestore.asset_doc(uid, asset_id) for asset_id in asset_ids}
+    snaps = list(transaction.get_all(asset_refs.values()))
+    data_by_id = {}
+    for snap in snaps:
         if not snap.exists:
             raise AppError(400, "Asset not found")
         data = snap.to_dict()
         if not data.get("isActive", True):
             raise AppError(400, "Asset is inactive")
+        data_by_id[snap.id] = data
+
+    for asset_id, delta in deltas.items():
+        if delta == 0:
+            continue
+        data = data_by_id.get(asset_id)
+        if not data:
+            raise AppError(400, "Asset not found")
         current = int(data.get("currentBalance", 0))
         new_balance = current + delta
         transaction.update(
-            asset_ref,
+            asset_refs[asset_id],
             {"currentBalance": new_balance, "updatedAt": now},
         )
 
@@ -139,6 +153,8 @@ def create_expense(uid: str, payload: ExpenseCreate) -> dict:
     def _work(transaction: fs.Transaction):
         now = _now()
         data = payload.dict()
+        if data.get("dayOrder") is None:
+            data["dayOrder"] = _default_day_order(now)
         data["type"] = "expense"
         data["createdAt"] = now
         data["updatedAt"] = now
@@ -159,6 +175,8 @@ def create_income(uid: str, payload: IncomeCreate) -> dict:
     def _work(transaction: fs.Transaction):
         now = _now()
         data = payload.dict()
+        if data.get("dayOrder") is None:
+            data["dayOrder"] = _default_day_order(now)
         data["type"] = "income"
         data["createdAt"] = now
         data["updatedAt"] = now
@@ -179,6 +197,8 @@ def create_transfer(uid: str, payload: TransferCreate) -> dict:
     def _work(transaction: fs.Transaction):
         now = _now()
         data = payload.dict()
+        if data.get("dayOrder") is None:
+            data["dayOrder"] = _default_day_order(now)
         data["type"] = "transfer"
         data["createdAt"] = now
         data["updatedAt"] = now

@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-table";
 import { Check, Trash2, X } from "lucide-react";
 import type { Asset, Category, Transaction } from "@/lib/types";
-import { formatDateSlash } from "@/lib/date";
+import { formatDateSlash, toDateKey } from "@/lib/date";
 import { formatJPYPlain } from "@/lib/money";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -395,8 +395,14 @@ export const LedgerTable = ({
   categories: Category[];
   fixedAssetId?: string;
 }) => {
+  const { token } = useAuth();
+  const invalidate = useInvalidateLedger();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [indicator, setIndicator] = useState<{ dateKey: string; index: number } | null>(
+    null
+  );
 
   const assetMap = useMemo(
     () => new Map(assets.map((asset) => [asset.id, asset.name])),
@@ -519,19 +525,252 @@ export const LedgerTable = ({
     [assetMap]
   );
 
-  const sorted = useMemo(
-    () =>
-      [...transactions].sort((a, b) =>
-        b.occurredAt.localeCompare(a.occurredAt)
-      ),
-    [transactions]
-  );
+  const sorted = useMemo(() => {
+    const withIndex = transactions.map((tx, index) => ({ tx, index }));
+    withIndex.sort((a, b) => {
+      const dateA = toDateKey(a.tx.occurredAt);
+      const dateB = toDateKey(b.tx.occurredAt);
+      if (dateA !== dateB) {
+        return dateB.localeCompare(dateA);
+      }
+      const orderA = a.tx.dayOrder ?? 0;
+      const orderB = b.tx.dayOrder ?? 0;
+      if (orderA !== orderB) {
+        return orderB - orderA;
+      }
+      return a.index - b.index;
+    });
+    return withIndex.map((item) => item.tx);
+  }, [transactions]);
+
+  const groupData = useMemo(() => {
+    const groups: Array<{ dateKey: string; items: Transaction[] }> = [];
+    const idMap = new Map<string, { dateKey: string; index: number }>();
+    let current: { dateKey: string; items: Transaction[] } | null = null;
+    sorted.forEach((tx) => {
+      const dateKey = toDateKey(tx.occurredAt);
+      if (!current || current.dateKey !== dateKey) {
+        current = { dateKey, items: [] };
+        groups.push(current);
+      }
+      const index = current.items.length;
+      current.items.push(tx);
+      idMap.set(tx.id, { dateKey, index });
+    });
+    const dateMap = new Map(groups.map((group) => [group.dateKey, group]));
+    return { groups, idMap, dateMap };
+  }, [sorted]);
 
   const table = useReactTable({
     data: sorted,
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
+
+  const dragInfo = draggingId ? groupData.idMap.get(draggingId) : null;
+
+  const canDropToPosition = (targetDateKey: string, insertIndex: number) => {
+    if (!dragInfo) {
+      return false;
+    }
+    const targetGroup = groupData.dateMap.get(targetDateKey);
+    if (!targetGroup) {
+      return false;
+    }
+    if (dragInfo.dateKey === targetDateKey) {
+      return true;
+    }
+    if (targetGroup.items.length < 2) {
+      return false;
+    }
+    if (insertIndex === 0 || insertIndex === targetGroup.items.length) {
+      return false;
+    }
+    return true;
+  };
+
+  const buildDayOrders = (items: Transaction[]) =>
+    items.map((tx, index) => ({
+      tx,
+      dayOrder: items.length - index,
+    }));
+
+  const handleDropAt = async (targetDateKey: string, insertIndex: number) => {
+    if (!token) {
+      toast.error("ログインしてね");
+      return;
+    }
+    if (!draggingId || !dragInfo) {
+      return;
+    }
+    const sourceGroup = groupData.dateMap.get(dragInfo.dateKey);
+    const targetGroup = groupData.dateMap.get(targetDateKey);
+    if (!sourceGroup || !targetGroup) {
+      return;
+    }
+    const sameDay = dragInfo.dateKey === targetDateKey;
+    if (
+      !sameDay &&
+      (targetGroup.items.length < 2 ||
+        insertIndex === 0 ||
+        insertIndex === targetGroup.items.length)
+    ) {
+      return;
+    }
+    const moved = sourceGroup.items[dragInfo.index];
+    if (!moved) {
+      return;
+    }
+    const sourceItems = sourceGroup.items.filter((tx) => tx.id !== moved.id);
+    let targetItems = sameDay ? [...sourceItems] : [...targetGroup.items];
+    let clampedIndex = Math.max(
+      0,
+      Math.min(insertIndex, sourceGroup.items.length)
+    );
+    if (sameDay && dragInfo.index < insertIndex) {
+      clampedIndex = clampedIndex - 1;
+    }
+    if (clampedIndex < 0) {
+      clampedIndex = 0;
+    }
+    if (clampedIndex > targetItems.length) {
+      clampedIndex = targetItems.length;
+    }
+    targetItems.splice(clampedIndex, 0, moved);
+
+    if (
+      sameDay &&
+      targetItems.every(
+        (tx, index) => tx.id === sourceGroup.items[index]?.id
+      )
+    ) {
+      setIndicator(null);
+      setDraggingId(null);
+      return;
+    }
+
+    const updates: Array<{ id: string; payload: Record<string, unknown> }> = [];
+    const pushUpdate = (tx: Transaction, payload: Record<string, unknown>) => {
+      if (Object.keys(payload).length > 0) {
+        updates.push({ id: tx.id, payload });
+      }
+    };
+
+    if (sameDay) {
+      buildDayOrders(targetItems).forEach(({ tx, dayOrder }) => {
+        if (tx.dayOrder !== dayOrder) {
+          pushUpdate(tx, { dayOrder });
+        }
+      });
+    } else {
+      const targetDateValue = targetDateKey;
+      buildDayOrders(targetItems).forEach(({ tx, dayOrder }) => {
+        const payload: Record<string, unknown> = {};
+        if (tx.dayOrder !== dayOrder) {
+          payload.dayOrder = dayOrder;
+        }
+        if (tx.id === moved.id) {
+          payload.occurredAt = targetDateValue;
+        }
+        pushUpdate(tx, payload);
+      });
+      buildDayOrders(sourceItems).forEach(({ tx, dayOrder }) => {
+        if (tx.dayOrder !== dayOrder) {
+          pushUpdate(tx, { dayOrder });
+        }
+      });
+    }
+
+    if (updates.length === 0) {
+      setIndicator(null);
+      setDraggingId(null);
+      return;
+    }
+
+    try {
+      await Promise.all(
+        updates.map((update) =>
+          api.updateTransaction(token, update.id, update.payload)
+        )
+      );
+      invalidate();
+    } catch (error) {
+      toast.error((error as Error).message);
+    } finally {
+      setIndicator(null);
+      setDraggingId(null);
+    }
+  };
+
+  const handleDragStart = (
+    event: React.DragEvent<HTMLSpanElement>,
+    txId: string
+  ) => {
+    event.dataTransfer.setData("text/plain", txId);
+    event.dataTransfer.effectAllowed = "move";
+    setDraggingId(txId);
+  };
+
+  const handleDragEnd = () => {
+    setDraggingId(null);
+    setIndicator(null);
+  };
+
+  const handleDragOverRow = (
+    event: React.DragEvent<HTMLTableRowElement>,
+    dateKey: string,
+    index: number
+  ) => {
+    if (!draggingId) {
+      if (indicator) {
+        setIndicator(null);
+      }
+      return;
+    }
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const before = event.clientY - bounds.top < bounds.height / 2;
+    const insertIndex = before ? index : index + 1;
+    if (!canDropToPosition(dateKey, insertIndex)) {
+      if (indicator) {
+        setIndicator(null);
+      }
+      return;
+    }
+    if (
+      dragInfo &&
+      dragInfo.dateKey === dateKey &&
+      (insertIndex === dragInfo.index || insertIndex === dragInfo.index + 1)
+    ) {
+      if (indicator) {
+        setIndicator(null);
+      }
+      return;
+    }
+    event.preventDefault();
+    setIndicator({ dateKey, index: insertIndex });
+  };
+
+  const handleDropOnRow = async (
+    event: React.DragEvent<HTMLTableRowElement>,
+    dateKey: string,
+    index: number
+  ) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const before = event.clientY - bounds.top < bounds.height / 2;
+    const insertIndex = before ? index : index + 1;
+    if (
+      dragInfo &&
+      dragInfo.dateKey === dateKey &&
+      (insertIndex === dragInfo.index || insertIndex === dragInfo.index + 1)
+    ) {
+      return;
+    }
+    if (!canDropToPosition(dateKey, insertIndex)) {
+      return;
+    }
+    event.preventDefault();
+    await handleDropAt(dateKey, insertIndex);
+  };
 
   return (
     <div className="overflow-x-auto rounded-lg border bg-card/80 shadow-sm">
@@ -559,41 +798,99 @@ export const LedgerTable = ({
             categories={categories}
             fixedAssetId={fixedAssetId}
           />
-          {table.getRowModel().rows.map((row) => (
-            editingId === row.original.id ? (
-              <EditableRow
-                key={row.id}
-                transaction={row.original}
-                assets={assets}
-                categories={categories}
-                fixedAssetId={fixedAssetId}
-                onCancel={() => setEditingId(null)}
-              />
-            ) : (
+          {table.getRowModel().rows.map((row) => {
+            const info = groupData.idMap.get(row.original.id);
+            const dateKey = info?.dateKey ?? toDateKey(row.original.occurredAt);
+            const indexInGroup = info?.index ?? 0;
+            const groupLength =
+              groupData.dateMap.get(dateKey)?.items.length ?? 1;
+            const showTopIndicator =
+              indicator?.dateKey === dateKey && indicator.index === indexInGroup;
+            const showBottomIndicator =
+              indicator?.dateKey === dateKey &&
+              indicator.index === groupLength &&
+              indexInGroup === groupLength - 1;
+
+            if (editingId === row.original.id) {
+              return (
+                <EditableRow
+                  key={row.id}
+                  transaction={row.original}
+                  assets={assets}
+                  categories={categories}
+                  fixedAssetId={fixedAssetId}
+                  onCancel={() => setEditingId(null)}
+                />
+              );
+            }
+
+            const indicatorStyle =
+              showTopIndicator
+                ? { boxShadow: "inset 0 2px 0 0 rgb(56 189 248)" }
+                : showBottomIndicator
+                  ? { boxShadow: "inset 0 -2px 0 0 rgb(56 189 248)" }
+                  : undefined;
+            return (
               <tr
                 key={row.id}
                 className={`border-t hover:bg-secondary/30 ${
                   selectedId === row.original.id ? "bg-secondary/40" : ""
-                }`}
+                } ${draggingId === row.original.id ? "opacity-40" : ""}`}
                 onClick={() => {
                   setSelectedId(row.original.id);
                   setEditingId(row.original.id);
                 }}
+                onDragOver={(event) =>
+                  handleDragOverRow(event, dateKey, indexInGroup)
+                }
+                onDrop={(event) =>
+                  handleDropOnRow(event, dateKey, indexInGroup)
+                }
               >
-                {row.getVisibleCells().map((cell) => (
-                  <td
-                    key={cell.id}
-                    className={`p-3 align-top ${
-                      (cell.column.columnDef.meta as ColumnMeta | undefined)
-                        ?.cellClassName ?? ""
-                    }`}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
+                {row.getVisibleCells().map((cell) => {
+                  const isDateCell = cell.column.id === "occurredAt";
+                  return (
+                    <td
+                      key={cell.id}
+                      className={`p-3 align-top ${
+                        (cell.column.columnDef.meta as ColumnMeta | undefined)
+                          ?.cellClassName ?? ""
+                      }`}
+                      style={indicatorStyle}
+                    >
+                      {isDateCell ? (
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="cursor-grab text-muted-foreground"
+                            draggable
+                            onDragStart={(event) =>
+                              handleDragStart(event, row.original.id)
+                            }
+                            onDragEnd={handleDragEnd}
+                            onClick={(event) => event.stopPropagation()}
+                            aria-label="ならびかえ"
+                          >
+                            ≡
+                          </span>
+                          <span>
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </span>
+                        </div>
+                      ) : (
+                        flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )
+                      )}
+                    </td>
+                  );
+                })}
               </tr>
-            )
-          ))}
+            );
+          })}
         </tbody>
       </table>
       <datalist id="merchant-suggest">

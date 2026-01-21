@@ -9,6 +9,7 @@ class TransactionBase(BaseModel):
     occurredAt: datetime
     amount: int = Field(..., ge=1)
     memo: Optional[str] = None
+    dayOrder: Optional[int] = Field(None, ge=0)
 
 
 class ExpenseCreate(BaseModel):
@@ -18,6 +19,7 @@ class ExpenseCreate(BaseModel):
     assetId: str
     categoryName: str
     merchant: Optional[str] = None
+    dayOrder: Optional[int] = Field(None, ge=0)
 
 
 class IncomeCreate(BaseModel):
@@ -27,6 +29,7 @@ class IncomeCreate(BaseModel):
     assetId: str
     categoryName: str
     source: Optional[str] = None
+    dayOrder: Optional[int] = Field(None, ge=0)
 
 
 class TransferCreate(BaseModel):
@@ -37,6 +40,7 @@ class TransferCreate(BaseModel):
     toAssetId: str
     fee: int = Field(0, ge=0)
     feeCategoryId: Optional[str] = None
+    dayOrder: Optional[int] = Field(None, ge=0)
 
 
 class TransactionUpdate(BaseModel):
@@ -52,6 +56,7 @@ class TransactionUpdate(BaseModel):
     toAssetId: Optional[str] = None
     fee: Optional[int] = Field(None, ge=0)
     feeCategoryId: Optional[str] = None
+    dayOrder: Optional[int] = Field(None, ge=0)
 
 
 class TransactionOut(BaseModel):
@@ -60,6 +65,7 @@ class TransactionOut(BaseModel):
     occurredAt: datetime
     amount: int
     memo: Optional[str] = None
+    dayOrder: Optional[int] = None
     createdAt: datetime
     updatedAt: datetime
     createdBy: str
