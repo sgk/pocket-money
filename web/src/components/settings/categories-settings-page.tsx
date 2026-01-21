@@ -14,8 +14,8 @@ import type { Category } from "@/lib/types";
 type CategoryKind = "expense" | "income";
 
 const CATEGORY_KIND_LABEL: Record<CategoryKind, string> = {
-  expense: "つかった",
-  income: "もらった",
+  expense: "だした",
+  income: "いれた",
 };
 
 const normalizeKind = (category: Category): CategoryKind =>
@@ -575,7 +575,7 @@ export const CategoriesSettingsPage = () => {
                 }`}
                 onClick={() => setNewCategory({ ...newCategory, kind: "expense" })}
               >
-                つかった
+                だした
               </Button>
               <Button
                 type="button"
@@ -588,7 +588,7 @@ export const CategoriesSettingsPage = () => {
                 }`}
                 onClick={() => setNewCategory({ ...newCategory, kind: "income" })}
               >
-                もらった
+                いれた
               </Button>
             </div>
           </div>

@@ -318,12 +318,12 @@ const EditableRow = ({
             <SelectContent>
               {availableCategories.map((category) => (
                 <SelectItem key={category.name} value={category.name}>
-                  {transaction.type === "income" ? "もらった" : "つかった"}:{" "}
+                  {transaction.type === "income" ? "いれた" : "だした"}:{" "}
                   {category.name}
                 </SelectItem>
               ))}
               <SelectItem value="その他">
-                {transaction.type === "income" ? "もらった" : "つかった"}: その他
+                {transaction.type === "income" ? "いれた" : "だした"}: その他
               </SelectItem>
             </SelectContent>
           </Select>
@@ -473,10 +473,10 @@ export const LedgerTable = ({
         cell: ({ row }) => {
           const tx = row.original;
           if (tx.type === "expense") {
-            return `つかった: ${tx.categoryName ?? ""}`;
+            return `だした: ${tx.categoryName ?? ""}`;
           }
           if (tx.type === "income") {
-            return `もらった: ${tx.categoryName ?? ""}`;
+            return `いれた: ${tx.categoryName ?? ""}`;
           }
           return `いどう: ${assetName(tx.toAssetId)}`;
         },

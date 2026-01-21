@@ -66,13 +66,13 @@ export const LedgerPage = () => {
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-3">
             <div>
-              <p className="text-xs text-muted-foreground">もらった</p>
+              <p className="text-xs text-muted-foreground">いれた</p>
               <p className="text-lg font-semibold text-emerald-600">
                 {formatJPY(summary?.incomeTotal ?? 0)}
               </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">つかった</p>
+              <p className="text-xs text-muted-foreground">だした</p>
               <p className="text-lg font-semibold text-rose-600">
                 {formatJPY(summary?.expenseTotal ?? 0)}
               </p>

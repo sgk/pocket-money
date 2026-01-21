@@ -55,7 +55,7 @@ export const DashboardPage = () => {
       <section className="mt-8 grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">こんげつ もらった</CardTitle>
+            <CardTitle className="text-base">こんげつ いれた</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-semibold text-emerald-600">
@@ -65,7 +65,7 @@ export const DashboardPage = () => {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">こんげつ つかった</CardTitle>
+            <CardTitle className="text-base">こんげつ だした</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-semibold text-rose-600">

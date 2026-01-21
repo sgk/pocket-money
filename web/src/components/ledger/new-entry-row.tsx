@@ -323,22 +323,22 @@ export const NewEntryRow = ({
                 key={`expense:${category.name}`}
                 value={`expense::${category.name}`}
               >
-                つかった: {category.name}
+                だした: {category.name}
               </SelectItem>
             ))}
             <SelectItem key="expense:その他" value="expense::その他">
-              つかった: その他
+              だした: その他
             </SelectItem>
             {incomeCategories.map((category) => (
               <SelectItem
                 key={`income:${category.name}`}
                 value={`income::${category.name}`}
               >
-                もらった: {category.name}
+                いれた: {category.name}
               </SelectItem>
             ))}
             <SelectItem key="income:その他" value="income::その他">
-              もらった: その他
+              いれた: その他
             </SelectItem>
             {assetOptions
               .filter((asset) => asset.id !== entry.fromAssetId)
