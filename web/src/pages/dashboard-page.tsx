@@ -1,10 +1,11 @@
 import { useMemo } from "react";
 import { addMonths } from "date-fns";
 import { Topbar } from "@/components/layout/topbar";
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAssets, useMonthlySummary, useTransactions } from "@/lib/query";
 import { formatJPY } from "@/lib/money";
-import { formatDateSlash } from "@/lib/date";
+import { formatDate, formatDateSlash } from "@/lib/date";
 
 export const DashboardPage = () => {
   const { data: assets = [] } = useAssets();
@@ -31,17 +32,22 @@ export const DashboardPage = () => {
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {assets.map((asset) => (
           <Card key={asset.id}>
-            <CardHeader>
-              <CardTitle className="text-base">{asset.name}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-semibold">
-                {formatJPY(asset.currentBalance)}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                はじめののこり {formatJPY(asset.initialBalance)}
-              </p>
-            </CardContent>
+            <Link
+              to={`/assets/${asset.id}/ledger`}
+              className="block h-full transition hover:-translate-y-1 hover:shadow-elevated focus:outline-none"
+            >
+              <CardHeader>
+                <CardTitle className="text-base">{asset.name}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-semibold text-sky-700">
+                  {formatJPY(asset.currentBalance)}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  はじめののこり {formatJPY(asset.initialBalance)}
+                </p>
+              </CardContent>
+            </Link>
           </Card>
         ))}
       </section>
