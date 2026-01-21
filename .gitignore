@@ -4,7 +4,7 @@ __pycache__/
 .env
 .gcloud/
 bin/
-lib/
+/lib/
 !web/src/lib/
 lib64
 include/
