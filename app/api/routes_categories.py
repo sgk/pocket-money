@@ -29,4 +29,4 @@ def update_category(
 
 @router.delete("/{category_id}", response_model=CategoryOut)
 def delete_category(category_id: str, user=Depends(get_current_user)):
-    return categories_service.deactivate_category(user.uid, category_id)
+    return categories_service.delete_category(user.uid, category_id)

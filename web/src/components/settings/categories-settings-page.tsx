@@ -32,7 +32,7 @@ const CategoryRow = ({
   category: Category;
   kind: CategoryKind;
   onToggleActive: (id: string, value: boolean) => void;
-  onUpdateCategory: (id: string, payload: { name: string }) => void;
+  onUpdateCategory: (id: string, payload: { name: string }) => Promise<boolean>;
   onDragEnd: () => void;
   isDragging: boolean;
   dragHandleProps: {
@@ -42,19 +42,36 @@ const CategoryRow = ({
 }) => {
   const inactive = !category.isActive;
   const [name, setName] = useState(category.name);
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSubmittedName, setLastSubmittedName] = useState<string | null>(null);
 
   useEffect(() => {
     setName(category.name);
+    setIsSaving(false);
+    setLastSubmittedName(null);
   }, [category]);
 
-  const handleSave = () => {
-    if (name.trim() === "") {
+  const handleSave = async () => {
+    if (isSaving) {
+      return;
+    }
+    const trimmed = name.trim();
+    if (trimmed === "") {
       setName(category.name);
       toast.error("なまえを いれてね");
       return;
     }
-    if (name !== category.name) {
-      onUpdateCategory(category.id, { name: name.trim() });
+    if (trimmed === category.name || trimmed === lastSubmittedName) {
+      return;
+    }
+    setIsSaving(true);
+    setLastSubmittedName(trimmed);
+    const ok = await onUpdateCategory(category.id, { name: trimmed });
+    setIsSaving(false);
+    if (!ok) {
+      setLastSubmittedName(null);
+      setName(category.name);
+      return;
     }
   };
 
@@ -77,11 +94,11 @@ const CategoryRow = ({
           value={name}
           onChange={(event) => setName(event.target.value)}
           className="h-8"
-          onBlur={handleSave}
+          onBlur={() => void handleSave()}
           onKeyDown={(event) => {
             if (event.key === "Enter") {
               event.preventDefault();
-              handleSave();
+              void handleSave();
             }
           }}
         />
@@ -114,7 +131,7 @@ const CategoryList = ({
   setOrder: (next: string[]) => void;
   onReorder: (next: Category[]) => Promise<void>;
   onToggleActive: (id: string, value: boolean) => void;
-  onUpdateCategory: (id: string, payload: { name: string }) => void;
+  onUpdateCategory: (id: string, payload: { name: string }) => Promise<boolean>;
   onMoveAcross: (
     fromKind: CategoryKind,
     dragId: string,
@@ -395,20 +412,23 @@ export const CategoriesSettingsPage = () => {
     }
   };
 
-  const handleUpdateCategory = async (id: string, payload: { name: string }) => {
+  const handleUpdateCategory = async (
+    id: string,
+    payload: { name: string }
+  ): Promise<boolean> => {
     if (!token) {
       toast.error("ログインしてね");
-      return;
+      return false;
     }
     const nextName = payload.name.trim();
     if (!nextName) {
       toast.error("なまえを いれてね");
-      return;
+      return false;
     }
     if (nextName === "その他") {
       toast.error("「その他」は つかえないよ");
       queryClient.invalidateQueries({ queryKey: ["categories"] });
-      return;
+      return false;
     }
     const conflicts = categories.filter(
       (category) => category.id !== id && category.name === nextName
@@ -417,7 +437,7 @@ export const CategoriesSettingsPage = () => {
       const ok = window.confirm("おなじ なまえがあるよ。まとめていい？");
       if (!ok) {
         queryClient.invalidateQueries({ queryKey: ["categories"] });
-        return;
+        return false;
       }
     }
     try {
@@ -428,8 +448,10 @@ export const CategoriesSettingsPage = () => {
         }
       });
       queryClient.invalidateQueries({ queryKey: ["categories"] });
+      return true;
     } catch (error) {
       toast.error((error as Error).message);
+      return false;
     }
   };
 

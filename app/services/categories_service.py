@@ -62,3 +62,14 @@ def deactivate_category(uid: str, category_id: str) -> dict:
     data.update({"isActive": False, "updatedAt": now})
     data["id"] = category_id
     return data
+
+
+def delete_category(uid: str, category_id: str) -> dict:
+    doc_ref = firestore.category_doc(uid, category_id)
+    snap = doc_ref.get()
+    if not snap.exists:
+        raise AppError(404, "Category not found")
+    data = snap.to_dict()
+    doc_ref.delete()
+    data["id"] = category_id
+    return data
