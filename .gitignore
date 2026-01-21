@@ -5,6 +5,7 @@ __pycache__/
 .gcloud/
 bin/
 lib/
+!web/src/lib/
 lib64
 include/
 pyvenv.cfg
