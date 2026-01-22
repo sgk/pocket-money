@@ -12,7 +12,7 @@ from app.models.transactions import ExpenseCreate, IncomeCreate, TransferCreate,
 FIELDS_BY_TYPE = {
     "expense": {"assetId", "categoryName", "merchant"},
     "income": {"assetId", "categoryName", "source"},
-    "transfer": {"fromAssetId", "toAssetId", "fee", "feeCategoryId"},
+    "transfer": {"fromAssetId", "toAssetId", "fee", "feeCategoryId", "counterparty"},
 }
 
 

@@ -46,6 +46,7 @@ export type TxTransfer = TxBase & {
   fromAssetId: string;
   toAssetId: string;
   fee: number;
+  counterparty?: string;
 };
 
 export type Transaction = TxExpense | TxIncome | TxTransfer;

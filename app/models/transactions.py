@@ -36,6 +36,7 @@ class TransferCreate(BaseModel):
     occurredAt: datetime
     amount: int = Field(...)
     memo: Optional[str] = None
+    counterparty: Optional[str] = None
     fromAssetId: str
     toAssetId: str
     fee: int = Field(0, ge=0)
@@ -56,6 +57,7 @@ class TransactionUpdate(BaseModel):
     toAssetId: Optional[str] = None
     fee: Optional[int] = Field(None, ge=0)
     feeCategoryId: Optional[str] = None
+    counterparty: Optional[str] = None
     dayOrder: Optional[int] = Field(None, ge=0)
 
 
@@ -77,3 +79,4 @@ class TransactionOut(BaseModel):
     toAssetId: Optional[str] = None
     fee: Optional[int] = None
     feeCategoryId: Optional[str] = None
+    counterparty: Optional[str] = None
