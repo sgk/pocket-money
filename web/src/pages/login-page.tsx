@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "@/components/ui/toast";
 
 declare global {
   interface Window {
@@ -21,7 +20,7 @@ declare global {
 }
 
 export const LoginPage = () => {
-  const { token, setToken } = useAuth();
+  const { token } = useAuth();
   const navigate = useNavigate();
   const googleButtonRef = useRef<HTMLDivElement>(null);
   const [clientId, setClientId] = useState("");
@@ -68,14 +67,8 @@ export const LoginPage = () => {
       }
       google.accounts.id.initialize({
         client_id: clientId,
-        callback: (response) => {
-          if (!response.credential) {
-            toast.error("ログインにしっぱいしました");
-            return;
-          }
-          setToken(response.credential);
-          navigate("/", { replace: true });
-        },
+        ux_mode: "redirect",
+        login_uri: `${window.location.origin}/login`,
       });
       if (googleButtonRef.current) {
         google.accounts.id.renderButton(googleButtonRef.current, {
@@ -96,7 +89,7 @@ export const LoginPage = () => {
       return () => script.removeEventListener("load", initialize);
     }
     initialize();
-  }, [clientId, setToken, navigate]);
+  }, [clientId]);
 
   return (
     <div className="page-shell flex min-h-screen items-center justify-center p-6">

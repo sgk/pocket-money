@@ -1,7 +1,9 @@
 from pathlib import Path
 
-from fastapi import FastAPI
-from fastapi.responses import FileResponse
+import json
+
+from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.routes_assets import router as assets_router
@@ -59,6 +61,37 @@ def spa_root():
 @app.get("/login")
 def spa_login():
     return serve_index()
+
+
+@app.post("/login")
+async def spa_login_post(request: Request):
+    form = await request.form()
+    credential = form.get("credential")
+    csrf_token = form.get("g_csrf_token")
+    cookie_token = request.cookies.get("g_csrf_token")
+    if not credential or not csrf_token or csrf_token != cookie_token:
+        return HTMLResponse("login failed", status_code=400)
+    token_json = json.dumps(str(credential))
+    return HTMLResponse(
+        f"""<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ログイン</title>
+  </head>
+  <body>
+    <script>
+      try {{
+        localStorage.setItem("auth.token", {token_json});
+        window.location.replace("/");
+      }} catch (e) {{
+        document.body.textContent = "login failed";
+      }}
+    </script>
+  </body>
+</html>"""
+    )
 
 
 @app.get("/ledger")

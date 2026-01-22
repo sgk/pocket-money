@@ -4,4 +4,5 @@ google-cloud-firestore
 google-auth
 pydantic
 python-dotenv
+python-multipart
 pytest
