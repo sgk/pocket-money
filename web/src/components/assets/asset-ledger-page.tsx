@@ -110,6 +110,8 @@ export const AssetLedgerPage = () => {
         categories={categories}
         fixedAssetId={assetId}
         balancesById={balancesById}
+        openingBalances={openingBalances}
+        openingDate={filters.from}
       />
 
       <section className="mt-6">

@@ -451,12 +451,16 @@ export const LedgerTable = ({
   categories,
   fixedAssetId,
   balancesById,
+  openingBalances,
+  openingDate,
 }: {
   transactions: Transaction[];
   assets: Asset[];
   categories: Category[];
   fixedAssetId?: string;
   balancesById?: Record<string, number>;
+  openingBalances?: Record<string, number>;
+  openingDate?: string;
 }) => {
   const { token } = useAuth();
   const invalidate = useInvalidateLedger();
@@ -472,6 +476,20 @@ export const LedgerTable = ({
     [assets]
   );
   const assetName = (assetId: string) => assetMap.get(assetId) ?? "";
+
+  const openingBalanceValue = useMemo(() => {
+    if (!openingBalances) {
+      return null;
+    }
+    if (fixedAssetId) {
+      return openingBalances[fixedAssetId] ?? 0;
+    }
+    return Object.values(openingBalances).reduce((sum, value) => sum + value, 0);
+  }, [openingBalances, fixedAssetId]);
+
+  const openingBalanceText =
+    openingBalanceValue === null ? "-" : formatJPYPlain(openingBalanceValue);
+  const openingDateText = openingDate ? formatDateSlash(openingDate) : "-";
 
   const suggestions = useMemo(() => {
     const merchants = new Set<string>();
@@ -972,6 +990,18 @@ export const LedgerTable = ({
               </tr>
             );
           })}
+          <tr className="border-t bg-secondary/10">
+            <td className="p-3">
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground opacity-0" aria-hidden>
+                  ≡
+                </span>
+                <span>{openingDateText}</span>
+              </div>
+            </td>
+            <td colSpan={table.getAllLeafColumns().length - 2} className="p-3" />
+            <td className="p-3 text-right">{openingBalanceText}</td>
+          </tr>
         </tbody>
       </table>
       <datalist id="merchant-suggest">
