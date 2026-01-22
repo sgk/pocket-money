@@ -22,6 +22,14 @@ export const DashboardPage = () => {
     () => new Map(assets.map((asset) => [asset.id, asset.name])),
     [assets]
   );
+  const totalBalance = useMemo(
+    () => assets.reduce((sum, asset) => sum + asset.currentBalance, 0),
+    [assets]
+  );
+  const totalInitial = useMemo(
+    () => assets.reduce((sum, asset) => sum + asset.initialBalance, 0),
+    [assets]
+  );
 
   const recent = transactions.slice(0, 10);
 
@@ -30,6 +38,24 @@ export const DashboardPage = () => {
       <Topbar title="まとめ" subtitle="いまのようすを みよう" />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <Card>
+          <Link
+            to="/ledger"
+            className="block h-full transition hover:-translate-y-1 hover:shadow-elevated focus:outline-none"
+          >
+            <CardHeader>
+              <CardTitle className="text-base">ぜんぶ</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-semibold text-sky-700">
+                {formatJPY(totalBalance)}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                はじめののこり {formatJPY(totalInitial)}
+              </p>
+            </CardContent>
+          </Link>
+        </Card>
         {assets.map((asset) => (
           <Card key={asset.id}>
             <Link
