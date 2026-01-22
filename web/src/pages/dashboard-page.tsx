@@ -1,11 +1,11 @@
 import { useMemo } from "react";
-import { addMonths } from "date-fns";
 import { Topbar } from "@/components/layout/topbar";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAssets, useMonthlySummary, useTransactions } from "@/lib/query";
 import { formatJPY } from "@/lib/money";
 import { formatDate, formatDateSlash } from "@/lib/date";
+import { endOfMonth } from "date-fns";
 
 export const DashboardPage = () => {
   const { data: assets = [] } = useAssets();
@@ -13,7 +13,7 @@ export const DashboardPage = () => {
   const { data: summary } = useMonthlySummary(now.getFullYear(), now.getMonth() + 1);
   const { data } = useTransactions({
     from: formatDate(new Date(now.getFullYear(), now.getMonth(), 1)),
-    to: formatDate(addMonths(new Date(now.getFullYear(), now.getMonth(), 1), 1)),
+    to: formatDate(endOfMonth(new Date(now.getFullYear(), now.getMonth(), 1))),
     limit: 200,
   });
   const transactions = data.items;
