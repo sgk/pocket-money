@@ -427,7 +427,7 @@ export const NewEntryRow = ({
           onChange={(event) => setEntry({ ...entry, amount: event.target.value })}
         />
       </td>
-      <td className="p-2 text-center">
+      <td className="p-2 text-center w-[120px] min-w-[120px] max-w-[120px]">
         <Button type="button" onClick={handleSubmit} disabled={isSaving}>
           ついか
         </Button>

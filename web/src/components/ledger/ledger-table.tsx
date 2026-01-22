@@ -451,7 +451,7 @@ const EditableRow = ({
           onChange={(event) => setForm({ ...form, amount: event.target.value })}
         />
       </td>
-      <td className="p-2 text-right">
+      <td className="p-2 text-right w-[120px] min-w-[120px] max-w-[120px]">
         <div className="flex items-center justify-end gap-1">
           <Button
             type="button"
@@ -460,6 +460,7 @@ const EditableRow = ({
             onClick={handleSave}
             disabled={isSaving}
             aria-label="ほぞん"
+            className="h-7 w-7"
           >
             <Check className="h-4 w-4 text-emerald-600" />
           </Button>
@@ -470,6 +471,7 @@ const EditableRow = ({
             onClick={onCancel}
             disabled={isSaving}
             aria-label="キャンセル"
+            className="h-7 w-7"
           >
             <X className="h-4 w-4 text-muted-foreground" />
           </Button>
@@ -480,6 +482,7 @@ const EditableRow = ({
             onClick={handleDelete}
             disabled={isSaving}
             aria-label="きろくを けす"
+            className="h-7 w-7"
           >
             <Trash2 className="h-4 w-4 text-rose-600" />
           </Button>
@@ -663,8 +666,10 @@ export const LedgerTable = ({
           return formatJPYPlain(value);
         },
         meta: {
-          headerClassName: "min-w-[120px] whitespace-nowrap",
-          cellClassName: "min-w-[120px] whitespace-nowrap text-right",
+          headerClassName:
+            "min-w-[120px] w-[120px] max-w-[120px] whitespace-nowrap",
+          cellClassName:
+            "min-w-[120px] w-[120px] max-w-[120px] whitespace-nowrap text-right",
         },
       },
     ],
@@ -960,7 +965,9 @@ export const LedgerTable = ({
                 </div>
               </td>
               <td colSpan={table.getAllLeafColumns().length - 2} className="p-3" />
-              <td className="p-3 text-right">{openingBalanceText}</td>
+              <td className="p-3 text-right w-[120px] min-w-[120px] max-w-[120px]">
+                {openingBalanceText}
+              </td>
             </tr>
           ) : null}
           {table.getRowModel().rows.map((row) => {
@@ -1067,7 +1074,9 @@ export const LedgerTable = ({
                 </div>
               </td>
               <td colSpan={table.getAllLeafColumns().length - 2} className="p-3" />
-              <td className="p-3 text-right">{openingBalanceText}</td>
+              <td className="p-3 text-right w-[120px] min-w-[120px] max-w-[120px]">
+                {openingBalanceText}
+              </td>
             </tr>
           ) : null}
           {!isDesc ? (
