@@ -100,6 +100,7 @@ export const Filters = ({
           }}
           className="w-full sm:w-40 md:w-44"
         />
+        <span className="text-sm text-muted-foreground">～</span>
         <Input
           type="date"
           value={filters.to}
@@ -109,7 +110,7 @@ export const Filters = ({
           }}
           className="w-full sm:w-40 md:w-44"
         />
-        <span className="text-sm text-muted-foreground">ならび</span>
+        <span className="text-sm text-muted-foreground">ならびじゅん</span>
         <Select
           value={filters.order}
           onValueChange={(value) =>
@@ -124,6 +125,7 @@ export const Filters = ({
             <SelectItem value="asc">ふるい</SelectItem>
           </SelectContent>
         </Select>
+        <span className="text-sm text-muted-foreground">ものから</span>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm text-muted-foreground">さがす</span>
