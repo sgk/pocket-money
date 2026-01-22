@@ -9,9 +9,15 @@ export const UserMenu = () => {
   const { data } = useBootstrap();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const email = data?.profile?.email ?? "メールなし";
+  const photoUrl = data?.profile?.photoUrl;
+
+  useEffect(() => {
+    setImageError(false);
+  }, [photoUrl]);
 
   useEffect(() => {
     const handler = (event: MouseEvent) => {
@@ -38,9 +44,18 @@ export const UserMenu = () => {
         className="flex items-center gap-2 rounded-full border bg-card px-3 py-2 text-sm shadow-sm transition hover:bg-secondary"
         onClick={() => setOpen((prev) => !prev)}
       >
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
-          <User className="h-4 w-4" />
-        </span>
+        {photoUrl && !imageError ? (
+          <img
+            src={photoUrl}
+            alt="ユーザー"
+            className="h-9 w-9 rounded-full object-cover"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
+            <User className="h-4 w-4" />
+          </span>
+        )}
         <span className="max-w-[120px] truncate text-sm sm:max-w-[180px]">{email}</span>
         <ChevronDown className="h-4 w-4 text-muted-foreground" />
       </button>

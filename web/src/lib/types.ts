@@ -18,6 +18,18 @@ export type Category = {
   kind?: "expense" | "income";
 };
 
+export type UserProfile = {
+  displayName?: string;
+  email?: string;
+  photoUrl?: string;
+};
+
+export type BootstrapResponse = {
+  profile?: UserProfile;
+  assets?: Asset[];
+  categories?: Category[];
+};
+
 export type TxBase = {
   id: string;
   type: "expense" | "income" | "transfer";

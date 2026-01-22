@@ -1,4 +1,11 @@
-import type { Asset, Category, MonthlySummary, Transaction, TransactionsResponse } from "@/lib/types";
+import type {
+  Asset,
+  BootstrapResponse,
+  Category,
+  MonthlySummary,
+  Transaction,
+  TransactionsResponse,
+} from "@/lib/types";
 
 const API_BASE_URL = window.location.origin;
 
@@ -42,7 +49,8 @@ const fetchJson = async <T>(
 };
 
 export const api = {
-  bootstrap: (token: string) => fetchJson<{ ok: boolean }>(token, "/api/bootstrap", { method: "POST" }),
+  bootstrap: (token: string) =>
+    fetchJson<BootstrapResponse>(token, "/api/bootstrap", { method: "POST" }),
   getAssets: (token: string) => fetchJson<Asset[]>(token, "/api/assets"),
   createAsset: (token: string, payload: Partial<Asset>) =>
     fetchJson<Asset>(token, "/api/assets", {

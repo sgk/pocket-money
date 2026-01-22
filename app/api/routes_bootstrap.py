@@ -32,6 +32,7 @@ def bootstrap(user=Depends(get_current_user)):
                 "updatedAt": now,
                 "displayName": user.display_name,
                 "email": user.email,
+                "photoUrl": user.photo_url,
                 "currency": "JPY",
                 "settings": {"timezone": "Asia/Tokyo"},
             }
@@ -67,6 +68,16 @@ def bootstrap(user=Depends(get_current_user)):
                         "updatedAt": now,
                     },
                 )
+
+        updates = {"updatedAt": now}
+        if user.display_name:
+            updates["displayName"] = user.display_name
+        if user.email:
+            updates["email"] = user.email
+        if user.photo_url:
+            updates["photoUrl"] = user.photo_url
+        if len(updates) > 1:
+            transaction.set(user_ref, updates, merge=True)
 
         return True
 

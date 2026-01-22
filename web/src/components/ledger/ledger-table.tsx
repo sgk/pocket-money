@@ -46,6 +46,7 @@ const EditableRow = ({
   const invalidate = useInvalidateLedger();
   const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState<{
+    type: Transaction["type"];
     occurredAt: string;
     amount: string;
     memo: string;
@@ -58,6 +59,7 @@ const EditableRow = ({
     toAssetId?: string;
     transferDirection?: "out" | "in";
   }>({
+    type: transaction.type,
     occurredAt: transaction.occurredAt.slice(0, 10),
     amount: String(transaction.amount),
     memo: transaction.memo ?? "",
@@ -83,23 +85,39 @@ const EditableRow = ({
     (category) => category.kind === "income" && category.name !== "その他"
   );
 
-  const categoryOptions =
-    transaction.type === "income" ? incomeCategories : expenseCategories;
-  const availableCategories =
-    form.categoryName && form.categoryName !== "その他"
-      ? categoryOptions.some((category) => category.name === form.categoryName)
-        ? categoryOptions
-        : [
-            {
-              id: "custom",
-              name: form.categoryName,
-              isActive: true,
-              sortOrder: 0,
-              kind: transaction.type === "income" ? "income" : "expense",
-            },
-            ...categoryOptions,
-          ]
-      : categoryOptions;
+  const withCustomCategory = (
+    base: Category[],
+    kind: "expense" | "income"
+  ) => {
+    if (form.type !== kind) {
+      return base;
+    }
+    if (!form.categoryName || form.categoryName === "その他") {
+      return base;
+    }
+    if (base.some((category) => category.name === form.categoryName)) {
+      return base;
+    }
+    return [
+      {
+        id: "custom",
+        name: form.categoryName,
+        isActive: true,
+        sortOrder: 0,
+        kind,
+      },
+      ...base,
+    ];
+  };
+
+  const availableExpenseCategories = withCustomCategory(expenseCategories, "expense");
+  const availableIncomeCategories = withCustomCategory(incomeCategories, "income");
+  const categoryValue =
+    form.type === "expense" || form.type === "income"
+      ? form.categoryName
+        ? `${form.type}::${form.categoryName}`
+        : ""
+      : "";
 
   const handleSave = async () => {
     if (!token) {
@@ -110,7 +128,7 @@ const EditableRow = ({
       toast.error("きんがくを いれてね");
       return;
     }
-    if (transaction.type === "expense" || transaction.type === "income") {
+    if (form.type === "expense" || form.type === "income") {
       if (!form.assetId) {
         toast.error("いれものを えらんでね");
         return;
@@ -120,7 +138,7 @@ const EditableRow = ({
         return;
       }
     }
-    if (transaction.type === "transfer") {
+    if (form.type === "transfer") {
       if (!form.fromAssetId || !form.toAssetId) {
         toast.error("うつす いれものを えらんでね");
         return;
@@ -137,25 +155,28 @@ const EditableRow = ({
         amount: Number(form.amount),
         memo: form.memo || undefined,
       };
-      if (transaction.type === "expense") {
+      if (form.type === "expense") {
         payload = {
           ...payload,
+          type: "expense",
           assetId: form.assetId,
           categoryName: form.categoryName,
           merchant: form.merchant || undefined,
         };
       }
-      if (transaction.type === "income") {
+      if (form.type === "income") {
         payload = {
           ...payload,
+          type: "income",
           assetId: form.assetId,
           categoryName: form.categoryName,
           source: form.source || undefined,
         };
       }
-      if (transaction.type === "transfer") {
+      if (form.type === "transfer") {
         payload = {
           ...payload,
+          type: "transfer",
           fromAssetId: form.fromAssetId,
           toAssetId: form.toAssetId,
           counterparty: form.counterparty || undefined,
@@ -218,8 +239,9 @@ const EditableRow = ({
 
   const disableAsset =
     Boolean(fixedAssetId) &&
-    (transaction.type !== "transfer" ? form.assetId === fixedAssetId : false);
-  const disableTransferAsset = Boolean(fixedAssetId);
+    form.type !== "transfer" &&
+    form.assetId === fixedAssetId;
+  const disableTransferAsset = Boolean(fixedAssetId) && form.type === "transfer";
 
   const transferDirection = form.transferDirection ?? "out";
   const transferBaseAssetId = fixedAssetId
@@ -249,7 +271,7 @@ const EditableRow = ({
         />
       </td>
       <td className="p-2">
-        {transaction.type === "transfer" ? (
+        {form.type === "transfer" ? (
           <Select
             value={fixedAssetId ?? (transferDirection === "out"
               ? form.fromAssetId ?? ""
@@ -292,14 +314,14 @@ const EditableRow = ({
         )}
       </td>
       <td className="p-2">
-        {transaction.type === "expense" ? (
+        {form.type === "expense" ? (
           <Input
             list="merchant-suggest"
             placeholder="あいて"
             value={form.merchant ?? ""}
             onChange={(event) => setForm({ ...form, merchant: event.target.value })}
           />
-        ) : transaction.type === "income" ? (
+        ) : form.type === "income" ? (
           <Input
             list="source-suggest"
             placeholder="あいて"
@@ -317,7 +339,7 @@ const EditableRow = ({
         )}
       </td>
       <td className="p-2">
-        {transaction.type === "transfer" ? (
+        {form.type === "transfer" ? (
           <Select
             value={transferValue}
             onValueChange={(value) => {
@@ -372,21 +394,43 @@ const EditableRow = ({
           </Select>
         ) : (
           <Select
-            value={form.categoryName ?? ""}
-            onValueChange={(value) =>
-              setForm({ ...form, categoryName: value })
-            }
+            value={categoryValue}
+            onValueChange={(value) => {
+              const [type, ...rest] = value.split("::");
+              const name = rest.join("::");
+              if (type === "expense" || type === "income") {
+                setForm({
+                  ...form,
+                  type,
+                  categoryName: name ?? "",
+                });
+              }
+            }}
           >
             <SelectTrigger>
               <SelectValue placeholder="うごき" />
             </SelectTrigger>
             <SelectContent>
-              {availableCategories.map((category) => (
-                <SelectItem key={category.name} value={category.name}>
+              <div className="px-2 pt-2 text-xs text-muted-foreground">だした</div>
+              {availableExpenseCategories.map((category) => (
+                <SelectItem
+                  key={`expense:${category.name}`}
+                  value={`expense::${category.name}`}
+                >
                   {category.name}
                 </SelectItem>
               ))}
-              <SelectItem value="その他">その他</SelectItem>
+              <SelectItem value="expense::その他">その他</SelectItem>
+              <div className="px-2 pt-2 text-xs text-muted-foreground">いれた</div>
+              {availableIncomeCategories.map((category) => (
+                <SelectItem
+                  key={`income:${category.name}`}
+                  value={`income::${category.name}`}
+                >
+                  {category.name}
+                </SelectItem>
+              ))}
+              <SelectItem value="income::その他">その他</SelectItem>
             </SelectContent>
           </Select>
         )}

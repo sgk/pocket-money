@@ -9,10 +9,17 @@ from app.core.errors import AppError
 
 
 class AuthResult:
-    def __init__(self, uid: str, email: Optional[str], display_name: Optional[str]):
+    def __init__(
+        self,
+        uid: str,
+        email: Optional[str],
+        display_name: Optional[str],
+        photo_url: Optional[str],
+    ):
         self.uid = uid
         self.email = email
         self.display_name = display_name
+        self.photo_url = photo_url
 
 
 def _verify_google_id_token(token: str) -> AuthResult:
@@ -29,13 +36,20 @@ def _verify_google_id_token(token: str) -> AuthResult:
     uid = payload.get("sub")
     if not uid:
         raise AppError(401, "Token missing sub")
-    return AuthResult(uid=uid, email=payload.get("email"), display_name=payload.get("name"))
+    return AuthResult(
+        uid=uid,
+        email=payload.get("email"),
+        display_name=payload.get("name"),
+        photo_url=payload.get("picture"),
+    )
 
 
 def authenticate(authorization: Optional[str] = Header(None)) -> AuthResult:
     settings = get_settings()
     if settings.dev_user_id:
-        return AuthResult(uid=settings.dev_user_id, email=None, display_name=None)
+        return AuthResult(
+            uid=settings.dev_user_id, email=None, display_name=None, photo_url=None
+        )
     if not authorization:
         raise AppError(401, "Authorization header required")
     parts = authorization.split()
