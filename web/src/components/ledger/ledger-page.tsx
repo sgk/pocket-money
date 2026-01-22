@@ -3,7 +3,8 @@ import { Topbar } from "@/components/layout/topbar";
 import { Filters, type LedgerFiltersState } from "@/components/ledger/filters";
 import { LedgerTable } from "@/components/ledger/ledger-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatDate, startOfCurrentMonth, startOfNextMonth, toDateKey } from "@/lib/date";
+import { formatDate, startOfCurrentMonth, toDateKey } from "@/lib/date";
+import { endOfMonth } from "date-fns";
 import { computeRunningBalances } from "@/lib/balance";
 import { formatJPY } from "@/lib/money";
 import { useAssets, useCategories, useMonthlySummary, useTransactions } from "@/lib/query";
@@ -13,7 +14,7 @@ export const LedgerPage = () => {
   const { data: categories = [] } = useCategories();
   const [filters, setFilters] = useState<LedgerFiltersState>({
     from: formatDate(startOfCurrentMonth()),
-    to: formatDate(startOfNextMonth()),
+    to: formatDate(endOfMonth(new Date())),
     search: "",
   });
 
