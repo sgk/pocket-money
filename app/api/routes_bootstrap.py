@@ -42,7 +42,7 @@ def bootstrap(user=Depends(get_current_user)):
                 asset_ref,
                 {
                     "name": "おさいふ",
-                    "type": "cash",
+                    "type": "げんきん",
                     "currency": "JPY",
                     "isActive": True,
                     "initialBalance": 0,
