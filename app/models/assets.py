@@ -26,6 +26,7 @@ class AssetCreate(BaseModel):
 class AssetUpdate(BaseModel):
     name: Optional[str] = None
     type: Optional[str] = None
+    initialBalance: Optional[int] = None
     note: Optional[str] = None
     sortOrder: Optional[int] = None
     isActive: Optional[bool] = None

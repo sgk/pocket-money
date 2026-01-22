@@ -47,9 +47,14 @@ def update_asset(uid: str, asset_id: str, payload: AssetUpdate) -> dict:
         raise AppError(404, "Asset not found")
     now = _now()
     updates = {k: v for k, v in payload.dict().items() if v is not None}
+    data = snap.to_dict()
+    if "initialBalance" in updates:
+        old_initial = int(data.get("initialBalance", 0))
+        old_current = int(data.get("currentBalance", 0))
+        new_initial = int(updates["initialBalance"])
+        updates["currentBalance"] = old_current + (new_initial - old_initial)
     updates["updatedAt"] = now
     doc_ref.update(updates)
-    data = snap.to_dict()
     data.update(updates)
     data["id"] = asset_id
     return data

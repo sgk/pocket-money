@@ -25,7 +25,13 @@ const AssetRow = ({
   asset: Asset;
   onSave: (
     id: string,
-    payload: { name: string; type: string; note: string; isActive: boolean }
+    payload: {
+      name: string;
+      type: string;
+      note: string;
+      initialBalance: number;
+      isActive: boolean;
+    }
   ) => void;
   onToggleActive: (id: string, value: boolean) => void;
   onDelete: (id: string) => void;
@@ -41,6 +47,7 @@ const AssetRow = ({
     name: asset.name,
     type: asset.type ?? "",
     note: asset.note ?? "",
+    initialBalance: String(asset.initialBalance ?? 0),
     isActive: asset.isActive,
   });
   const [isDirty, setIsDirty] = useState(false);
@@ -50,6 +57,7 @@ const AssetRow = ({
       name: asset.name,
       type: asset.type ?? "",
       note: asset.note ?? "",
+      initialBalance: String(asset.initialBalance ?? 0),
       isActive: asset.isActive,
     });
     setIsDirty(false);
@@ -68,10 +76,17 @@ const AssetRow = ({
       return;
     }
     setIsDirty(false);
+    const initialValue = form.initialBalance.trim();
+    const parsedInitial = initialValue === "" ? 0 : Number(initialValue);
+    if (Number.isNaN(parsedInitial)) {
+      toast.error("ざんだかを いれてね");
+      return;
+    }
     onSave(asset.id, {
       name: form.name.trim(),
       type: form.type.trim(),
       note: form.note.trim(),
+      initialBalance: parsedInitial,
       isActive: form.isActive,
     });
   };
@@ -83,7 +98,7 @@ const AssetRow = ({
 
   return (
     <div
-      className={`flex flex-wrap items-center gap-2 rounded-lg border bg-card/80 px-3 py-1.5 text-sm md:grid md:grid-cols-[16px_minmax(200px,2fr)_minmax(140px,1fr)_minmax(200px,2fr)_112px_64px_32px] md:items-center ${
+      className={`flex flex-wrap items-center gap-2 rounded-lg border bg-card/80 px-3 py-1.5 text-sm md:grid md:grid-cols-[16px_minmax(200px,2fr)_minmax(140px,1fr)_minmax(200px,2fr)_120px_112px_64px_32px] md:items-center ${
         inactive ? "opacity-50" : ""
       } ${isDragging ? "opacity-40" : ""}`}
       onDragEnd={onDragEnd}
@@ -99,6 +114,12 @@ const AssetRow = ({
         placeholder="なまえ"
         value={form.name}
         onChange={(event) => handleChange({ name: event.target.value })}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            handleSave();
+          }
+        }}
         onBlur={handleSave}
         className="h-8 w-full min-w-0"
       />
@@ -106,6 +127,12 @@ const AssetRow = ({
         placeholder="しゅるい"
         value={form.type}
         onChange={(event) => handleChange({ type: event.target.value })}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            handleSave();
+          }
+        }}
         onBlur={handleSave}
         className="h-8 w-full min-w-0"
       />
@@ -113,8 +140,28 @@ const AssetRow = ({
         placeholder="メモ"
         value={form.note}
         onChange={(event) => handleChange({ note: event.target.value })}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            handleSave();
+          }
+        }}
         onBlur={handleSave}
         className="h-8 w-full min-w-0"
+      />
+      <Input
+        type="number"
+        placeholder="はじめのざんだか"
+        value={form.initialBalance}
+        onChange={(event) => handleChange({ initialBalance: event.target.value })}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            handleSave();
+          }
+        }}
+        onBlur={handleSave}
+        className="h-8 w-full min-w-0 text-right"
       />
       <Link
         to={`/assets/${asset.id}/ledger`}
@@ -280,7 +327,13 @@ export const AssetsSettingsPage = () => {
 
   const handleSaveAsset = async (
     id: string,
-    payload: { name: string; type: string; note: string; isActive: boolean }
+    payload: {
+      name: string;
+      type: string;
+      note: string;
+      initialBalance: number;
+      isActive: boolean;
+    }
   ) => {
     if (!token) {
       toast.error("ログインしてね");
@@ -296,6 +349,7 @@ export const AssetsSettingsPage = () => {
           name: payload.name.trim(),
           type: payload.type || undefined,
           note: payload.note || undefined,
+          initialBalance: payload.initialBalance,
           isActive: payload.isActive,
         });
       });
@@ -415,12 +469,13 @@ export const AssetsSettingsPage = () => {
         </div>
       ) : (
         <div className="grid gap-1.5">
-          <div className="grid grid-cols-[16px_minmax(200px,2fr)_minmax(140px,1fr)_minmax(200px,2fr)_112px_64px_32px] items-center gap-2 px-3 text-xs text-muted-foreground">
+          <div className="grid grid-cols-[16px_minmax(200px,2fr)_minmax(140px,1fr)_minmax(200px,2fr)_120px_112px_64px_32px] items-center gap-2 px-3 text-xs text-muted-foreground">
             <span />
             <span>なまえ</span>
             <span>しゅるい</span>
             <span>メモ</span>
-            <span className="text-right">ざんだか</span>
+            <span>はじめのざんだか</span>
+            <span className="text-right">いまのざんだか</span>
             <span className="text-center">ゆうこう</span>
             <span className="text-center">けす</span>
           </div>
