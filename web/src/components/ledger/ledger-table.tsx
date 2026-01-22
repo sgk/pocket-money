@@ -601,7 +601,7 @@ export const LedgerTable = ({
           if (tx.type === "income") {
             return tx.source ?? "";
           }
-          return tx.counterparty ?? "-";
+          return tx.counterparty ?? "";
         },
         meta: {
           headerClassName: "min-w-[160px] whitespace-nowrap",
@@ -636,7 +636,7 @@ export const LedgerTable = ({
             if (tx.memo) {
               return tx.memo;
             }
-            return tx.fee ? `てすうりょう ${formatJPYPlain(tx.fee)}` : "-";
+            return tx.fee ? `てすうりょう ${formatJPYPlain(tx.fee)}` : "";
           }
           return tx.memo ?? "";
         },
