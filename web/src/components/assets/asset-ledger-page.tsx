@@ -20,6 +20,7 @@ export const AssetLedgerPage = () => {
     from: formatDate(startOfCurrentMonth()),
     to: formatDate(endOfMonth(new Date())),
     search: "",
+    order: "desc",
   });
 
   const { data } = useTransactions({
@@ -112,6 +113,7 @@ export const AssetLedgerPage = () => {
         balancesById={balancesById}
         openingBalances={openingBalances}
         openingDate={filters.from}
+        order={filters.order}
       />
 
       <section className="mt-6">

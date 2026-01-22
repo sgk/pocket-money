@@ -453,6 +453,7 @@ export const LedgerTable = ({
   balancesById,
   openingBalances,
   openingDate,
+  order,
 }: {
   transactions: Transaction[];
   assets: Asset[];
@@ -461,6 +462,7 @@ export const LedgerTable = ({
   balancesById?: Record<string, number>;
   openingBalances?: Record<string, number>;
   openingDate?: string;
+  order: "desc" | "asc";
 }) => {
   const { token } = useAuth();
   const invalidate = useInvalidateLedger();
@@ -490,6 +492,7 @@ export const LedgerTable = ({
   const openingBalanceText =
     openingBalanceValue === null ? "-" : formatJPYPlain(openingBalanceValue);
   const openingDateText = openingDate ? formatDateSlash(openingDate) : "-";
+  const isDesc = order === "desc";
 
   const suggestions = useMemo(() => {
     const merchants = new Set<string>();
@@ -630,17 +633,19 @@ export const LedgerTable = ({
       const dateA = toDateKey(a.tx.occurredAt);
       const dateB = toDateKey(b.tx.occurredAt);
       if (dateA !== dateB) {
-        return dateB.localeCompare(dateA);
+        return order === "desc"
+          ? dateB.localeCompare(dateA)
+          : dateA.localeCompare(dateB);
       }
       const orderA = a.tx.dayOrder ?? 0;
       const orderB = b.tx.dayOrder ?? 0;
       if (orderA !== orderB) {
-        return orderB - orderA;
+        return order === "desc" ? orderB - orderA : orderA - orderB;
       }
       return a.index - b.index;
     });
     return withIndex.map((item) => item.tx);
-  }, [transactions]);
+  }, [transactions, order]);
 
   const groupData = useMemo(() => {
     const groups: Array<{ dateKey: string; items: Transaction[] }> = [];
@@ -691,7 +696,7 @@ export const LedgerTable = ({
   const buildDayOrders = (items: Transaction[]) =>
     items.map((tx, index) => ({
       tx,
-      dayOrder: items.length - index,
+      dayOrder: order === "desc" ? items.length - index : index + 1,
     }));
 
   const handleDropAt = async (targetDateKey: string, insertIndex: number) => {
@@ -872,8 +877,9 @@ export const LedgerTable = ({
   };
 
   return (
-    <div className="overflow-x-auto rounded-lg border bg-card/80 shadow-sm">
-      <table className="ledger-table min-w-[1100px] w-full border-collapse text-sm">
+    <div className="rounded-lg border bg-card/80 shadow-sm">
+      <div className="max-h-[65vh] overflow-auto">
+        <table className="ledger-table min-w-[1100px] w-full border-collapse text-sm">
         <thead className="bg-secondary/50">
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
@@ -892,11 +898,27 @@ export const LedgerTable = ({
           ))}
         </thead>
         <tbody className="ledger-grid">
-          <NewEntryRow
-            assets={assets}
-            categories={categories}
-            fixedAssetId={fixedAssetId}
-          />
+          {isDesc ? (
+            <NewEntryRow
+              assets={assets}
+              categories={categories}
+              fixedAssetId={fixedAssetId}
+            />
+          ) : null}
+          {!isDesc ? (
+            <tr className="border-t bg-secondary/10">
+              <td className="p-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground opacity-0" aria-hidden>
+                    ≡
+                  </span>
+                  <span>{openingDateText}</span>
+                </div>
+              </td>
+              <td colSpan={table.getAllLeafColumns().length - 2} className="p-3" />
+              <td className="p-3 text-right">{openingBalanceText}</td>
+            </tr>
+          ) : null}
           {table.getRowModel().rows.map((row) => {
             const info = groupData.idMap.get(row.original.id);
             const dateKey = info?.dateKey ?? toDateKey(row.original.occurredAt);
@@ -990,20 +1012,30 @@ export const LedgerTable = ({
               </tr>
             );
           })}
-          <tr className="border-t bg-secondary/10">
-            <td className="p-3">
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground opacity-0" aria-hidden>
-                  ≡
-                </span>
-                <span>{openingDateText}</span>
-              </div>
-            </td>
-            <td colSpan={table.getAllLeafColumns().length - 2} className="p-3" />
-            <td className="p-3 text-right">{openingBalanceText}</td>
-          </tr>
+          {isDesc ? (
+            <tr className="border-t bg-secondary/10">
+              <td className="p-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground opacity-0" aria-hidden>
+                    ≡
+                  </span>
+                  <span>{openingDateText}</span>
+                </div>
+              </td>
+              <td colSpan={table.getAllLeafColumns().length - 2} className="p-3" />
+              <td className="p-3 text-right">{openingBalanceText}</td>
+            </tr>
+          ) : null}
+          {!isDesc ? (
+            <NewEntryRow
+              assets={assets}
+              categories={categories}
+              fixedAssetId={fixedAssetId}
+            />
+          ) : null}
         </tbody>
-      </table>
+        </table>
+      </div>
       <datalist id="merchant-suggest">
         {suggestions.merchants.map((item) => (
           <option key={item} value={item} />
