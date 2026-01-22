@@ -554,8 +554,9 @@ def list_transactions(
     if include_opening_balances and from_dt:
         from_dt = _to_utc(from_dt)
         month_start = _month_start(from_dt)
-        _ensure_snapshots(uid, month_start)
-        snapshot = _get_snapshot(uid, month_start)
+        prev_month = _prev_month(month_start)
+        _ensure_snapshots(uid, prev_month)
+        snapshot = _get_snapshot(uid, prev_month)
         balances = (
             {k: int(v) for k, v in snapshot.get("byAsset", {}).items()}
             if snapshot
