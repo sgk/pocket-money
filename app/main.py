@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from app.api.routes_assets import router as assets_router
 from app.api.routes_bootstrap import router as bootstrap_router
 from app.api.routes_categories import router as categories_router
+from app.api.routes_config import router as config_router
 from app.api.routes_summary import router as summary_router
 from app.api.routes_transactions import router as transactions_router
 from app.core.errors import (
@@ -28,6 +29,7 @@ def healthz():
 app.include_router(bootstrap_router)
 app.include_router(assets_router)
 app.include_router(categories_router)
+app.include_router(config_router)
 app.include_router(transactions_router)
 app.include_router(summary_router)
 

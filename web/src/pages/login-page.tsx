@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/components/ui/toast";
 
@@ -22,20 +20,41 @@ declare global {
   }
 }
 
-const allowDevAuth = import.meta.env.VITE_ALLOW_DEV_AUTH === "true";
-const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
-
 export const LoginPage = () => {
   const { token, setToken } = useAuth();
   const navigate = useNavigate();
   const googleButtonRef = useRef<HTMLDivElement>(null);
-  const [devUid, setDevUid] = useState("");
+  const [clientId, setClientId] = useState("");
 
   useEffect(() => {
     if (token) {
       navigate("/", { replace: true });
     }
   }, [token, navigate]);
+
+  useEffect(() => {
+    let isActive = true;
+    const loadConfig = async () => {
+      try {
+        const res = await fetch("/api/config");
+        if (!res.ok) {
+          throw new Error("config fetch failed");
+        }
+        const data = (await res.json()) as { googleClientId?: string };
+        if (isActive) {
+          setClientId(data.googleClientId ?? "");
+        }
+      } catch (error) {
+        if (isActive) {
+          setClientId("");
+        }
+      }
+    };
+    loadConfig();
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!clientId) {
@@ -77,16 +96,7 @@ export const LoginPage = () => {
       return () => script.removeEventListener("load", initialize);
     }
     initialize();
-  }, [setToken, navigate]);
-
-  const handleDevLogin = () => {
-    if (!devUid.trim()) {
-      toast.error("なまえをいれてね");
-      return;
-    }
-    setToken(`dev:${devUid.trim()}`);
-    navigate("/", { replace: true });
-  };
+  }, [clientId, setToken, navigate]);
 
   return (
     <div className="page-shell flex min-h-screen items-center justify-center p-6">
@@ -101,21 +111,6 @@ export const LoginPage = () => {
             </p>
             <div className="mt-4" ref={googleButtonRef} />
           </div>
-          {allowDevAuth ? (
-            <div className="rounded-md border border-dashed p-4">
-              <p className="text-sm text-muted-foreground">テストログイン</p>
-              <div className="mt-2 flex gap-2">
-                <Input
-                  placeholder="dev uid"
-                  value={devUid}
-                  onChange={(event) => setDevUid(event.target.value)}
-                />
-                <Button type="button" onClick={handleDevLogin}>
-                  Dev Login
-                </Button>
-              </div>
-            </div>
-          ) : null}
           {!clientId ? (
             <p className="text-xs text-destructive">
               GoogleのIDが未設定です

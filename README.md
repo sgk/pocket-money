@@ -10,51 +10,60 @@ Googleログインで使える、家計の元帳（いれもの別の入出金�
 - Google OAuth クライアントID（Web）
 - Application Default Credentials（gcloudなどで認証）
 
-## インストール方法
+## デプロイまでの手順（git clone から）
 1. リポジトリを取得
    - `git clone <repo> && cd pocket-money`
-2. 環境変数を用意
+2. GCPプロジェクトを作成・選択
+   - `gcloud projects create <PROJECT_ID>`
+   - `gcloud config set project <PROJECT_ID>`
+3. 必要なAPIを有効化
+   - `gcloud services enable firestore.googleapis.com run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com oauth2.googleapis.com`
+4. Firestoreを作成（Native）
+   - `gcloud firestore databases create --region=asia-northeast1`
+5. ADCを準備
+   - `gcloud auth application-default login`
+6. OAuth同意画面と認証情報を設定
+   - GCPコンソールで設定します
+     - コンソール → APIとサービス → OAuth同意画面
+     - ユーザータイプを選択（個人利用なら「外部」）
+     - アプリ名・サポートメール・承認済みドメインを登録
+     - 外部の場合はテストユーザーに自分のGoogleアカウントを追加
+     - 保存して公開
+   - 認証情報を作成
+     - コンソール → APIとサービス → 認証情報 → 認証情報を作成 → OAuthクライアントID
+     - アプリケーションの種類: ウェブアプリケーション
+     - 承認済みのJavaScript生成元に以下を追加
+       - `http://localhost:8000`
+       - `https://<Cloud Runのドメイン>`
+     - 作成されたクライアントIDを `GOOGLE_CLIENT_ID` に設定
+     - 承認済みのリダイレクトURIは未設定でOK
+       - このアプリはGoogle Identity Servicesのポップアップ/ワンタップ前提のため不要です
+       - もしリダイレクト方式に変更する場合は `http://localhost:8000/login` と `https://<Cloud Runのドメイン>/login` を追加してください
+7. 環境変数を用意
    - `cp dotenv-example .env`
-   - `.env` の値を埋める
+   - `.env` に以下を設定
      - `GOOGLE_CLOUD_PROJECT`
-     - `FIRESTORE_DATABASE`
+     - `FIRESTORE_DATABASE="(default)"`
      - `GOOGLE_CLIENT_ID`
-     - `VITE_GOOGLE_CLIENT_ID`
-   - `GOOGLE_CLIENT_ID` と `VITE_GOOGLE_CLIENT_ID` は同じ値を使ってください
-3. 依存関係をインストール
+     - `CLOUD_RUN_SERVICE`（例: `pocket-money`）
+     - `CLOUD_RUN_REGION`（例: `asia-northeast1`）
+8. Cloud Build用の権限を付与（最初の1回だけ）
+   - `PROJECT_NUMBER=$(gcloud projects describe "$GOOGLE_CLOUD_PROJECT" --format="value(projectNumber)")`
+   - `gcloud projects add-iam-policy-binding "$GOOGLE_CLOUD_PROJECT" --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" --role="roles/storage.admin"`
+   - `gcloud projects add-iam-policy-binding "$GOOGLE_CLOUD_PROJECT" --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" --role="roles/cloudbuild.builds.builder"`
+9. デプロイ
+   - `make deploy`
+   - Cloud BuildでDockerfileを使ってビルドされます（ローカルビルド不要）
+10. ブラウザで開く
+   - `https://<サービスURL>/`
+
+## ローカルで動かす
+1. 依存関係をインストール
    - `python3 -m venv .venv`
    - `source .venv/bin/activate`
    - `pip install -r requirements.txt`
-
-## 操作方法
-1. 起動
+2. 起動
    - `make run`
-2. ブラウザで開く
+3. ブラウザで開く
    - `http://localhost:8000/`
-3. Googleログインして使う
-
-## GCPの設定方法（gcloud）
-1. プロジェクト作成・選択
-   - `gcloud projects create <PROJECT_ID>`
-   - `gcloud config set project <PROJECT_ID>`
-2. Firestoreを有効化（Nativeモード）
-   - `gcloud services enable firestore.googleapis.com`
-   - `gcloud firestore databases create --region=asia-northeast1`
-3. Cloud Run用のAPIを有効化
-   - `gcloud services enable run.googleapis.com artifactregistry.googleapis.com`
-4. 認証情報の準備
-   - Google CloudのADCを使います
-   - `gcloud auth application-default login`
-5. OAuthクライアントIDを作成
-   - `gcloud services enable oauth2.googleapis.com`
-   - `gcloud alpha iap oauth-clients create --display_name=money-web --brand=<BRAND_ID>`
-   - 作成されたクライアントIDを `GOOGLE_CLIENT_ID` と `VITE_GOOGLE_CLIENT_ID` に設定
-
-## Cloud Runへのデプロイ方法
-1. コンテナをビルドしてArtifact Registryへ登録
-   - `gcloud artifacts repositories create pocket-money --repository-format=docker --location=asia-northeast1`
-   - `gcloud builds submit --tag asia-northeast1-docker.pkg.dev/<PROJECT_ID>/pocket-money/app`
-2. Cloud Runへデプロイ
-   - `gcloud run deploy pocket-money --image asia-northeast1-docker.pkg.dev/<PROJECT_ID>/pocket-money/app --region asia-northeast1 --allow-unauthenticated`
-3. 環境変数を設定
-   - `gcloud run services update pocket-money --region asia-northeast1 --set-env-vars GOOGLE_CLOUD_PROJECT=<PROJECT_ID>,FIRESTORE_DATABASE=(default),GOOGLE_CLIENT_ID=<CLIENT_ID>,VITE_GOOGLE_CLIENT_ID=<CLIENT_ID>`
+4. Googleログインして使う

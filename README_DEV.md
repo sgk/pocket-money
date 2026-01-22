@@ -14,7 +14,6 @@
      - `GOOGLE_CLOUD_PROJECT`
      - `FIRESTORE_DATABASE`
      - `GOOGLE_CLIENT_ID`
-     - `VITE_GOOGLE_CLIENT_ID`
 2. Python依存の導入
    - `python3 -m venv .venv`
    - `source .venv/bin/activate`
@@ -28,6 +27,10 @@
   - 先にフロントをビルドしてから、FastAPIを起動します
   - アクセス先: `http://localhost:8000/`
 
+### Cloud Runへデプロイ
+- `.env` に `CLOUD_RUN_SERVICE` と `CLOUD_RUN_REGION` を追加
+- `make deploy` を実行
+
 ### バックエンドだけ起動したい場合
 - `uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`
 
@@ -38,4 +41,3 @@
 ### 認証について
 - Googleログインが前提です
 - 開発時に認証をスキップしたい場合は、`.env` に `DEV_USER_ID` を設定してください
-
