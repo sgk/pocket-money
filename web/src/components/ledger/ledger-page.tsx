@@ -80,24 +80,26 @@ export const LedgerPage = () => {
       <section className="mt-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">こんげつのまとめ</CardTitle>
+            <CardTitle className="text-base">まとめ</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-3">
-            <div>
-              <p className="text-xs text-muted-foreground">いれた</p>
-              <p className="text-lg font-semibold text-emerald-600">
+          <CardContent className="grid gap-2 text-sm sm:grid-cols-3">
+            <div className="flex items-center justify-between rounded-md bg-muted/40 px-3 py-2">
+              <span className="text-muted-foreground">いれた</span>
+              <span className="font-semibold text-emerald-600">
                 {formatJPY(summary?.incomeTotal ?? 0)}
-              </p>
+              </span>
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground">だした</p>
-              <p className="text-lg font-semibold text-rose-600">
+            <div className="flex items-center justify-between rounded-md bg-muted/40 px-3 py-2">
+              <span className="text-muted-foreground">だした</span>
+              <span className="font-semibold text-rose-600">
                 {formatJPY(summary?.expenseTotal ?? 0)}
-              </p>
+              </span>
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground">のこり</p>
-              <p className="text-lg font-semibold">{formatJPY(summary?.net ?? 0)}</p>
+            <div className="flex items-center justify-between rounded-md bg-muted/40 px-3 py-2">
+              <span className="text-muted-foreground">のこり</span>
+              <span className="font-semibold">
+                {formatJPY(summary?.net ?? 0)}
+              </span>
             </div>
           </CardContent>
         </Card>
