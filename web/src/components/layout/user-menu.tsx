@@ -12,7 +12,9 @@ export const UserMenu = () => {
   const [imageError, setImageError] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const email = data?.profile?.email ?? "メールなし";
+  const displayName = data?.profile?.displayName?.trim();
+  const email = data?.profile?.email?.trim();
+  const label = displayName || email || "メールなし";
   const photoUrl = data?.profile?.photoUrl;
 
   useEffect(() => {
@@ -56,7 +58,7 @@ export const UserMenu = () => {
             <User className="h-4 w-4" />
           </span>
         )}
-        <span className="max-w-[120px] truncate text-sm sm:max-w-[180px]">{email}</span>
+        <span className="max-w-[120px] truncate text-sm sm:max-w-[180px]">{label}</span>
         <ChevronDown className="h-4 w-4 text-muted-foreground" />
       </button>
       {open ? (
