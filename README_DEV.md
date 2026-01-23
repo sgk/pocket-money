@@ -14,6 +14,8 @@
      - `GOOGLE_CLOUD_PROJECT`
      - `FIRESTORE_DATABASE`
      - `GOOGLE_CLIENT_ID`
+     - `SESSION_SECRET`
+     - `SESSION_EXPIRE_DAYS`（未指定なら7）
 2. Python依存の導入
    - `python3 -m venv .venv`
    - `source .venv/bin/activate`
@@ -41,3 +43,5 @@
 ### 認証について
 - Googleログインが前提です
 - 開発時に認証をスキップしたい場合は、`.env` に `DEV_USER_ID` を設定してください
+- ログイン有効期限は `SESSION_EXPIRE_DAYS` で調整できます
+ - 長期セッションの署名に `SESSION_SECRET` が必要です

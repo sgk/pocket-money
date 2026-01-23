@@ -36,15 +36,17 @@ Googleログインで使える、家計の元帳（いれもの別の入出金�
        - `http://localhost:8000`
        - `https://<Cloud Runのドメイン>`
      - 作成されたクライアントIDを `GOOGLE_CLIENT_ID` に設定
-     - 承認済みのリダイレクトURIは未設定でOK
-       - このアプリはGoogle Identity Servicesのポップアップ/ワンタップ前提のため不要です
-       - もしリダイレクト方式に変更する場合は `http://localhost:8000/login` と `https://<Cloud Runのドメイン>/login` を追加してください
+     - 承認済みのリダイレクトURIに以下を追加
+       - `http://localhost:8000/login`
+       - `https://<Cloud Runのドメイン>/login`
 7. 環境変数を用意
    - `cp dotenv-example .env`
    - `.env` に以下を設定
      - `GOOGLE_CLOUD_PROJECT`
      - `FIRESTORE_DATABASE="(default)"`
      - `GOOGLE_CLIENT_ID`
+     - `SESSION_SECRET`（ランダムな文字列）
+     - `SESSION_EXPIRE_DAYS`（未指定なら7）
      - `CLOUD_RUN_SERVICE`（例: `pocket-money`）
      - `CLOUD_RUN_REGION`（例: `asia-northeast1`）
 8. Cloud Build用の権限を付与（最初の1回だけ）
@@ -67,3 +69,6 @@ Googleログインで使える、家計の元帳（いれもの別の入出金�
 3. ブラウザで開く
    - `http://localhost:8000/`
 4. Googleログインして使う
+   - ログインは7日間有効（`SESSION_EXPIRE_DAYS`で変更）
+   - 7日間の有効期限を実現するため、サーバーが独自セッションを発行します
+     - その署名鍵として `SESSION_SECRET` が必要です

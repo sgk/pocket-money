@@ -1,3 +1,8 @@
+import base64
+import hashlib
+import hmac
+import json
+import time
 from typing import Optional
 
 from fastapi import Header
@@ -44,6 +49,84 @@ def _verify_google_id_token(token: str) -> AuthResult:
     )
 
 
+def _b64encode(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).decode("utf-8").rstrip("=")
+
+
+def _b64decode(data: str) -> bytes:
+    padding = "=" * (-len(data) % 4)
+    return base64.urlsafe_b64decode(data + padding)
+
+
+def create_session_token(result: AuthResult) -> str:
+    settings = get_settings()
+    if not settings.session_secret:
+        raise AppError(500, "SESSION_SECRET is not set")
+    now = int(time.time())
+    payload = {
+        "uid": result.uid,
+        "email": result.email,
+        "display_name": result.display_name,
+        "photo_url": result.photo_url,
+        "iat": now,
+        "exp": now + settings.session_expire_days * 24 * 60 * 60,
+    }
+    payload_json = json.dumps(payload, separators=(",", ":"), ensure_ascii=False).encode(
+        "utf-8"
+    )
+    payload_b64 = _b64encode(payload_json)
+    signature = hmac.new(
+        settings.session_secret.encode("utf-8"),
+        payload_b64.encode("utf-8"),
+        hashlib.sha256,
+    ).digest()
+    signature_b64 = _b64encode(signature)
+    return f"{payload_b64}.{signature_b64}"
+
+
+def create_session_token_from_google(token: str) -> str:
+    return create_session_token(_verify_google_id_token(token))
+
+
+def _verify_session_token(token: str) -> AuthResult:
+    settings = get_settings()
+    if not settings.session_secret:
+        raise AppError(500, "SESSION_SECRET is not set")
+    parts = token.split(".")
+    if len(parts) != 2:
+        raise AppError(401, "Invalid session token")
+    payload_b64, signature_b64 = parts
+    try:
+        signature = _b64decode(signature_b64)
+    except Exception as exc:
+        raise AppError(401, "Invalid session token") from exc
+    expected_signature = hmac.new(
+        settings.session_secret.encode("utf-8"),
+        payload_b64.encode("utf-8"),
+        hashlib.sha256,
+    ).digest()
+    if not hmac.compare_digest(signature, expected_signature):
+        raise AppError(401, "Invalid session token")
+    try:
+        payload = json.loads(_b64decode(payload_b64))
+    except Exception as exc:
+        raise AppError(401, "Invalid session token") from exc
+    exp = payload.get("exp")
+    if not isinstance(exp, (int, float)):
+        raise AppError(401, "Invalid session token")
+    if int(time.time()) >= int(exp):
+        raise AppError(401, "Session expired")
+    uid = payload.get("uid")
+    if not uid:
+        raise AppError(401, "Invalid session token")
+    return AuthResult(
+        uid=uid,
+        email=payload.get("email"),
+        display_name=payload.get("display_name"),
+        photo_url=payload.get("photo_url"),
+    )
+
+
 def authenticate(authorization: Optional[str] = Header(None)) -> AuthResult:
     settings = get_settings()
     if settings.dev_user_id:
@@ -57,4 +140,4 @@ def authenticate(authorization: Optional[str] = Header(None)) -> AuthResult:
         raise AppError(401, "Authorization must be Bearer token")
 
     token = parts[1]
-    return _verify_google_id_token(token)
+    return _verify_session_token(token)

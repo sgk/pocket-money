@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, Optional
 
 from fastapi import Request
@@ -14,6 +15,8 @@ class AppError(Exception):
 
 
 def json_error_handler(_: Request, exc: AppError) -> JSONResponse:
+    if exc.status_code >= 500:
+        logger.error("AppError: %s", exc.message, extra={"details": exc.details})
     payload = {"error": {"message": exc.message}}
     if exc.details:
         payload["error"]["details"] = exc.details
@@ -28,7 +31,9 @@ def validation_exception_handler(_: Request, exc: RequestValidationError) -> JSO
 
 
 def unhandled_exception_handler(_: Request, exc: Exception) -> JSONResponse:
+    logger.exception("Unhandled error")
     return JSONResponse(
         status_code=500,
         content={"error": {"message": "Internal server error"}},
     )
+logger = logging.getLogger(__name__)

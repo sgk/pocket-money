@@ -12,6 +12,7 @@ from app.api.routes_categories import router as categories_router
 from app.api.routes_config import router as config_router
 from app.api.routes_summary import router as summary_router
 from app.api.routes_transactions import router as transactions_router
+from app.core.auth import create_session_token_from_google
 from app.core.errors import (
     AppError,
     json_error_handler,
@@ -71,7 +72,11 @@ async def spa_login_post(request: Request):
     cookie_token = request.cookies.get("g_csrf_token")
     if not credential or not csrf_token or csrf_token != cookie_token:
         return HTMLResponse("login failed", status_code=400)
-    token_json = json.dumps(str(credential))
+    try:
+        session_token = create_session_token_from_google(str(credential))
+    except AppError:
+        return HTMLResponse("login failed", status_code=401)
+    token_json = json.dumps(session_token)
     return HTMLResponse(
         f"""<!doctype html>
 <html lang="ja">
