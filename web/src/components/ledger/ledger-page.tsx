@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { Topbar } from "@/components/layout/topbar";
 import { Filters, type LedgerFiltersState } from "@/components/ledger/filters";
 import { LedgerTable } from "@/components/ledger/ledger-table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate, startOfCurrentMonth, toDateKey } from "@/lib/date";
 import { endOfMonth } from "date-fns";
 import { computeRunningBalances } from "@/lib/balance";
@@ -62,7 +61,7 @@ export const LedgerPage = () => {
   }, [transactions, filters.search, filters.from, filters.to]);
 
   return (
-    <div>
+    <div className="pb-24 md:pb-28">
       <Topbar title="いれもの（ぜんぶ）" subtitle="ぜんぶまとめて みよう">
         <Filters filters={filters} setFilters={setFilters} />
       </Topbar>
@@ -77,32 +76,32 @@ export const LedgerPage = () => {
         order={filters.order}
       />
 
-      <section className="mt-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">まとめ</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-2 text-sm sm:grid-cols-3">
-            <div className="flex items-center justify-between rounded-md bg-muted/40 px-3 py-2">
-              <span className="text-muted-foreground">いれた</span>
-              <span className="font-semibold text-emerald-600">
-                {formatJPY(summary?.incomeTotal ?? 0)}
-              </span>
+      <section className="fixed bottom-0 left-0 right-0 z-30 border-t bg-card/95 backdrop-blur">
+        <div className="mx-auto w-full max-w-6xl px-4 py-2 md:px-6">
+          <div className="flex flex-nowrap items-center gap-2 text-xs sm:text-sm">
+            <span className="shrink-0 text-muted-foreground">まとめ</span>
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              <div className="flex min-w-0 flex-1 items-center justify-between rounded-md bg-muted/40 px-2 py-1.5">
+                <span className="text-muted-foreground">いれた</span>
+                <span className="font-semibold text-emerald-600 whitespace-nowrap">
+                  {formatJPY(summary?.incomeTotal ?? 0)}
+                </span>
+              </div>
+              <div className="flex min-w-0 flex-1 items-center justify-between rounded-md bg-muted/40 px-2 py-1.5">
+                <span className="text-muted-foreground">だした</span>
+                <span className="font-semibold text-rose-600 whitespace-nowrap">
+                  {formatJPY(summary?.expenseTotal ?? 0)}
+                </span>
+              </div>
+              <div className="flex min-w-0 flex-1 items-center justify-between rounded-md bg-muted/40 px-2 py-1.5">
+                <span className="text-muted-foreground">のこり</span>
+                <span className="font-semibold whitespace-nowrap">
+                  {formatJPY(summary?.net ?? 0)}
+                </span>
+              </div>
             </div>
-            <div className="flex items-center justify-between rounded-md bg-muted/40 px-3 py-2">
-              <span className="text-muted-foreground">だした</span>
-              <span className="font-semibold text-rose-600">
-                {formatJPY(summary?.expenseTotal ?? 0)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between rounded-md bg-muted/40 px-3 py-2">
-              <span className="text-muted-foreground">のこり</span>
-              <span className="font-semibold">
-                {formatJPY(summary?.net ?? 0)}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </section>
     </div>
   );
