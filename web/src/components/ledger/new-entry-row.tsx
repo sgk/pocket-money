@@ -243,8 +243,8 @@ export const NewEntryRow = ({
   };
 
   return (
-    <tr onKeyDown={handleKeyDown} className="bg-secondary/30">
-      <td className="p-2">
+    <tr onKeyDown={handleKeyDown} className="bg-secondary/30 ledger-row ledger-row--edit">
+      <td className="p-2" data-label="ひづけ">
         <Input
           ref={dateRef}
           type="date"
@@ -252,7 +252,7 @@ export const NewEntryRow = ({
           onChange={(event) => setEntry({ ...entry, date: event.target.value })}
         />
       </td>
-      <td className="p-2">
+      <td className="p-2" data-label="いれもの">
         {entry.type === "transfer" ? (
           <div>
             <Select
@@ -299,7 +299,7 @@ export const NewEntryRow = ({
           </Select>
         )}
       </td>
-      <td className="p-2">
+      <td className="p-2" data-label="あいて">
         {entry.type === "expense" ? (
           <Input
             list="merchant-suggest"
@@ -324,7 +324,7 @@ export const NewEntryRow = ({
           />
         )}
       </td>
-      <td className="p-2">
+      <td className="p-2" data-label="うごき">
         <Select
           value={categoryValue}
           onValueChange={(value) => {
@@ -411,7 +411,7 @@ export const NewEntryRow = ({
           </SelectContent>
         </Select>
       </td>
-      <td className="p-2">
+      <td className="p-2" data-label="メモ">
         <Input
           list="memo-suggest"
           placeholder="メモ"
@@ -419,7 +419,7 @@ export const NewEntryRow = ({
           onChange={(event) => setEntry({ ...entry, memo: event.target.value })}
         />
       </td>
-      <td className="p-2">
+      <td className="p-2" data-label="きんがく">
         <Input
           type="number"
           placeholder="きんがく"
@@ -427,7 +427,10 @@ export const NewEntryRow = ({
           onChange={(event) => setEntry({ ...entry, amount: event.target.value })}
         />
       </td>
-      <td className="p-2 text-center w-[120px] min-w-[120px] max-w-[120px]">
+      <td
+        className="p-2 text-center w-[120px] min-w-[120px] max-w-[120px]"
+        data-label=""
+      >
         <Button type="button" onClick={handleSubmit} disabled={isSaving}>
           ついか
         </Button>

@@ -25,6 +25,7 @@ import {
 import { toast } from "@/components/ui/toast";
 
 type ColumnMeta = {
+  label?: string;
   headerClassName?: string;
   cellClassName?: string;
 };
@@ -261,16 +262,16 @@ const EditableRow = ({
   return (
     <tr
       onKeyDown={handleKeyDown}
-      className="border-t bg-secondary/30"
+      className="border-t bg-secondary/30 ledger-row ledger-row--edit"
     >
-      <td className="p-2">
+      <td className="p-2" data-label="ひづけ">
         <Input
           type="date"
           value={form.occurredAt}
           onChange={(event) => setForm({ ...form, occurredAt: event.target.value })}
         />
       </td>
-      <td className="p-2">
+      <td className="p-2" data-label="いれもの">
         {form.type === "transfer" ? (
           <Select
             value={fixedAssetId ?? (transferDirection === "out"
@@ -313,7 +314,7 @@ const EditableRow = ({
           </Select>
         )}
       </td>
-      <td className="p-2">
+      <td className="p-2" data-label="あいて">
         {form.type === "expense" ? (
           <Input
             list="merchant-suggest"
@@ -338,7 +339,7 @@ const EditableRow = ({
           />
         )}
       </td>
-      <td className="p-2">
+      <td className="p-2" data-label="うごき">
         {form.type === "transfer" ? (
           <Select
             value={transferValue}
@@ -435,7 +436,7 @@ const EditableRow = ({
           </Select>
         )}
       </td>
-      <td className="p-2">
+      <td className="p-2" data-label="メモ">
         <Input
           list="memo-suggest"
           placeholder="メモ"
@@ -443,7 +444,7 @@ const EditableRow = ({
           onChange={(event) => setForm({ ...form, memo: event.target.value })}
         />
       </td>
-      <td className="p-2">
+      <td className="p-2" data-label="きんがく">
         <Input
           type="number"
           placeholder="きんがく"
@@ -451,7 +452,10 @@ const EditableRow = ({
           onChange={(event) => setForm({ ...form, amount: event.target.value })}
         />
       </td>
-      <td className="p-2 text-right w-[120px] min-w-[120px] max-w-[120px]">
+      <td
+        className="p-2 text-right w-[120px] min-w-[120px] max-w-[120px]"
+        data-label=""
+      >
         <div className="flex items-center justify-end gap-1">
           <Button
             type="button"
@@ -570,6 +574,7 @@ export const LedgerTable = ({
         accessorKey: "occurredAt",
         cell: ({ row }) => formatDateSlash(row.original.occurredAt),
         meta: {
+          label: "ひづけ",
           headerClassName: "min-w-[120px] whitespace-nowrap",
           cellClassName: "min-w-[120px] whitespace-nowrap",
         },
@@ -587,6 +592,7 @@ export const LedgerTable = ({
           return assetName(tx.assetId);
         },
         meta: {
+          label: "いれもの",
           headerClassName: "min-w-[180px] whitespace-nowrap",
           cellClassName: "min-w-[180px] whitespace-nowrap",
         },
@@ -604,6 +610,7 @@ export const LedgerTable = ({
           return tx.counterparty ?? "";
         },
         meta: {
+          label: "あいて",
           headerClassName: "min-w-[160px] whitespace-nowrap",
           cellClassName: "min-w-[160px] whitespace-nowrap",
         },
@@ -624,6 +631,7 @@ export const LedgerTable = ({
           return `だした: →${assetName(tx.toAssetId)} へ`;
         },
         meta: {
+          label: "うごき",
           headerClassName: "min-w-[200px] whitespace-nowrap",
           cellClassName: "min-w-[200px] whitespace-nowrap",
         },
@@ -641,6 +649,7 @@ export const LedgerTable = ({
           return tx.memo ?? "";
         },
         meta: {
+          label: "メモ",
           headerClassName: "min-w-[160px] whitespace-nowrap",
           cellClassName: "min-w-[160px] whitespace-nowrap",
         },
@@ -649,6 +658,7 @@ export const LedgerTable = ({
         header: "きんがく",
         cell: ({ row }) => formatJPYPlain(row.original.amount),
         meta: {
+          label: "きんがく",
           headerClassName: "min-w-[120px] whitespace-nowrap",
           cellClassName: "min-w-[120px] whitespace-nowrap text-right",
         },
@@ -666,6 +676,7 @@ export const LedgerTable = ({
           return formatJPYPlain(value);
         },
         meta: {
+          label: "ざんだか",
           headerClassName:
             "min-w-[120px] w-[120px] max-w-[120px] whitespace-nowrap",
           cellClassName:
@@ -927,8 +938,8 @@ export const LedgerTable = ({
 
   return (
     <div className="rounded-lg border bg-card/80 shadow-sm">
-      <div className="max-h-[65vh] overflow-auto">
-        <table className="ledger-table min-w-[1100px] w-full border-collapse text-sm">
+      <div className="max-h-[65vh] overflow-auto p-2 md:p-0">
+        <table className="ledger-table w-full border-collapse text-sm md:min-w-[1100px]">
         <thead className="bg-secondary/50">
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
@@ -955,8 +966,8 @@ export const LedgerTable = ({
             />
           ) : null}
           {!isDesc ? (
-            <tr className="border-t bg-secondary/10">
-              <td className="p-3">
+            <tr className="border-t bg-secondary/10 ledger-row">
+              <td className="p-3" data-label="ひづけ">
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground opacity-0" aria-hidden>
                     ≡
@@ -964,8 +975,15 @@ export const LedgerTable = ({
                   <span>{openingDateText}</span>
                 </div>
               </td>
-              <td colSpan={table.getAllLeafColumns().length - 2} className="p-3" />
-              <td className="p-3 text-right w-[120px] min-w-[120px] max-w-[120px]">
+              <td
+                colSpan={table.getAllLeafColumns().length - 2}
+                className="p-3 ledger-spacer"
+                data-label=""
+              />
+              <td
+                className="p-3 text-right w-[120px] min-w-[120px] max-w-[120px]"
+                data-label="ざんだか"
+              >
                 {openingBalanceText}
               </td>
             </tr>
@@ -996,16 +1014,15 @@ export const LedgerTable = ({
               );
             }
 
-            const indicatorStyle =
-              showTopIndicator
-                ? { boxShadow: "inset 0 2px 0 0 rgb(56 189 248)" }
-                : showBottomIndicator
-                  ? { boxShadow: "inset 0 -2px 0 0 rgb(56 189 248)" }
-                  : undefined;
+            const dropClass = showTopIndicator
+              ? "ledger-drop-top"
+              : showBottomIndicator
+                ? "ledger-drop-bottom"
+                : "";
             return (
               <tr
                 key={row.id}
-                className={`border-t hover:bg-secondary/30 ${
+                className={`border-t hover:bg-secondary/30 ledger-row ${dropClass} ${
                   selectedId === row.original.id ? "bg-secondary/40" : ""
                 } ${draggingId === row.original.id ? "opacity-40" : ""}`}
                 onClick={() => {
@@ -1021,6 +1038,9 @@ export const LedgerTable = ({
               >
                 {row.getVisibleCells().map((cell) => {
                   const isDateCell = cell.column.id === "occurredAt";
+                  const label =
+                    (cell.column.columnDef.meta as ColumnMeta | undefined)
+                      ?.label ?? "";
                   return (
                     <td
                       key={cell.id}
@@ -1028,12 +1048,12 @@ export const LedgerTable = ({
                         (cell.column.columnDef.meta as ColumnMeta | undefined)
                           ?.cellClassName ?? ""
                       }`}
-                      style={indicatorStyle}
+                      data-label={label}
                     >
                       {isDateCell ? (
                         <div className="flex items-center gap-2">
                           <span
-                            className="cursor-grab text-muted-foreground"
+                            className="ledger-handle cursor-grab text-muted-foreground"
                             draggable
                             onDragStart={(event) =>
                               handleDragStart(event, row.original.id)
@@ -1064,8 +1084,8 @@ export const LedgerTable = ({
             );
           })}
           {isDesc ? (
-            <tr className="border-t bg-secondary/10">
-              <td className="p-3">
+            <tr className="border-t bg-secondary/10 ledger-row">
+              <td className="p-3" data-label="ひづけ">
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground opacity-0" aria-hidden>
                     ≡
@@ -1073,8 +1093,15 @@ export const LedgerTable = ({
                   <span>{openingDateText}</span>
                 </div>
               </td>
-              <td colSpan={table.getAllLeafColumns().length - 2} className="p-3" />
-              <td className="p-3 text-right w-[120px] min-w-[120px] max-w-[120px]">
+              <td
+                colSpan={table.getAllLeafColumns().length - 2}
+                className="p-3 ledger-spacer"
+                data-label=""
+              />
+              <td
+                className="p-3 text-right w-[120px] min-w-[120px] max-w-[120px]"
+                data-label="ざんだか"
+              >
                 {openingBalanceText}
               </td>
             </tr>

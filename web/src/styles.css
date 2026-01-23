@@ -64,3 +64,145 @@ h1, h2, h3, .font-display {
 .ledger-table td:last-child {
   border-right: none;
 }
+
+.ledger-table tr.ledger-drop-top td {
+  box-shadow: inset 0 2px 0 0 rgb(56 189 248);
+}
+
+.ledger-table tr.ledger-drop-bottom td {
+  box-shadow: inset 0 -2px 0 0 rgb(56 189 248);
+}
+
+@media (max-width: 768px) {
+  .ledger-table {
+    min-width: 0;
+  }
+
+  .ledger-table thead {
+    display: none;
+  }
+
+  .ledger-table tbody {
+    display: block;
+  }
+
+  .ledger-table tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 6px 12px;
+    margin-bottom: 8px;
+    padding: 8px 10px;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+    position: relative;
+  }
+
+  .ledger-table td {
+    display: block;
+    width: auto;
+    border-right: none;
+    border-top: 1px dashed rgba(15, 23, 42, 0.1);
+    padding: 4px 2px;
+  }
+
+  .ledger-table td:nth-child(-n + 2) {
+    border-top: none;
+  }
+
+  .ledger-table td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 2px;
+    font-size: 0.65rem;
+    color: hsl(var(--muted-foreground));
+    letter-spacing: 0.08em;
+  }
+
+  .ledger-table td.text-right::before {
+    text-align: left;
+  }
+
+  .ledger-table td[data-label="ついか"],
+  .ledger-table td[data-label="ほぞん"] {
+    grid-column: 1 / -1;
+  }
+
+  .ledger-table tr.ledger-row td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .ledger-table tr.ledger-row td::before {
+    flex: 0 0 52px;
+    margin-bottom: 0;
+  }
+
+  .ledger-table tr.ledger-row {
+    position: relative;
+    padding-left: 22px;
+  }
+
+  .ledger-table .ledger-handle {
+    position: absolute;
+    left: 6px;
+    top: 6px;
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  .ledger-table tr.ledger-row--edit td {
+    display: block;
+  }
+
+  .ledger-table tr.ledger-row--edit td::before {
+    margin-bottom: 4px;
+    flex: 0 0 auto;
+  }
+
+  .ledger-table td {
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+
+  .ledger-table tr.ledger-drop-top td,
+  .ledger-table tr.ledger-drop-bottom td {
+    box-shadow: none !important;
+  }
+
+  .ledger-table tr.ledger-drop-top::before,
+  .ledger-table tr.ledger-drop-bottom::after {
+    content: "";
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    height: 2px;
+    background: rgb(56 189 248);
+    pointer-events: none;
+  }
+
+  .ledger-table tr.ledger-drop-top::before {
+    top: -6px;
+  }
+
+  .ledger-table tr.ledger-drop-bottom::after {
+    bottom: -6px;
+  }
+
+  .ledger-table td[data-label=""]::before {
+    content: "";
+    display: none;
+  }
+
+  .ledger-table .ledger-spacer {
+    display: none;
+  }
+
+  .ledger-grid {
+    background-image: none;
+  }
+}
