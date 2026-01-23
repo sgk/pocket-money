@@ -8,7 +8,7 @@ export const AppLayout = () => {
       <div className="flex min-h-screen flex-col md:flex-row">
         <Sidebar />
         <div className="flex flex-1 flex-col">
-          <header className="flex justify-end px-4 pt-4 md:px-6">
+          <header className="hidden justify-end px-4 pt-4 md:flex md:px-6">
             <UserMenu />
           </header>
           <main className="flex-1 p-4 pt-4 md:p-6">

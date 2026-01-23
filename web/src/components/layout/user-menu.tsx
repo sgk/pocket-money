@@ -4,7 +4,12 @@ import { ChevronDown, User } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useBootstrap } from "@/lib/query";
 
-export const UserMenu = () => {
+type UserMenuProps = {
+  compact?: boolean;
+  onOpenChange?: (open: boolean) => void;
+};
+
+export const UserMenu = ({ compact = false, onOpenChange }: UserMenuProps) => {
   const { logout } = useAuth();
   const { data } = useBootstrap();
   const navigate = useNavigate();
@@ -12,14 +17,17 @@ export const UserMenu = () => {
   const [imageError, setImageError] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const displayName = data?.profile?.displayName?.trim();
   const email = data?.profile?.email?.trim();
-  const label = displayName || email || "メールなし";
+  const label = email || "メールなし";
   const photoUrl = data?.profile?.photoUrl;
 
   useEffect(() => {
     setImageError(false);
   }, [photoUrl]);
+
+  useEffect(() => {
+    onOpenChange?.(open);
+  }, [open, onOpenChange]);
 
   useEffect(() => {
     const handler = (event: MouseEvent) => {
@@ -43,22 +51,33 @@ export const UserMenu = () => {
     <div className="relative z-30" ref={menuRef}>
       <button
         type="button"
-        className="flex items-center gap-2 rounded-full border bg-card px-3 py-2 text-sm shadow-sm transition hover:bg-secondary"
+        className={`flex items-center rounded-full border bg-card text-sm shadow-sm transition hover:bg-secondary ${
+          compact ? "gap-1 px-2 py-2" : "gap-2 px-3 py-2"
+        }`}
         onClick={() => setOpen((prev) => !prev)}
+        aria-label={label}
       >
         {photoUrl && !imageError ? (
           <img
             src={photoUrl}
             alt="ユーザー"
-            className="h-9 w-9 rounded-full object-cover"
+            className={`${compact ? "h-8 w-8" : "h-9 w-9"} rounded-full object-cover`}
             onError={() => setImageError(true)}
           />
         ) : (
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
+          <span
+            className={`flex items-center justify-center rounded-full bg-secondary text-secondary-foreground ${
+              compact ? "h-8 w-8" : "h-9 w-9"
+            }`}
+          >
             <User className="h-4 w-4" />
           </span>
         )}
-        <span className="max-w-[120px] truncate text-sm sm:max-w-[180px]">{label}</span>
+        {compact ? null : (
+          <span className="max-w-[120px] truncate text-sm sm:max-w-[180px]">
+            {label}
+          </span>
+        )}
         <ChevronDown className="h-4 w-4 text-muted-foreground" />
       </button>
       {open ? (
