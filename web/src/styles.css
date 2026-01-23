@@ -93,9 +93,9 @@ h1, h2, h3, .font-display {
   .ledger-table tr {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 4px 10px;
-    margin-bottom: 6px;
-    padding: 6px 8px;
+    gap: 3px 8px;
+    margin-bottom: 4px;
+    padding: 4px 6px;
     border: 1px solid rgba(15, 23, 42, 0.12);
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.9);
@@ -108,7 +108,7 @@ h1, h2, h3, .font-display {
     width: auto;
     border-right: none;
     border-top: 1px dashed rgba(15, 23, 42, 0.1);
-    padding: 2px 2px;
+    padding: 1px 2px;
   }
 
   .ledger-table td:nth-child(-n + 2) {
@@ -175,7 +175,7 @@ h1, h2, h3, .font-display {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 6px;
+    gap: 3px;
     border-top: none;
   }
 
@@ -209,17 +209,17 @@ h1, h2, h3, .font-display {
   .ledger-table tr.ledger-row--edit td {
     display: block;
     border-top: none;
-    padding: 2px 0;
+    padding: 1px 0;
   }
 
   .ledger-table tr.ledger-row--edit td::before {
-    margin-bottom: 1px;
+    margin-bottom: -3px;
     flex: 0 0 auto;
   }
 
   .ledger-table tr.ledger-row--edit {
-    gap: 3px 8px;
-    padding: 5px 8px;
+    gap: 1px 6px;
+    padding: 0 4px;
     align-items: end;
   }
 
