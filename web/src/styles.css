@@ -124,13 +124,44 @@ h1, h2, h3, .font-display {
     text-align: left;
   }
 
-  .ledger-table td[data-label="ついか"],
-  .ledger-table td[data-label="ほぞん"] {
-    grid-column: 1 / -1;
+  .ledger-table td[data-label="ひづけ"] {
+    grid-column: 2 / 3;
+    grid-row: 1;
+  }
+
+  .ledger-table td[data-label="いれもの"] {
+    grid-column: 1 / 2;
+    grid-row: 2;
+  }
+
+  .ledger-table td[data-label="あいて"] {
+    grid-column: 2 / 3;
+    grid-row: 2;
+  }
+
+  .ledger-table td[data-label="うごき"] {
+    grid-column: 1 / 2;
+    grid-row: 3;
+  }
+
+  .ledger-table td[data-label="メモ"] {
+    grid-column: 2 / 3;
+    grid-row: 3;
+  }
+
+  .ledger-table td[data-label="きんがく"] {
+    grid-column: 1 / 2;
+    grid-row: 4;
+  }
+
+  .ledger-table td[data-label="ざんだか"] {
+    grid-column: 2 / 3;
+    grid-row: 4;
   }
 
   .ledger-table .ledger-action-cell {
-    grid-column: 1 / -1;
+    grid-column: 2 / 3;
+    grid-row: 4;
     display: flex;
     justify-content: flex-end;
     text-align: right;
@@ -150,14 +181,13 @@ h1, h2, h3, .font-display {
   }
 
   .ledger-table tr.ledger-row {
-    position: relative;
-    padding-left: 20px;
+    padding-left: 8px;
   }
 
   .ledger-table .ledger-handle {
     position: absolute;
-    left: 5px;
-    top: 5px;
+    left: 8px;
+    top: 8px;
     font-size: 12px;
     line-height: 1;
   }
@@ -176,6 +206,7 @@ h1, h2, h3, .font-display {
   .ledger-table tr.ledger-row--edit {
     gap: 3px 8px;
     padding: 5px 8px;
+    align-items: end;
   }
 
   .ledger-table td {
