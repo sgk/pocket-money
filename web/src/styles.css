@@ -65,6 +65,10 @@ h1, h2, h3, .font-display {
   border-right: none;
 }
 
+.ledger-handle-label {
+  display: none;
+}
+
 .ledger-table tr.ledger-drop-top td {
   box-shadow: inset 0 2px 0 0 rgb(56 189 248);
 }
@@ -192,6 +196,16 @@ h1, h2, h3, .font-display {
     line-height: 1;
   }
 
+  .ledger-table tr.ledger-row--edit .ledger-handle-label {
+    display: block;
+    position: absolute;
+    left: 24px;
+    top: 8px;
+    font-size: 0.875rem;
+    color: hsl(var(--foreground));
+    letter-spacing: 0;
+  }
+
   .ledger-table tr.ledger-row--edit td {
     display: block;
     border-top: none;
@@ -207,6 +221,28 @@ h1, h2, h3, .font-display {
     gap: 3px 8px;
     padding: 5px 8px;
     align-items: end;
+  }
+
+  .ledger-table tr.ledger-row--new::before {
+    content: "あたらしくついかする";
+    grid-column: 1 / 2;
+    grid-row: 1;
+    align-self: start;
+    font-size: 0.875rem;
+    color: hsl(var(--foreground));
+    letter-spacing: 0;
+    pointer-events: none;
+  }
+
+  .ledger-table tr.ledger-row--edit:not(.ledger-row--new)::before {
+    content: "へんこうする";
+    grid-column: 1 / 2;
+    grid-row: 1;
+    align-self: start;
+    font-size: 0.875rem;
+    color: hsl(var(--foreground));
+    letter-spacing: 0;
+    pointer-events: none;
   }
 
   .ledger-table td {

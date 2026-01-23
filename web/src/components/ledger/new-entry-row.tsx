@@ -243,7 +243,10 @@ export const NewEntryRow = ({
   };
 
   return (
-    <tr onKeyDown={handleKeyDown} className="bg-secondary/30 ledger-row ledger-row--edit">
+    <tr
+      onKeyDown={handleKeyDown}
+      className="bg-secondary/30 ledger-row ledger-row--edit ledger-row--new"
+    >
       <td className="p-2" data-label="ひづけ">
         <Input
           ref={dateRef}
