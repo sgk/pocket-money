@@ -453,7 +453,7 @@ const EditableRow = ({
         />
       </td>
       <td
-        className="p-2 text-right w-[120px] min-w-[120px] max-w-[120px]"
+        className="ledger-action-cell p-2 text-right w-[120px] min-w-[120px] max-w-[120px]"
         data-label=""
       >
         <div className="flex items-center justify-end gap-1">

@@ -89,9 +89,9 @@ h1, h2, h3, .font-display {
   .ledger-table tr {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 6px 12px;
-    margin-bottom: 8px;
-    padding: 8px 10px;
+    gap: 4px 10px;
+    margin-bottom: 6px;
+    padding: 6px 8px;
     border: 1px solid rgba(15, 23, 42, 0.12);
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.9);
@@ -104,7 +104,7 @@ h1, h2, h3, .font-display {
     width: auto;
     border-right: none;
     border-top: 1px dashed rgba(15, 23, 42, 0.1);
-    padding: 4px 2px;
+    padding: 2px 2px;
   }
 
   .ledger-table td:nth-child(-n + 2) {
@@ -115,7 +115,7 @@ h1, h2, h3, .font-display {
     content: attr(data-label);
     display: block;
     margin-bottom: 2px;
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     color: hsl(var(--muted-foreground));
     letter-spacing: 0.08em;
   }
@@ -129,38 +129,53 @@ h1, h2, h3, .font-display {
     grid-column: 1 / -1;
   }
 
+  .ledger-table .ledger-action-cell {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-end;
+    text-align: right;
+  }
+
   .ledger-table tr.ledger-row td {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
+    gap: 6px;
+    border-top: none;
   }
 
   .ledger-table tr.ledger-row td::before {
-    flex: 0 0 52px;
+    flex: 0 0 48px;
     margin-bottom: 0;
   }
 
   .ledger-table tr.ledger-row {
     position: relative;
-    padding-left: 22px;
+    padding-left: 20px;
   }
 
   .ledger-table .ledger-handle {
     position: absolute;
-    left: 6px;
-    top: 6px;
-    font-size: 14px;
+    left: 5px;
+    top: 5px;
+    font-size: 12px;
     line-height: 1;
   }
 
   .ledger-table tr.ledger-row--edit td {
     display: block;
+    border-top: none;
+    padding: 2px 0;
   }
 
   .ledger-table tr.ledger-row--edit td::before {
-    margin-bottom: 4px;
+    margin-bottom: 1px;
     flex: 0 0 auto;
+  }
+
+  .ledger-table tr.ledger-row--edit {
+    gap: 3px 8px;
+    padding: 5px 8px;
   }
 
   .ledger-table td {

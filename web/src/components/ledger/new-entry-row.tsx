@@ -428,7 +428,7 @@ export const NewEntryRow = ({
         />
       </td>
       <td
-        className="p-2 text-center w-[120px] min-w-[120px] max-w-[120px]"
+        className="ledger-action-cell p-2 text-center w-[120px] min-w-[120px] max-w-[120px]"
         data-label=""
       >
         <Button type="button" onClick={handleSubmit} disabled={isSaving}>
