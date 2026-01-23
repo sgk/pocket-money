@@ -1064,7 +1064,6 @@ export const LedgerTable = ({
                           >
                             ≡
                           </span>
-                          <span className="ledger-handle-label">へんこうする</span>
                           <span>
                             {flexRender(
                               cell.column.columnDef.cell,

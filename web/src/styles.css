@@ -129,11 +129,28 @@ h1, h2, h3, .font-display {
   }
 
   .ledger-table td[data-label="ひづけ"] {
+    grid-column: 1 / 2;
+    grid-row: 1;
+    justify-content: flex-end;
+    text-align: right;
+  }
+
+  .ledger-table tr.ledger-row td[data-label="ひづけ"] > span:last-child {
+    margin-left: auto;
+    text-align: right;
+  }
+
+  .ledger-table tr.ledger-row td[data-label="ひづけ"] > div {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .ledger-table td[data-label="いれもの"] {
     grid-column: 2 / 3;
     grid-row: 1;
   }
 
-  .ledger-table td[data-label="いれもの"] {
+  .ledger-table td[data-label="うごき"] {
     grid-column: 1 / 2;
     grid-row: 2;
   }
@@ -143,7 +160,7 @@ h1, h2, h3, .font-display {
     grid-row: 2;
   }
 
-  .ledger-table td[data-label="うごき"] {
+  .ledger-table td[data-label="きんがく"] {
     grid-column: 1 / 2;
     grid-row: 3;
   }
@@ -153,13 +170,8 @@ h1, h2, h3, .font-display {
     grid-row: 3;
   }
 
-  .ledger-table td[data-label="きんがく"] {
-    grid-column: 1 / 2;
-    grid-row: 4;
-  }
-
   .ledger-table td[data-label="ざんだか"] {
-    grid-column: 2 / 3;
+    grid-column: 1 / 2;
     grid-row: 4;
   }
 
@@ -185,25 +197,15 @@ h1, h2, h3, .font-display {
   }
 
   .ledger-table tr.ledger-row {
-    padding-left: 8px;
+    padding-left: 6px;
   }
 
   .ledger-table .ledger-handle {
     position: absolute;
-    left: 8px;
-    top: 8px;
+    left: 6px;
+    top: 6px;
     font-size: 12px;
     line-height: 1;
-  }
-
-  .ledger-table tr.ledger-row--edit .ledger-handle-label {
-    display: block;
-    position: absolute;
-    left: 24px;
-    top: 8px;
-    font-size: 0.875rem;
-    color: hsl(var(--foreground));
-    letter-spacing: 0;
   }
 
   .ledger-table tr.ledger-row--edit td {
@@ -223,26 +225,24 @@ h1, h2, h3, .font-display {
     align-items: end;
   }
 
-  .ledger-table tr.ledger-row--new::before {
-    content: "あたらしくついかする";
-    grid-column: 1 / 2;
-    grid-row: 1;
-    align-self: start;
-    font-size: 0.875rem;
-    color: hsl(var(--foreground));
-    letter-spacing: 0;
-    pointer-events: none;
+  .ledger-table td[data-label="ひづけ"]::before {
+    content: attr(data-label);
+    display: block;
   }
 
-  .ledger-table tr.ledger-row--edit:not(.ledger-row--new)::before {
-    content: "へんこうする";
-    grid-column: 1 / 2;
-    grid-row: 1;
-    align-self: start;
-    font-size: 0.875rem;
-    color: hsl(var(--foreground));
-    letter-spacing: 0;
-    pointer-events: none;
+  .ledger-table tr.ledger-row td[data-label="ひづけ"]::before {
+    content: "";
+    display: none;
+  }
+
+  .ledger-table tr.ledger-row--edit td[data-label="ひづけ"]::before {
+    content: attr(data-label);
+    display: block;
+  }
+
+  .ledger-table tr.ledger-row--edit td[data-label="ひづけ"] {
+    justify-content: flex-start;
+    text-align: left;
   }
 
   .ledger-table td {
