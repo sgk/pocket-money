@@ -15,10 +15,8 @@ export const LedgerPage = () => {
   const { data: categories = [] } = useCategories();
   const topbarRef = useRef<HTMLElement>(null);
   const summaryRef = useRef<HTMLElement>(null);
-  const entryRef = useRef<HTMLDivElement>(null);
   const [topbarHeight, setTopbarHeight] = useState(0);
   const [summaryHeight, setSummaryHeight] = useState(0);
-  const [entryHeight, setEntryHeight] = useState(0);
   const [filters, setFilters] = useState<LedgerFiltersState>({
     from: formatDate(startOfCurrentMonth()),
     to: formatDate(endOfMonth(new Date())),
@@ -72,20 +70,6 @@ export const LedgerPage = () => {
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    const entryEl = entryRef.current;
-    if (!entryEl) {
-      return;
-    }
-    const update = () => {
-      setEntryHeight(entryEl.getBoundingClientRect().height);
-    };
-    update();
-    const observer = new ResizeObserver(update);
-    observer.observe(entryEl);
-    return () => observer.disconnect();
-  }, [filters.order]);
-
   const filtered = useMemo(() => {
     const keyword = filters.search.trim().toLowerCase();
     const from = filters.from ? toDateKey(filters.from) : null;
@@ -112,31 +96,31 @@ export const LedgerPage = () => {
     });
   }, [transactions, filters.search, filters.from, filters.to]);
 
-  const entryPanel = (
-    <div
-      ref={entryRef}
-      className={`sticky z-20 -mx-4 bg-card/95 md:-mx-6 ${
-        filters.order === "desc"
-          ? "top-[var(--ledger-top-offset)] border-b"
-          : "bottom-[var(--ledger-bottom-offset)] border-t"
-      }`}
-    >
-      <div className="mx-auto w-full max-w-6xl px-4 md:px-6">
-        <div className="ledger-table-wrap flex flex-col shadow-none">
-          <div className="overflow-visible p-2 md:p-0">
-            <table className="ledger-table w-full border-collapse text-sm md:min-w-[1100px]">
-              <tbody className="ledger-grid">
-                <NewEntryRow assets={assets} categories={categories} />
-              </tbody>
-            </table>
-          </div>
+  const entryContent = (
+    <div className="mx-auto w-full max-w-6xl px-4 md:px-6">
+      <div className="ledger-table-wrap flex flex-col shadow-none">
+        <div className="overflow-visible p-2 md:p-0">
+          <table className="ledger-table w-full border-collapse text-sm md:min-w-[1100px]">
+            <tbody className="ledger-grid">
+              <NewEntryRow assets={assets} categories={categories} />
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   );
 
-  const listPaddingBottom =
-    summaryHeight + (filters.order === "asc" ? entryHeight : 0);
+  const entryPanelTop = (
+    <div className="sticky z-20 -mx-4 bg-card/95 md:-mx-6 top-[var(--ledger-top-offset)] border-b">
+      {entryContent}
+    </div>
+  );
+
+  const entryPanelBottom = (
+    <div className="border-b">
+      {entryContent}
+    </div>
+  );
 
   return (
     <div
@@ -156,9 +140,9 @@ export const LedgerPage = () => {
         <Filters filters={filters} setFilters={setFilters} />
       </Topbar>
 
-      {filters.order === "desc" ? entryPanel : null}
+      {filters.order === "desc" ? entryPanelTop : null}
 
-      <div style={{ paddingBottom: listPaddingBottom }}>
+      <div style={{ paddingBottom: summaryHeight }}>
         <LedgerTable
           transactions={filtered}
           assets={assets}
@@ -170,13 +154,12 @@ export const LedgerPage = () => {
         />
       </div>
 
-      {filters.order === "asc" ? entryPanel : null}
-
       <section
         ref={summaryRef}
         className="sticky bottom-0 z-20 mt-auto shrink-0 border-t bg-card/95 backdrop-blur -mx-4 md:-mx-6"
         style={{ marginBottom: "-1px" }}
       >
+        {filters.order === "asc" ? entryPanelBottom : null}
         <div className="mx-auto w-full max-w-6xl px-4 py-2 md:px-6">
           <div className="flex flex-nowrap items-center gap-2 text-xs sm:text-sm">
             <span className="shrink-0 text-muted-foreground">まとめ</span>
