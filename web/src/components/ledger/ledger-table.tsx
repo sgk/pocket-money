@@ -976,7 +976,7 @@ export const LedgerTable = ({
 
   return (
     <div
-      className="ledger-table-wrap flex flex-col rounded-lg border bg-card/80 shadow-sm"
+      className="ledger-table-wrap flex flex-col bg-transparent shadow-none"
       data-order={isDesc ? "desc" : "asc"}
     >
       <div className="overflow-visible p-2 md:p-0">

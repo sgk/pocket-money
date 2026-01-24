@@ -266,6 +266,32 @@ h1, h2, h3, .font-display {
     background: transparent;
   }
 
+  .ledger-table tr.ledger-row--opening td::before {
+    content: "";
+    display: none;
+  }
+
+  .ledger-table tr.ledger-row--opening td[data-label="ざんだか"]::before {
+    content: "ざんだか";
+    display: block;
+    margin-bottom: 0;
+    font-size: 0.6rem;
+    color: hsl(var(--muted-foreground));
+    letter-spacing: 0.08em;
+    text-align: left;
+  }
+
+  .ledger-table tr.ledger-row--opening td[data-label="ひづけ"] {
+    grid-row: 1;
+    grid-column: 1 / 2;
+  }
+
+  .ledger-table tr.ledger-row--opening td[data-label="ざんだか"] {
+    grid-row: 1;
+    grid-column: 2 / 3;
+    justify-content: flex-end;
+  }
+
   .ledger-table tr.ledger-row--edit td[data-label="きんがく"] {
     display: flex;
     align-items: center;
