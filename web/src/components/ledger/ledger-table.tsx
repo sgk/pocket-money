@@ -244,6 +244,7 @@ const EditableRow = ({
   const disableTransferAsset = Boolean(fixedAssetId) && form.type === "transfer";
 
   const transferDirection = form.transferDirection ?? "out";
+  const placeholderValue = "__placeholder__";
   const transferBaseAssetId = fixedAssetId
     ? fixedAssetId
     : transferDirection === "out"
@@ -343,6 +344,19 @@ const EditableRow = ({
           <Select
             value={transferValue}
             onValueChange={(value) => {
+              if (value === placeholderValue) {
+                const baseAssetId = fixedAssetId ?? form.assetId ?? "";
+                setForm({
+                  ...form,
+                  type: "expense",
+                  assetId: baseAssetId,
+                  categoryName: "",
+                  transferDirection: "out",
+                  fromAssetId: undefined,
+                  toAssetId: undefined,
+                });
+                return;
+              }
               const [type, ...rest] = value.split("::");
               const id = rest.join("::");
               const baseAssetId = transferBaseAssetId ?? "";
@@ -368,7 +382,7 @@ const EditableRow = ({
               <SelectValue placeholder="うごき" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__placeholder__" disabled>
+              <SelectItem value={placeholderValue} className="text-muted-foreground">
                 うごき
               </SelectItem>
               <div className="px-2 pt-2 text-xs text-muted-foreground">だした</div>
@@ -399,6 +413,10 @@ const EditableRow = ({
           <Select
             value={categoryValue}
             onValueChange={(value) => {
+              if (value === placeholderValue) {
+                setForm({ ...form, categoryName: "" });
+                return;
+              }
               const [type, ...rest] = value.split("::");
               const name = rest.join("::");
               if (type === "expense" || type === "income") {
@@ -414,7 +432,7 @@ const EditableRow = ({
               <SelectValue placeholder="うごき" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__placeholder__" disabled>
+              <SelectItem value={placeholderValue} className="text-muted-foreground">
                 うごき
               </SelectItem>
               <div className="px-2 pt-2 text-xs text-muted-foreground">だした</div>

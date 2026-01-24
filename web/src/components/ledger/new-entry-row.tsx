@@ -76,6 +76,7 @@ export const NewEntryRow = ({
     () => categoryOptions.filter((category) => category.kind === "income"),
     [categoryOptions]
   );
+  const placeholderValue = "__placeholder__";
 
   const categoryValue =
     entry.type === "transfer"
@@ -331,6 +332,27 @@ export const NewEntryRow = ({
         <Select
           value={categoryValue}
           onValueChange={(value) => {
+            if (value === placeholderValue) {
+              if (entry.type === "transfer") {
+                const baseAssetId =
+                  fixedAssetId ??
+                  entry.assetId ??
+                  entry.fromAssetId ??
+                  entry.toAssetId ??
+                  "";
+                setEntry({
+                  ...entry,
+                  type: "expense",
+                  categoryName: "",
+                  transferDirection: "out",
+                  fromAssetId: baseAssetId,
+                  toAssetId: "",
+                });
+                return;
+              }
+              setEntry({ ...entry, categoryName: "" });
+              return;
+            }
             const [type, ...rest] = value.split("::");
             const id = rest.join("::");
             if (type === "transfer-out") {
@@ -367,7 +389,7 @@ export const NewEntryRow = ({
             <SelectValue placeholder="うごき" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="__placeholder__" disabled>
+            <SelectItem value={placeholderValue} className="text-muted-foreground">
               うごき
             </SelectItem>
             <div className="px-2 pt-2 text-xs text-muted-foreground">だした</div>
