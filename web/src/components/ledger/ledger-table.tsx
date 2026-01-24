@@ -445,12 +445,49 @@ const EditableRow = ({
         />
       </td>
       <td className="p-2" data-label="きんがく">
-        <Input
-          type="number"
-          placeholder="きんがく"
-          value={form.amount}
-          onChange={(event) => setForm({ ...form, amount: event.target.value })}
-        />
+        <div className="ledger-amount-inline">
+          <Input
+            type="number"
+            placeholder="きんがく"
+            value={form.amount}
+            onChange={(event) => setForm({ ...form, amount: event.target.value })}
+          />
+          <div className="ledger-inline-actions">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={handleSave}
+              disabled={isSaving}
+              aria-label="ほぞん"
+              className="h-7 w-7"
+            >
+              <Check className="h-4 w-4 text-emerald-600" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={onCancel}
+              disabled={isSaving}
+              aria-label="キャンセル"
+              className="h-7 w-7"
+            >
+              <X className="h-4 w-4 text-muted-foreground" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={handleDelete}
+              disabled={isSaving}
+              aria-label="きろくを けす"
+              className="h-7 w-7"
+            >
+              <Trash2 className="h-4 w-4 text-rose-600" />
+            </Button>
+          </div>
+        </div>
       </td>
       <td
         className="ledger-action-cell p-2 text-right w-[120px] min-w-[120px] max-w-[120px]"
@@ -656,6 +693,7 @@ export const LedgerTable = ({
       },
       {
         header: "きんがく",
+        accessorKey: "amount",
         cell: ({ row }) => formatJPYPlain(row.original.amount),
         meta: {
           label: "きんがく",
@@ -730,6 +768,7 @@ export const LedgerTable = ({
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
+
 
   const dragInfo = draggingId ? groupData.idMap.get(draggingId) : null;
 
@@ -937,8 +976,11 @@ export const LedgerTable = ({
   };
 
   return (
-    <div className="rounded-lg border bg-card/80 shadow-sm">
-      <div className="max-h-[65vh] overflow-auto p-2 md:p-0">
+    <div
+      className="ledger-table-wrap flex flex-col rounded-lg border bg-card/80 shadow-sm"
+      data-order={isDesc ? "desc" : "asc"}
+    >
+      <div className="overflow-visible p-2 md:p-0">
         <table className="ledger-table w-full border-collapse text-sm md:min-w-[1100px]">
         <thead className="bg-secondary/50">
           {table.getHeaderGroups().map((headerGroup) => (
@@ -966,7 +1008,7 @@ export const LedgerTable = ({
             />
           ) : null}
           {!isDesc ? (
-            <tr className="border-t bg-secondary/10 ledger-row">
+            <tr className="border-t bg-secondary/10 ledger-row ledger-row--opening">
               <td className="p-3" data-label="ひづけ">
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground opacity-0" aria-hidden>
@@ -1037,10 +1079,17 @@ export const LedgerTable = ({
                 }
               >
                 {row.getVisibleCells().map((cell) => {
-                  const isDateCell = cell.column.id === "occurredAt";
                   const label =
                     (cell.column.columnDef.meta as ColumnMeta | undefined)
                       ?.label ?? "";
+                  const isDateCell = cell.column.id === "occurredAt";
+                  const isAmountCell =
+                    cell.column.id === "amount" || label === "きんがく";
+                  const balanceValue = balancesById?.[row.original.id];
+                  const balanceText =
+                    balanceValue === undefined || balanceValue === null
+                      ? "-"
+                      : formatJPYPlain(balanceValue);
                   return (
                     <td
                       key={cell.id}
@@ -1071,6 +1120,18 @@ export const LedgerTable = ({
                             )}
                           </span>
                         </div>
+                      ) : isAmountCell ? (
+                        <div className="ledger-amount-block">
+                          <span className="ledger-amount-value">
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </span>
+                          <span className="ledger-amount-balance text-xs text-muted-foreground">
+                            {balanceText}
+                          </span>
+                        </div>
                       ) : (
                         flexRender(
                           cell.column.columnDef.cell,
@@ -1084,7 +1145,7 @@ export const LedgerTable = ({
             );
           })}
           {isDesc ? (
-            <tr className="border-t bg-secondary/10 ledger-row">
+            <tr className="border-t bg-secondary/10 ledger-row ledger-row--opening">
               <td className="p-3" data-label="ひづけ">
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground opacity-0" aria-hidden>

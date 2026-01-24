@@ -92,7 +92,7 @@ export const LoginPage = () => {
   }, [clientId]);
 
   return (
-    <div className="page-shell flex min-h-screen items-center justify-center p-6">
+    <div className="page-shell flex h-full items-center justify-center overflow-auto p-6">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="font-display text-2xl">ログイン</CardTitle>

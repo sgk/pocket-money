@@ -48,7 +48,7 @@ export const UserMenu = ({ compact = false, onOpenChange }: UserMenuProps) => {
   };
 
   return (
-    <div className="relative z-30" ref={menuRef}>
+    <div className="relative z-50" ref={menuRef}>
       <button
         type="button"
         className={`flex items-center rounded-full border bg-card text-sm shadow-sm transition hover:bg-secondary ${

@@ -33,6 +33,13 @@ body {
   @apply bg-background text-foreground font-ui;
 }
 
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
 h1, h2, h3, .font-display {
   font-family: "Noto Serif JP", serif;
 }
@@ -63,6 +70,57 @@ h1, h2, h3, .font-display {
 .ledger-table th:last-child,
 .ledger-table td:last-child {
   border-right: none;
+}
+
+.ledger-amount-inline {
+  display: block;
+}
+
+.ledger-amount-block {
+  display: contents;
+}
+
+.ledger-amount-balance {
+  display: none;
+}
+
+.ledger-inline-action,
+.ledger-inline-actions {
+  display: none;
+}
+
+.ledger-row--new {
+  background-color: hsl(var(--card));
+}
+
+.ledger-table-wrap[data-order="desc"] .ledger-row--new {
+  position: sticky;
+  top: var(--ledger-top-offset, 0px);
+  z-index: 6;
+  background-color: hsl(var(--card));
+}
+
+.ledger-table-wrap[data-order="asc"] .ledger-row--new {
+  position: sticky;
+  bottom: var(--ledger-bottom-offset, 0px);
+  z-index: 6;
+  background-color: hsl(var(--card));
+}
+
+.ledger-row--new td {
+  background-color: hsl(var(--card));
+}
+
+.ledger-table-wrap[data-order="desc"] .ledger-row--new td {
+  position: sticky;
+  top: var(--ledger-top-offset, 0px);
+  z-index: 6;
+}
+
+.ledger-table-wrap[data-order="asc"] .ledger-row--new td {
+  position: sticky;
+  bottom: var(--ledger-bottom-offset, 0px);
+  z-index: 6;
 }
 
 .ledger-handle-label {
@@ -135,52 +193,38 @@ h1, h2, h3, .font-display {
     text-align: right;
   }
 
-  .ledger-table tr.ledger-row td[data-label="ひづけ"] > span:last-child {
-    margin-left: auto;
-    text-align: right;
-  }
-
-  .ledger-table tr.ledger-row td[data-label="ひづけ"] > div {
-    width: 100%;
-    justify-content: flex-end;
-  }
-
   .ledger-table td[data-label="いれもの"] {
     grid-column: 2 / 3;
     grid-row: 1;
   }
 
-  .ledger-table td[data-label="うごき"] {
+  .ledger-table td[data-label="あいて"] {
     grid-column: 1 / 2;
     grid-row: 2;
   }
 
-  .ledger-table td[data-label="あいて"] {
+  .ledger-table td[data-label="メモ"] {
+    grid-column: 1 / 2;
+    grid-row: 3;
+  }
+
+  .ledger-table td[data-label="うごき"] {
     grid-column: 2 / 3;
     grid-row: 2;
   }
 
   .ledger-table td[data-label="きんがく"] {
-    grid-column: 1 / 2;
-    grid-row: 3;
-  }
-
-  .ledger-table td[data-label="メモ"] {
     grid-column: 2 / 3;
     grid-row: 3;
   }
 
   .ledger-table td[data-label="ざんだか"] {
-    grid-column: 1 / 2;
+    grid-column: 2 / 3;
     grid-row: 4;
   }
 
   .ledger-table .ledger-action-cell {
-    grid-column: 2 / 3;
-    grid-row: 4;
-    display: flex;
-    justify-content: flex-end;
-    text-align: right;
+    display: none;
   }
 
   .ledger-table tr.ledger-row td {
@@ -191,9 +235,23 @@ h1, h2, h3, .font-display {
     border-top: none;
   }
 
+  .ledger-table tr.ledger-row td.ledger-action-cell {
+    display: none;
+  }
+
   .ledger-table tr.ledger-row td::before {
     flex: 0 0 48px;
     margin-bottom: 0;
+  }
+
+  .ledger-table tr.ledger-row td[data-label="ひづけ"] > span:last-child {
+    margin-left: auto;
+    text-align: right;
+  }
+
+  .ledger-table tr.ledger-row td[data-label="ひづけ"] > div {
+    width: 100%;
+    justify-content: flex-end;
   }
 
   .ledger-table tr.ledger-row {
@@ -225,6 +283,57 @@ h1, h2, h3, .font-display {
     align-items: end;
   }
 
+  .ledger-table tr.ledger-row--edit td[data-label="きんがく"] {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ledger-table tr.ledger-row--edit td[data-label="きんがく"] .ledger-action-cell {
+    margin-left: auto;
+  }
+
+  .ledger-table tr.ledger-row td[data-label="きんがく"] .ledger-amount-block {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+  }
+
+  .ledger-amount-block {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+  }
+
+  .ledger-table tr.ledger-row--opening td[data-label="ざんだか"] {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .ledger-amount-inline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ledger-inline-action {
+    display: inline-flex;
+    height: 32px;
+  }
+
+  .ledger-inline-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: auto;
+  }
+
+  .ledger-amount-balance {
+    display: none !important;
+  }
+
   .ledger-table td[data-label="ひづけ"]::before {
     content: attr(data-label);
     display: block;
@@ -238,6 +347,22 @@ h1, h2, h3, .font-display {
   .ledger-table tr.ledger-row--edit td[data-label="ひづけ"]::before {
     content: attr(data-label);
     display: block;
+  }
+
+  .ledger-table tr.ledger-row--new td::before,
+  .ledger-table tr.ledger-row--edit td::before {
+    content: "" !important;
+    display: none !important;
+  }
+
+  .ledger-table tr.ledger-row--new td[data-label="ひづけ"]::before,
+  .ledger-table tr.ledger-row--edit td[data-label="ひづけ"]::before {
+    content: "" !important;
+    display: none !important;
+  }
+
+  .ledger-table tr.ledger-row--new td.ledger-action-cell {
+    display: none !important;
   }
 
   .ledger-table tr.ledger-row--edit td[data-label="ひづけ"] {

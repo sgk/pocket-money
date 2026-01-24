@@ -423,12 +423,22 @@ export const NewEntryRow = ({
         />
       </td>
       <td className="p-2" data-label="きんがく">
-        <Input
-          type="number"
-          placeholder="きんがく"
-          value={entry.amount}
-          onChange={(event) => setEntry({ ...entry, amount: event.target.value })}
-        />
+        <div className="ledger-amount-inline">
+          <Input
+            type="number"
+            placeholder="きんがく"
+            value={entry.amount}
+            onChange={(event) => setEntry({ ...entry, amount: event.target.value })}
+          />
+          <Button
+            type="button"
+            onClick={handleSubmit}
+            disabled={isSaving}
+            className="ledger-inline-action"
+          >
+            ついか
+          </Button>
+        </div>
       </td>
       <td
         className="ledger-action-cell p-2 text-center w-[120px] min-w-[120px] max-w-[120px]"

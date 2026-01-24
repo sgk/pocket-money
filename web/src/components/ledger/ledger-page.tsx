@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { Topbar } from "@/components/layout/topbar";
 import { Filters, type LedgerFiltersState } from "@/components/ledger/filters";
 import { LedgerTable } from "@/components/ledger/ledger-table";
@@ -11,6 +12,10 @@ import { useAssets, useCategories, useMonthlySummary, useTransactions } from "@/
 export const LedgerPage = () => {
   const { data: assets = [] } = useAssets();
   const { data: categories = [] } = useCategories();
+  const topbarRef = useRef<HTMLElement>(null);
+  const summaryRef = useRef<HTMLElement>(null);
+  const [topbarHeight, setTopbarHeight] = useState(0);
+  const [summaryHeight, setSummaryHeight] = useState(0);
   const [filters, setFilters] = useState<LedgerFiltersState>({
     from: formatDate(startOfCurrentMonth()),
     to: formatDate(endOfMonth(new Date())),
@@ -33,6 +38,36 @@ export const LedgerPage = () => {
 
   const now = new Date();
   const { data: summary } = useMonthlySummary(now.getFullYear(), now.getMonth() + 1);
+
+  useEffect(() => {
+    const topbar = topbarRef.current;
+    if (!topbar) {
+      return;
+    }
+    const update = () => {
+      const styles = window.getComputedStyle(topbar);
+      const marginBottom = Number.parseFloat(styles.marginBottom) || 0;
+      setTopbarHeight(topbar.getBoundingClientRect().height + marginBottom);
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(topbar);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const summaryEl = summaryRef.current;
+    if (!summaryEl) {
+      return;
+    }
+    const update = () => {
+      setSummaryHeight(summaryEl.getBoundingClientRect().height);
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(summaryEl);
+    return () => observer.disconnect();
+  }, []);
 
   const filtered = useMemo(() => {
     const keyword = filters.search.trim().toLowerCase();
@@ -61,22 +96,40 @@ export const LedgerPage = () => {
   }, [transactions, filters.search, filters.from, filters.to]);
 
   return (
-    <div className="pb-24 md:pb-28">
-      <Topbar title="いれもの（ぜんぶ）" subtitle="ぜんぶまとめて みよう">
+    <div
+      className="flex min-h-full flex-col"
+      style={
+        {
+          "--ledger-top-offset": `${topbarHeight}px`,
+          "--ledger-bottom-offset": `${summaryHeight}px`,
+        } as CSSProperties
+      }
+    >
+      <Topbar
+        ref={topbarRef}
+        title="いれもの（ぜんぶ）"
+        subtitle="ぜんぶまとめて みよう"
+      >
         <Filters filters={filters} setFilters={setFilters} />
       </Topbar>
 
-      <LedgerTable
-        transactions={filtered}
-        assets={assets}
-        categories={categories}
-        balancesById={balancesById}
-        openingBalances={openingBalances}
-        openingDate={filters.from}
-        order={filters.order}
-      />
+      <div style={{ paddingBottom: summaryHeight }}>
+        <LedgerTable
+          transactions={filtered}
+          assets={assets}
+          categories={categories}
+          balancesById={balancesById}
+          openingBalances={openingBalances}
+          openingDate={filters.from}
+          order={filters.order}
+        />
+      </div>
 
-      <section className="fixed bottom-0 left-0 right-0 z-30 border-t bg-card/95 backdrop-blur">
+      <section
+        ref={summaryRef}
+        className="sticky bottom-0 z-20 mt-auto shrink-0 border-t bg-card/95 backdrop-blur"
+        style={{ marginBottom: "-1px" }}
+      >
         <div className="mx-auto w-full max-w-6xl px-4 py-2 md:px-6">
           <div className="flex flex-nowrap items-center gap-2 text-xs sm:text-sm">
             <span className="shrink-0 text-muted-foreground">まとめ</span>

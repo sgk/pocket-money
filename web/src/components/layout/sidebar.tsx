@@ -22,7 +22,7 @@ export const Sidebar = () => {
   }, [location.pathname]);
 
   return (
-    <aside className="relative w-full shrink-0 border-b bg-card/80 p-2 shadow-elevated backdrop-blur md:w-64 md:border-b-0 md:border-r md:p-5">
+    <aside className="relative z-40 w-full shrink-0 border-b bg-card/80 p-2 shadow-elevated backdrop-blur md:h-screen md:w-64 md:border-b-0 md:border-r md:p-5 md:overflow-hidden">
       <div className="mb-1 md:mb-8">
         <div className="flex items-center gap-2 md:block">
           <button
@@ -88,7 +88,7 @@ export const Sidebar = () => {
         )}
       </nav>
       <div
-        className={`absolute left-4 right-4 top-12 z-40 md:hidden ${
+        className={`absolute left-4 right-4 top-12 z-50 md:hidden ${
           isOpen ? "block" : "hidden"
         }`}
       >

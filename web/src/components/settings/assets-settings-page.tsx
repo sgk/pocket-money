@@ -416,10 +416,10 @@ export const AssetsSettingsPage = () => {
   };
 
   return (
-    <div className="relative">
+    <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
       <Topbar title="いれもの設定" subtitle="いれものを ふやす / なおす" />
 
-      <Card className="mb-6">
+      <Card className="mb-4 shrink-0">
         <CardHeader>
           <CardTitle className="text-base">あたらしい いれもの</CardTitle>
         </CardHeader>
@@ -457,69 +457,71 @@ export const AssetsSettingsPage = () => {
         </CardContent>
       </Card>
 
-      {orderedAssets.length === 0 ? (
-        <div
-          className={`rounded-lg border border-dashed p-4 text-sm text-muted-foreground ${
-            indicatorIndex === 0 ? "border-sky-400 bg-sky-50 text-sky-700" : ""
-          }`}
-          onDragOver={(event) => handleDragOverSlot(event, 0)}
-          onDrop={(event) => handleDropOnSlot(event, 0)}
-        >
-          まだ いれものが ないよ
-        </div>
-      ) : (
-        <div className="grid gap-1.5">
-          <div className="grid grid-cols-[16px_minmax(200px,2fr)_minmax(140px,1fr)_minmax(200px,2fr)_120px_112px_64px_32px] items-center gap-2 px-3 text-xs text-muted-foreground">
-            <span />
-            <span>なまえ</span>
-            <span>しゅるい</span>
-            <span>メモ</span>
-            <span>はじめのざんだか</span>
-            <span className="text-right">いまのざんだか</span>
-            <span className="text-center">ゆうこう</span>
-            <span className="text-center">けす</span>
-          </div>
-          {orderedAssets.map((asset, index) => (
-            <div key={asset.id} className="grid gap-1.5">
-              <div
-                className="relative h-0.5"
-                onDragOver={(event) => handleDragOverSlot(event, index)}
-                onDrop={(event) => handleDropOnSlot(event, index)}
-              >
-                {indicatorIndex === index ? (
-                  <span className="absolute left-2 right-2 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-sky-400" />
-                ) : null}
-              </div>
-              <div
-                onDragOver={(event) => handleDragOverRow(event, index)}
-                onDrop={(event) => handleDropOnRow(event, index)}
-              >
-                <AssetRow
-                  asset={asset}
-                  onSave={handleSaveAsset}
-                  onToggleActive={handleToggleActive}
-                  onDelete={handleDeleteAsset}
-                  onDragEnd={handleDragEnd}
-                  isDragging={draggingId === asset.id}
-                  dragHandleProps={{
-                    draggable: true,
-                    onDragStart: (event) => handleDragStart(event, asset.id),
-                  }}
-                />
-              </div>
-            </div>
-          ))}
+      <div className="flex-1 min-h-0 overflow-auto">
+        {orderedAssets.length === 0 ? (
           <div
-            className="relative h-0.5"
-            onDragOver={(event) => handleDragOverSlot(event, orderedAssets.length)}
-            onDrop={(event) => handleDropOnSlot(event, orderedAssets.length)}
+            className={`rounded-lg border border-dashed p-4 text-sm text-muted-foreground ${
+              indicatorIndex === 0 ? "border-sky-400 bg-sky-50 text-sky-700" : ""
+            }`}
+            onDragOver={(event) => handleDragOverSlot(event, 0)}
+            onDrop={(event) => handleDropOnSlot(event, 0)}
           >
-            {indicatorIndex === orderedAssets.length ? (
-              <span className="absolute left-2 right-2 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-sky-400" />
-            ) : null}
+            まだ いれものが ないよ
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="grid gap-1.5">
+            <div className="grid grid-cols-[16px_minmax(200px,2fr)_minmax(140px,1fr)_minmax(200px,2fr)_120px_112px_64px_32px] items-center gap-2 px-3 text-xs text-muted-foreground">
+              <span />
+              <span>なまえ</span>
+              <span>しゅるい</span>
+              <span>メモ</span>
+              <span>はじめのざんだか</span>
+              <span className="text-right">いまのざんだか</span>
+              <span className="text-center">ゆうこう</span>
+              <span className="text-center">けす</span>
+            </div>
+            {orderedAssets.map((asset, index) => (
+              <div key={asset.id} className="grid gap-1.5">
+                <div
+                  className="relative h-0.5"
+                  onDragOver={(event) => handleDragOverSlot(event, index)}
+                  onDrop={(event) => handleDropOnSlot(event, index)}
+                >
+                  {indicatorIndex === index ? (
+                    <span className="absolute left-2 right-2 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-sky-400" />
+                  ) : null}
+                </div>
+                <div
+                  onDragOver={(event) => handleDragOverRow(event, index)}
+                  onDrop={(event) => handleDropOnRow(event, index)}
+                >
+                  <AssetRow
+                    asset={asset}
+                    onSave={handleSaveAsset}
+                    onToggleActive={handleToggleActive}
+                    onDelete={handleDeleteAsset}
+                    onDragEnd={handleDragEnd}
+                    isDragging={draggingId === asset.id}
+                    dragHandleProps={{
+                      draggable: true,
+                      onDragStart: (event) => handleDragStart(event, asset.id),
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+            <div
+              className="relative h-0.5"
+              onDragOver={(event) => handleDragOverSlot(event, orderedAssets.length)}
+              onDrop={(event) => handleDropOnSlot(event, orderedAssets.length)}
+            >
+              {indicatorIndex === orderedAssets.length ? (
+                <span className="absolute left-2 right-2 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-sky-400" />
+              ) : null}
+            </div>
+          </div>
+        )}
+      </div>
 
       {isSaving ? (
         <div className="absolute inset-0 z-20 flex items-center justify-center rounded-lg bg-white/70 backdrop-blur-sm">

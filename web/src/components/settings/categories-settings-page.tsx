@@ -549,10 +549,10 @@ export const CategoriesSettingsPage = () => {
   };
 
   return (
-    <div className="relative">
+    <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
       <Topbar title="つかいみち設定" subtitle="つかいみちを ふやす / なおす" />
 
-      <Card className="mb-6">
+      <Card className="mb-4 shrink-0">
         <CardHeader>
           <CardTitle className="text-base">あたらしい つかいみち</CardTitle>
         </CardHeader>
@@ -598,29 +598,31 @@ export const CategoriesSettingsPage = () => {
         </CardContent>
       </Card>
 
-      <div className="grid gap-6">
-        <CategoryList
-          kind="expense"
-          categories={categories}
-          order={expenseOrder}
-          setOrder={setExpenseOrder}
-          onReorder={handleReorder}
-          onToggleActive={handleToggleActive}
-          onUpdateCategory={handleUpdateCategory}
-          onDeleteCategory={handleDeleteCategory}
-          onMoveAcross={handleMoveAcross}
-        />
-        <CategoryList
-          kind="income"
-          categories={categories}
-          order={incomeOrder}
-          setOrder={setIncomeOrder}
-          onReorder={handleReorder}
-          onToggleActive={handleToggleActive}
-          onUpdateCategory={handleUpdateCategory}
-          onDeleteCategory={handleDeleteCategory}
-          onMoveAcross={handleMoveAcross}
-        />
+      <div className="flex-1 min-h-0 overflow-auto">
+        <div className="grid gap-6">
+          <CategoryList
+            kind="expense"
+            categories={categories}
+            order={expenseOrder}
+            setOrder={setExpenseOrder}
+            onReorder={handleReorder}
+            onToggleActive={handleToggleActive}
+            onUpdateCategory={handleUpdateCategory}
+            onDeleteCategory={handleDeleteCategory}
+            onMoveAcross={handleMoveAcross}
+          />
+          <CategoryList
+            kind="income"
+            categories={categories}
+            order={incomeOrder}
+            setOrder={setIncomeOrder}
+            onReorder={handleReorder}
+            onToggleActive={handleToggleActive}
+            onUpdateCategory={handleUpdateCategory}
+            onDeleteCategory={handleDeleteCategory}
+            onMoveAcross={handleMoveAcross}
+          />
+        </div>
       </div>
 
       {isSaving ? (
