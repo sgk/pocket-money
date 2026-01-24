@@ -19,6 +19,7 @@ export const AssetLedgerPage = () => {
   const summaryRef = useRef<HTMLElement>(null);
   const [topbarHeight, setTopbarHeight] = useState(0);
   const [summaryHeight, setSummaryHeight] = useState(0);
+  const [isEditing, setIsEditing] = useState(false);
   const asset = assets.find((item) => item.id === assetId);
 
   const [filters, setFilters] = useState<LedgerFiltersState>({
@@ -150,6 +151,7 @@ export const AssetLedgerPage = () => {
                 assets={assets}
                 categories={categories}
                 fixedAssetId={assetId}
+                disabled={isEditing}
               />
             </tbody>
           </table>
@@ -200,6 +202,7 @@ export const AssetLedgerPage = () => {
           openingBalances={openingBalances}
           openingDate={filters.from}
           order={filters.order}
+          onEditingChange={setIsEditing}
         />
       </div>
 

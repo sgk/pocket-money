@@ -36,11 +36,14 @@ export const NewEntryRow = ({
   assets,
   categories,
   fixedAssetId,
+  disabled,
 }: {
   assets: Asset[];
   categories: Category[];
   fixedAssetId?: string;
+  disabled?: boolean;
 }) => {
+  const isDisabled = Boolean(disabled);
   const buildInitialEntry = (assetId?: string) => {
     const base = emptyEntry();
     if (assetId) {
@@ -107,6 +110,9 @@ export const NewEntryRow = ({
       : entry.assetId;
 
   useEffect(() => {
+    if (isDisabled) {
+      return;
+    }
     const handler = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
       if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) {
@@ -131,7 +137,7 @@ export const NewEntryRow = ({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [isDisabled]);
 
   useEffect(() => {
     setEntry(buildInitialEntry(fixedAssetId));
@@ -245,7 +251,10 @@ export const NewEntryRow = ({
   return (
     <tr
       onKeyDown={handleKeyDown}
-      className="bg-secondary/30 ledger-row ledger-row--edit ledger-row--new"
+      className={`bg-secondary/30 ledger-row ledger-row--edit ledger-row--new ${
+        isDisabled ? "opacity-50 pointer-events-none" : ""
+      }`}
+      aria-disabled={isDisabled}
     >
       <td className="p-2" data-label="ひづけ">
         <Input
@@ -253,6 +262,7 @@ export const NewEntryRow = ({
           type="date"
           value={entry.date}
           onChange={(event) => setEntry({ ...entry, date: event.target.value })}
+          disabled={isDisabled}
         />
       </td>
       <td className="p-2" data-label="いれもの">
@@ -277,7 +287,7 @@ export const NewEntryRow = ({
                   setEntry({ ...entry, toAssetId: value });
                 }
               }}
-              disabled={Boolean(fixedAssetId)}
+              disabled={Boolean(fixedAssetId) || isDisabled}
             >
               <SelectTrigger>
                 <SelectValue placeholder="いれもの" />
@@ -307,7 +317,7 @@ export const NewEntryRow = ({
               }
               setEntry({ ...entry, assetId: value });
             }}
-            disabled={Boolean(fixedAssetId)}
+            disabled={Boolean(fixedAssetId) || isDisabled}
           >
             <SelectTrigger>
               <SelectValue placeholder="いれもの" />
@@ -335,6 +345,7 @@ export const NewEntryRow = ({
             placeholder="あいて"
             value={entry.merchant}
             onChange={(event) => setEntry({ ...entry, merchant: event.target.value })}
+            disabled={isDisabled}
           />
         ) : entry.type === "income" ? (
           <Input
@@ -342,6 +353,7 @@ export const NewEntryRow = ({
             placeholder="あいて"
             value={entry.source}
             onChange={(event) => setEntry({ ...entry, source: event.target.value })}
+            disabled={isDisabled}
           />
         ) : (
           <Input
@@ -350,6 +362,7 @@ export const NewEntryRow = ({
             onChange={(event) =>
               setEntry({ ...entry, counterparty: event.target.value })
             }
+            disabled={isDisabled}
           />
         )}
       </td>
@@ -409,6 +422,7 @@ export const NewEntryRow = ({
               });
             }
           }}
+          disabled={isDisabled}
         >
           <SelectTrigger>
             <SelectValue placeholder="うごき" />
@@ -470,6 +484,7 @@ export const NewEntryRow = ({
           placeholder="メモ"
           value={entry.memo}
           onChange={(event) => setEntry({ ...entry, memo: event.target.value })}
+          disabled={isDisabled}
         />
       </td>
       <td className="p-2" data-label="きんがく">
@@ -479,11 +494,12 @@ export const NewEntryRow = ({
             placeholder="きんがく"
             value={entry.amount}
             onChange={(event) => setEntry({ ...entry, amount: event.target.value })}
+            disabled={isDisabled}
           />
           <Button
             type="button"
             onClick={handleSubmit}
-            disabled={isSaving}
+            disabled={isSaving || isDisabled}
             className="ledger-inline-action"
           >
             ついか
@@ -494,7 +510,11 @@ export const NewEntryRow = ({
         className="ledger-action-cell p-2 text-center w-[120px] min-w-[120px] max-w-[120px]"
         data-label=""
       >
-        <Button type="button" onClick={handleSubmit} disabled={isSaving}>
+        <Button
+          type="button"
+          onClick={handleSubmit}
+          disabled={isSaving || isDisabled}
+        >
           ついか
         </Button>
       </td>

@@ -592,6 +592,7 @@ export const LedgerTable = ({
   openingBalances,
   openingDate,
   order,
+  onEditingChange,
 }: {
   transactions: Transaction[];
   assets: Asset[];
@@ -601,6 +602,7 @@ export const LedgerTable = ({
   openingBalances?: Record<string, number>;
   openingDate?: string;
   order: "desc" | "asc";
+  onEditingChange?: (isEditing: boolean) => void;
 }) => {
   const { token } = useAuth();
   const invalidate = useInvalidateLedger();
@@ -631,6 +633,10 @@ export const LedgerTable = ({
     openingBalanceValue === null ? "-" : formatJPYPlain(openingBalanceValue);
   const openingDateText = openingDate ? formatDateSlash(openingDate) : "-";
   const isDesc = order === "desc";
+
+  useEffect(() => {
+    onEditingChange?.(editingId !== null);
+  }, [editingId, onEditingChange]);
 
   const suggestions = useMemo(() => {
     const merchants = new Set<string>();

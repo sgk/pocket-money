@@ -17,6 +17,7 @@ export const LedgerPage = () => {
   const summaryRef = useRef<HTMLElement>(null);
   const [topbarHeight, setTopbarHeight] = useState(0);
   const [summaryHeight, setSummaryHeight] = useState(0);
+  const [isEditing, setIsEditing] = useState(false);
   const [filters, setFilters] = useState<LedgerFiltersState>({
     from: formatDate(startOfCurrentMonth()),
     to: formatDate(endOfMonth(new Date())),
@@ -101,12 +102,16 @@ export const LedgerPage = () => {
   }, [transactions, filters.search, filters.from, filters.to]);
 
   const entryContent = (
-      <div className="mx-auto w-full max-w-6xl px-4 md:px-6 md:pr-4">
+    <div className="mx-auto w-full max-w-6xl px-4 md:px-6 md:pr-4">
       <div className="ledger-table-wrap flex flex-col shadow-none">
         <div className="overflow-visible px-0 py-2 md:p-0">
           <table className="ledger-table w-full border-collapse text-sm md:min-w-[1100px]">
             <tbody className="ledger-grid">
-              <NewEntryRow assets={assets} categories={categories} />
+              <NewEntryRow
+                assets={assets}
+                categories={categories}
+                disabled={isEditing}
+              />
             </tbody>
           </table>
         </div>
@@ -155,6 +160,7 @@ export const LedgerPage = () => {
           openingBalances={openingBalances}
           openingDate={filters.from}
           order={filters.order}
+          onEditingChange={setIsEditing}
         />
       </div>
 
