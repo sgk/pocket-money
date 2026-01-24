@@ -1018,7 +1018,8 @@ export const LedgerTable = ({
                 className="p-3 text-right w-[120px] min-w-[120px] max-w-[120px]"
                 data-label="ざんだか"
               >
-                {openingBalanceText}
+                <span className="ledger-opening-label">ざんだか</span>
+                <span className="ledger-opening-value">{openingBalanceText}</span>
               </td>
             </tr>
           ) : null}
@@ -1155,7 +1156,8 @@ export const LedgerTable = ({
                 className="p-3 text-right w-[120px] min-w-[120px] max-w-[120px]"
                 data-label="ざんだか"
               >
-                {openingBalanceText}
+                <span className="ledger-opening-label">ざんだか</span>
+                <span className="ledger-opening-value">{openingBalanceText}</span>
               </td>
             </tr>
           ) : null}

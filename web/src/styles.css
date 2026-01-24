@@ -89,6 +89,10 @@ h1, h2, h3, .font-display {
   display: none;
 }
 
+.ledger-opening-label {
+  display: none;
+}
+
 .ledger-row--new {
   background-color: hsl(var(--card));
 }
@@ -271,16 +275,6 @@ h1, h2, h3, .font-display {
     display: none;
   }
 
-  .ledger-table tr.ledger-row--opening td[data-label="ざんだか"]::before {
-    content: "ざんだか";
-    display: block;
-    margin-bottom: 0;
-    font-size: 0.6rem;
-    color: hsl(var(--muted-foreground));
-    letter-spacing: 0.08em;
-    text-align: left;
-  }
-
   .ledger-table tr.ledger-row--opening td[data-label="ひづけ"] {
     grid-row: 1;
     grid-column: 1 / 2;
@@ -289,7 +283,21 @@ h1, h2, h3, .font-display {
   .ledger-table tr.ledger-row--opening td[data-label="ざんだか"] {
     grid-row: 1;
     grid-column: 2 / 3;
-    justify-content: flex-end;
+    justify-content: space-between;
+  }
+
+  .ledger-opening-label {
+    display: block;
+    flex: 0 0 48px;
+    margin-bottom: 0;
+    font-size: 0.6rem;
+    color: hsl(var(--muted-foreground));
+    letter-spacing: 0.08em;
+    text-align: left;
+  }
+
+  .ledger-opening-value {
+    margin-left: auto;
   }
 
   .ledger-table tr.ledger-row--edit td[data-label="きんがく"] {
