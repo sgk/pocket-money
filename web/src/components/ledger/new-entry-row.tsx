@@ -23,7 +23,7 @@ const emptyEntry = () => ({
   amount: "",
   fee: "0",
   assetId: storage.getLastAssetId() ?? "",
-  categoryName: storage.getLastCategoryName() ?? "",
+  categoryName: "",
   merchant: "",
   source: "",
   counterparty: "",
@@ -367,6 +367,9 @@ export const NewEntryRow = ({
             <SelectValue placeholder="うごき" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="__placeholder__" disabled>
+              うごき
+            </SelectItem>
             <div className="px-2 pt-2 text-xs text-muted-foreground">だした</div>
             {expenseCategories.map((category) => (
               <SelectItem

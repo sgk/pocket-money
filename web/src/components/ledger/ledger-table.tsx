@@ -368,6 +368,9 @@ const EditableRow = ({
               <SelectValue placeholder="うごき" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="__placeholder__" disabled>
+                うごき
+              </SelectItem>
               <div className="px-2 pt-2 text-xs text-muted-foreground">だした</div>
               {assets
                 .filter((asset) => asset.id !== transferBaseAssetId)
@@ -411,6 +414,9 @@ const EditableRow = ({
               <SelectValue placeholder="うごき" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="__placeholder__" disabled>
+                うごき
+              </SelectItem>
               <div className="px-2 pt-2 text-xs text-muted-foreground">だした</div>
               {availableExpenseCategories.map((category) => (
                 <SelectItem
