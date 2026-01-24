@@ -12,7 +12,6 @@ import { formatJPYPlain } from "@/lib/money";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useInvalidateLedger } from "@/lib/query";
-import { NewEntryRow } from "@/components/ledger/new-entry-row";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -1000,13 +999,6 @@ export const LedgerTable = ({
           ))}
         </thead>
         <tbody className="ledger-grid">
-          {isDesc ? (
-            <NewEntryRow
-              assets={assets}
-              categories={categories}
-              fixedAssetId={fixedAssetId}
-            />
-          ) : null}
           {!isDesc ? (
             <tr className="border-t bg-secondary/10 ledger-row ledger-row--opening">
               <td className="p-3" data-label="ひづけ">
@@ -1166,13 +1158,6 @@ export const LedgerTable = ({
                 {openingBalanceText}
               </td>
             </tr>
-          ) : null}
-          {!isDesc ? (
-            <NewEntryRow
-              assets={assets}
-              categories={categories}
-              fixedAssetId={fixedAssetId}
-            />
           ) : null}
         </tbody>
         </table>

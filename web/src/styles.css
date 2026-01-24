@@ -93,34 +93,8 @@ h1, h2, h3, .font-display {
   background-color: hsl(var(--card));
 }
 
-.ledger-table-wrap[data-order="desc"] .ledger-row--new {
-  position: sticky;
-  top: var(--ledger-top-offset, 0px);
-  z-index: 6;
-  background-color: hsl(var(--card));
-}
-
-.ledger-table-wrap[data-order="asc"] .ledger-row--new {
-  position: sticky;
-  bottom: var(--ledger-bottom-offset, 0px);
-  z-index: 6;
-  background-color: hsl(var(--card));
-}
-
 .ledger-row--new td {
   background-color: hsl(var(--card));
-}
-
-.ledger-table-wrap[data-order="desc"] .ledger-row--new td {
-  position: sticky;
-  top: var(--ledger-top-offset, 0px);
-  z-index: 6;
-}
-
-.ledger-table-wrap[data-order="asc"] .ledger-row--new td {
-  position: sticky;
-  bottom: var(--ledger-bottom-offset, 0px);
-  z-index: 6;
 }
 
 .ledger-handle-label {
@@ -281,6 +255,15 @@ h1, h2, h3, .font-display {
     gap: 1px 6px;
     padding: 0 4px;
     align-items: end;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .ledger-table tr.ledger-row--new {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
   }
 
   .ledger-table tr.ledger-row--edit td[data-label="きんがく"] {

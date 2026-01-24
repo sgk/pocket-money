@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 import { Topbar } from "@/components/layout/topbar";
 import { Filters, type LedgerFiltersState } from "@/components/ledger/filters";
 import { LedgerTable } from "@/components/ledger/ledger-table";
+import { NewEntryRow } from "@/components/ledger/new-entry-row";
 import { formatDate, startOfCurrentMonth, toDateKey } from "@/lib/date";
 import { endOfMonth } from "date-fns";
 import { computeRunningBalances } from "@/lib/balance";
@@ -16,8 +17,10 @@ export const AssetLedgerPage = () => {
   const { data: categories = [] } = useCategories();
   const topbarRef = useRef<HTMLElement>(null);
   const summaryRef = useRef<HTMLElement>(null);
+  const entryRef = useRef<HTMLDivElement>(null);
   const [topbarHeight, setTopbarHeight] = useState(0);
   const [summaryHeight, setSummaryHeight] = useState(0);
+  const [entryHeight, setEntryHeight] = useState(0);
   const asset = assets.find((item) => item.id === assetId);
 
   const [filters, setFilters] = useState<LedgerFiltersState>({
@@ -130,6 +133,50 @@ export const AssetLedgerPage = () => {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    const entryEl = entryRef.current;
+    if (!entryEl) {
+      return;
+    }
+    const update = () => {
+      setEntryHeight(entryEl.getBoundingClientRect().height);
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(entryEl);
+    return () => observer.disconnect();
+  }, [filters.order]);
+
+  const entryPanel = (
+    <div
+      ref={entryRef}
+      className={`sticky z-20 -mx-4 bg-card/95 md:-mx-6 ${
+        filters.order === "desc"
+          ? "top-[var(--ledger-top-offset)] border-b"
+          : "bottom-[var(--ledger-bottom-offset)] border-t"
+      }`}
+    >
+      <div className="mx-auto w-full max-w-6xl px-4 md:px-6">
+        <div className="ledger-table-wrap flex flex-col shadow-none">
+          <div className="overflow-visible p-2 md:p-0">
+            <table className="ledger-table w-full border-collapse text-sm md:min-w-[1100px]">
+              <tbody className="ledger-grid">
+                <NewEntryRow
+                  assets={assets}
+                  categories={categories}
+                  fixedAssetId={assetId}
+                />
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const listPaddingBottom =
+    summaryHeight + (filters.order === "asc" ? entryHeight : 0);
+
   return (
     <div
       className="flex min-h-full flex-col"
@@ -148,7 +195,9 @@ export const AssetLedgerPage = () => {
         <Filters filters={filters} setFilters={setFilters} />
       </Topbar>
 
-      <div style={{ paddingBottom: summaryHeight }}>
+      {filters.order === "desc" ? entryPanel : null}
+
+      <div style={{ paddingBottom: listPaddingBottom }}>
         <LedgerTable
           transactions={filtered}
           assets={assets}
@@ -161,9 +210,11 @@ export const AssetLedgerPage = () => {
         />
       </div>
 
+      {filters.order === "asc" ? entryPanel : null}
+
       <section
         ref={summaryRef}
-        className="sticky bottom-0 z-20 mt-auto shrink-0 border-t bg-card/95 backdrop-blur"
+        className="sticky bottom-0 z-20 mt-auto shrink-0 border-t bg-card/95 backdrop-blur -mx-4 md:-mx-6"
         style={{ marginBottom: "-1px" }}
       >
         <div className="mx-auto w-full max-w-6xl px-4 py-2 md:px-6">
