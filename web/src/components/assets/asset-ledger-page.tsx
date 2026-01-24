@@ -7,7 +7,7 @@ import { LedgerTable } from "@/components/ledger/ledger-table";
 import { NewEntryRow } from "@/components/ledger/new-entry-row";
 import { formatDate, startOfCurrentMonth, toDateKey } from "@/lib/date";
 import { endOfMonth } from "date-fns";
-import { computeRunningBalances } from "@/lib/balance";
+import { computeEndingBalance, computeRunningBalances } from "@/lib/balance";
 import { formatJPY } from "@/lib/money";
 import { useAssets, useCategories, useTransactions } from "@/lib/query";
 
@@ -43,6 +43,15 @@ export const AssetLedgerPage = () => {
       return {};
     }
     return computeRunningBalances(transactions, openingBalances, {
+      type: "asset",
+      assetId,
+    });
+  }, [transactions, openingBalances, assetId]);
+  const endingBalance = useMemo(() => {
+    if (!assetId) {
+      return 0;
+    }
+    return computeEndingBalance(transactions, openingBalances, {
       type: "asset",
       assetId,
     });
@@ -219,7 +228,7 @@ export const AssetLedgerPage = () => {
               <div className="flex min-w-0 flex-1 items-center justify-between rounded-md bg-muted/40 px-2 py-1.5">
                 <span className="text-muted-foreground">のこり</span>
                 <span className="font-semibold whitespace-nowrap">
-                  {formatJPY(assetSummary.net)}
+                  {formatJPY(endingBalance)}
                 </span>
               </div>
             </div>
