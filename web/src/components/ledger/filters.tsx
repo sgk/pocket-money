@@ -20,7 +20,7 @@ export type LedgerFiltersState = {
 const presets = [
   { value: "this-month", label: "こんげつ" },
   { value: "last-month", label: "せんげつ" },
-  { value: "last-30", label: "さいきん30にち" },
+  { value: "last-30", label: "30にち" },
   { value: "custom", label: "そのた" },
 ] as const;
 
@@ -79,71 +79,8 @@ export const Filters = ({
     <div className="grid gap-3">
       <div className="grid gap-2 sm:hidden">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">きかん</span>
           <Select value={preset} onValueChange={(value) => setPreset(value as PresetValue)}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="きかん" />
-            </SelectTrigger>
-            <SelectContent>
-              {presets.map((item) => (
-                <SelectItem key={item.value} value={item.value}>
-                  {item.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex items-center gap-2">
-          <Input
-            type="date"
-            value={filters.from}
-            onChange={(event) => {
-              setFilters({ ...filters, from: event.target.value });
-              setPreset("custom");
-            }}
-            className="flex-1"
-          />
-          <span className="text-sm text-muted-foreground">～</span>
-          <Input
-            type="date"
-            value={filters.to}
-            onChange={(event) => {
-              setFilters({ ...filters, to: event.target.value });
-              setPreset("custom");
-            }}
-            className="flex-1"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">ならびじゅん</span>
-          <Select
-            value={filters.order}
-            onValueChange={(value) =>
-              setFilters({ ...filters, order: value as "desc" | "asc" })
-            }
-          >
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="ならび" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="desc">あたらしい</SelectItem>
-              <SelectItem value="asc">ふるい</SelectItem>
-            </SelectContent>
-          </Select>
-          <span className="text-sm text-muted-foreground">ものから</span>
-        </div>
-        <Input
-          placeholder="さがす（あいて/メモ）"
-          value={filters.search}
-          onChange={(event) => setFilters({ ...filters, search: event.target.value })}
-          className="w-full"
-        />
-      </div>
-      <div className="hidden gap-3 sm:grid">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm text-muted-foreground">きかん</span>
-          <Select value={preset} onValueChange={(value) => setPreset(value as PresetValue)}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-24">
               <SelectValue placeholder="きかん" />
             </SelectTrigger>
             <SelectContent>
@@ -161,7 +98,7 @@ export const Filters = ({
               setFilters({ ...filters, from: event.target.value });
               setPreset("custom");
             }}
-            className="w-full sm:w-40 md:w-44"
+            className="w-[110px] flex-1 min-w-0"
           />
           <span className="text-sm text-muted-foreground">～</span>
           <Input
@@ -171,33 +108,87 @@ export const Filters = ({
               setFilters({ ...filters, to: event.target.value });
               setPreset("custom");
             }}
-            className="w-full sm:w-40 md:w-44"
+            className="w-[110px] flex-1 min-w-0"
           />
-          <span className="text-sm text-muted-foreground">ならびじゅん</span>
-          <Select
-            value={filters.order}
-            onValueChange={(value) =>
-              setFilters({ ...filters, order: value as "desc" | "asc" })
-            }
-          >
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="ならび" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="desc">あたらしい</SelectItem>
-              <SelectItem value="asc">ふるい</SelectItem>
-            </SelectContent>
-          </Select>
-          <span className="text-sm text-muted-foreground">ものから</span>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm text-muted-foreground">さがす</span>
+        <div className="flex items-center gap-2">
           <Input
             placeholder="さがす（あいて/メモ）"
             value={filters.search}
             onChange={(event) => setFilters({ ...filters, search: event.target.value })}
-            className="w-full sm:w-80"
+            className="flex-1 min-w-0"
           />
+          <Select
+            value={filters.order}
+            onValueChange={(value) =>
+              setFilters({ ...filters, order: value as "desc" | "asc" })
+            }
+          >
+            <SelectTrigger className="w-28">
+              <SelectValue placeholder="ならび" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="desc">あたらしい</SelectItem>
+              <SelectItem value="asc">ふるい</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="hidden gap-3 sm:grid">
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={preset} onValueChange={(value) => setPreset(value as PresetValue)}>
+            <SelectTrigger className="w-24">
+              <SelectValue placeholder="きかん" />
+            </SelectTrigger>
+            <SelectContent>
+              {presets.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input
+            type="date"
+            value={filters.from}
+            onChange={(event) => {
+              setFilters({ ...filters, from: event.target.value });
+              setPreset("custom");
+            }}
+            className="w-32 md:w-36"
+          />
+          <span className="text-sm text-muted-foreground">～</span>
+          <Input
+            type="date"
+            value={filters.to}
+            onChange={(event) => {
+              setFilters({ ...filters, to: event.target.value });
+              setPreset("custom");
+            }}
+            className="w-32 md:w-36"
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            placeholder="さがす（あいて/メモ）"
+            value={filters.search}
+            onChange={(event) => setFilters({ ...filters, search: event.target.value })}
+            className="flex-1 min-w-[220px]"
+          />
+          <Select
+            value={filters.order}
+            onValueChange={(value) =>
+              setFilters({ ...filters, order: value as "desc" | "asc" })
+            }
+          >
+            <SelectTrigger className="w-28">
+              <SelectValue placeholder="ならび" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="desc">あたらしい</SelectItem>
+              <SelectItem value="asc">ふるい</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
     </div>
