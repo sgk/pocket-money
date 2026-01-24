@@ -245,6 +245,7 @@ const EditableRow = ({
 
   const transferDirection = form.transferDirection ?? "out";
   const placeholderValue = "__placeholder__";
+  const assetPlaceholderValue = "__asset_placeholder__";
   const transferBaseAssetId = fixedAssetId
     ? fixedAssetId
     : transferDirection === "out"
@@ -277,17 +278,31 @@ const EditableRow = ({
             value={fixedAssetId ?? (transferDirection === "out"
               ? form.fromAssetId ?? ""
               : form.toAssetId ?? "")}
-            onValueChange={(value) =>
+            onValueChange={(value) => {
+              if (value === assetPlaceholderValue) {
+                if (transferDirection === "out") {
+                  setForm({ ...form, fromAssetId: "" });
+                } else {
+                  setForm({ ...form, toAssetId: "" });
+                }
+                return;
+              }
               transferDirection === "out"
                 ? setForm({ ...form, fromAssetId: value })
-                : setForm({ ...form, toAssetId: value })
-            }
+                : setForm({ ...form, toAssetId: value });
+            }}
             disabled={disableTransferAsset}
           >
             <SelectTrigger>
               <SelectValue placeholder="いれもの" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem
+                value={assetPlaceholderValue}
+                className="text-muted-foreground"
+              >
+                いれもの
+              </SelectItem>
               {assets.map((asset) => (
                 <SelectItem key={asset.id} value={asset.id}>
                   {asset.name}
@@ -298,13 +313,25 @@ const EditableRow = ({
         ) : (
           <Select
             value={form.assetId ?? ""}
-            onValueChange={(value) => setForm({ ...form, assetId: value })}
+            onValueChange={(value) => {
+              if (value === assetPlaceholderValue) {
+                setForm({ ...form, assetId: "" });
+                return;
+              }
+              setForm({ ...form, assetId: value });
+            }}
             disabled={disableAsset}
           >
             <SelectTrigger>
               <SelectValue placeholder="いれもの" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem
+                value={assetPlaceholderValue}
+                className="text-muted-foreground"
+              >
+                いれもの
+              </SelectItem>
               {assets.map((asset) => (
                 <SelectItem key={asset.id} value={asset.id}>
                   {asset.name}

@@ -41,19 +41,25 @@ export const NewEntryRow = ({
   categories: Category[];
   fixedAssetId?: string;
 }) => {
-  const { token } = useAuth();
-  const invalidate = useInvalidateLedger();
-  const [entry, setEntry] = useState(() => {
+  const buildInitialEntry = (assetId?: string) => {
     const base = emptyEntry();
-    if (fixedAssetId) {
+    if (assetId) {
       return {
         ...base,
-        assetId: fixedAssetId,
-        fromAssetId: fixedAssetId,
+        assetId,
+        fromAssetId: assetId,
       };
     }
-    return base;
-  });
+    return {
+      ...base,
+      assetId: "",
+      fromAssetId: "",
+      toAssetId: "",
+    };
+  };
+  const { token } = useAuth();
+  const invalidate = useInvalidateLedger();
+  const [entry, setEntry] = useState(() => buildInitialEntry(fixedAssetId));
   const [isSaving, setIsSaving] = useState(false);
   const dateRef = useRef<HTMLInputElement>(null);
 
@@ -77,6 +83,7 @@ export const NewEntryRow = ({
     [categoryOptions]
   );
   const placeholderValue = "__placeholder__";
+  const assetPlaceholderValue = "__asset_placeholder__";
 
   const categoryValue =
     entry.type === "transfer"
@@ -127,19 +134,11 @@ export const NewEntryRow = ({
   }, []);
 
   useEffect(() => {
-    const base = emptyEntry();
-    const next = fixedAssetId
-      ? { ...base, assetId: fixedAssetId, fromAssetId: fixedAssetId }
-      : base;
-    setEntry(next);
+    setEntry(buildInitialEntry(fixedAssetId));
   }, [fixedAssetId]);
 
   const resetEntry = () => {
-    const base = emptyEntry();
-    const next = fixedAssetId
-      ? { ...base, assetId: fixedAssetId, fromAssetId: fixedAssetId }
-      : base;
-    setEntry(next);
+    setEntry(buildInitialEntry(fixedAssetId));
   };
 
   const validateEntry = () => {
@@ -264,6 +263,14 @@ export const NewEntryRow = ({
                 ? entry.fromAssetId
                 : entry.toAssetId)}
               onValueChange={(value) => {
+                if (value === assetPlaceholderValue) {
+                  if (entry.transferDirection === "out") {
+                    setEntry({ ...entry, fromAssetId: "" });
+                  } else {
+                    setEntry({ ...entry, toAssetId: "" });
+                  }
+                  return;
+                }
                 if (entry.transferDirection === "out") {
                   setEntry({ ...entry, fromAssetId: value });
                 } else {
@@ -276,6 +283,12 @@ export const NewEntryRow = ({
                 <SelectValue placeholder="いれもの" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem
+                  value={assetPlaceholderValue}
+                  className="text-muted-foreground"
+                >
+                  いれもの
+                </SelectItem>
                 {assetOptions.map((asset) => (
                   <SelectItem key={asset.id} value={asset.id}>
                     {asset.name}
@@ -287,13 +300,25 @@ export const NewEntryRow = ({
         ) : (
           <Select
             value={entry.assetId}
-            onValueChange={(value) => setEntry({ ...entry, assetId: value })}
+            onValueChange={(value) => {
+              if (value === assetPlaceholderValue) {
+                setEntry({ ...entry, assetId: "" });
+                return;
+              }
+              setEntry({ ...entry, assetId: value });
+            }}
             disabled={Boolean(fixedAssetId)}
           >
             <SelectTrigger>
               <SelectValue placeholder="いれもの" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem
+                value={assetPlaceholderValue}
+                className="text-muted-foreground"
+              >
+                いれもの
+              </SelectItem>
               {assetOptions.map((asset) => (
                 <SelectItem key={asset.id} value={asset.id}>
                   {asset.name}
