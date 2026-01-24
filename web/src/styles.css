@@ -129,6 +129,7 @@ h1, h2, h3, .font-display {
   .ledger-table tr {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    width: 100%;
     gap: 3px 8px;
     margin-bottom: 4px;
     padding: 4px 6px;
