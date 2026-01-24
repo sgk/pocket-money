@@ -11,7 +11,7 @@ export const Topbar = forwardRef<HTMLElement, TopbarProps>(
     return (
       <header
         ref={ref}
-        className="sticky top-0 z-30 -mx-4 mb-4 shrink-0 border-b bg-card py-2 backdrop-blur md:-mx-6 md:mb-6"
+        className="sticky top-0 z-30 -mx-4 mb-0 shrink-0 border-b bg-card py-2 backdrop-blur md:-mx-6 md:mb-6"
       >
         <div className="flex flex-col gap-3 px-4 md:px-6">
           <div>
