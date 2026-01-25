@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, User } from "lucide-react";
+import { User } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useBootstrap } from "@/lib/query";
 
@@ -53,9 +53,7 @@ export const UserMenu = ({ compact = false, onOpenChange }: UserMenuProps) => {
     <div className="relative z-50" ref={menuRef}>
       <button
         type="button"
-        className={`flex items-center rounded-full border bg-card text-sm shadow-sm transition hover:bg-secondary ${
-          compact ? "gap-1 px-2 py-2" : "gap-2 px-3 py-2"
-        }`}
+        className="rounded-full transition hover:bg-secondary/60"
         onClick={() => setOpen((prev) => !prev)}
         aria-label={label}
       >
@@ -76,7 +74,6 @@ export const UserMenu = ({ compact = false, onOpenChange }: UserMenuProps) => {
           </span>
         )}
         {compact ? null : null}
-        <ChevronDown className="h-4 w-4 text-muted-foreground" />
       </button>
       {open ? (
         <div className="absolute right-0 z-50 mt-2 w-56 rounded-lg border bg-card p-2 text-sm shadow-lg">
