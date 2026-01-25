@@ -151,7 +151,7 @@ export const LedgerPage = () => {
 
       {filters.order === "desc" ? entryPanelTop : null}
 
-      <div style={{ paddingBottom: summaryHeight }}>
+      <div className="px-0 md:px-6" style={{ paddingBottom: summaryHeight }}>
         <LedgerTable
           transactions={filtered}
           assets={assets}

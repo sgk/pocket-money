@@ -583,6 +583,29 @@ const EditableRow = ({
   );
 };
 
+const useMediaQuery = (query: string) => {
+  const [matches, setMatches] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+    return window.matchMedia(query).matches;
+  });
+
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    const update = () => setMatches(media.matches);
+    update();
+    if (media.addEventListener) {
+      media.addEventListener("change", update);
+      return () => media.removeEventListener("change", update);
+    }
+    media.addListener(update);
+    return () => media.removeListener(update);
+  }, [query]);
+
+  return matches;
+};
+
 export const LedgerTable = ({
   transactions,
   assets,
@@ -612,6 +635,7 @@ export const LedgerTable = ({
   const [indicator, setIndicator] = useState<{ dateKey: string; index: number } | null>(
     null
   );
+  const isMobile = useMediaQuery("(max-width: 768px)");
 
   const assetMap = useMemo(
     () => new Map(assets.map((asset) => [asset.id, asset.name])),
@@ -1111,6 +1135,95 @@ export const LedgerTable = ({
               : showBottomIndicator
                 ? "ledger-drop-bottom"
                 : "";
+            const cellMap = new Map<string, ReturnType<typeof flexRender>>();
+            row.getVisibleCells().forEach((cell) => {
+              const label =
+                (cell.column.columnDef.meta as ColumnMeta | undefined)?.label ?? "";
+              cellMap.set(label, flexRender(cell.column.columnDef.cell, cell.getContext()));
+            });
+            const dateValue = cellMap.get("ひづけ") ?? "-";
+            const assetValue = cellMap.get("いれもの") ?? "-";
+            const counterpartyValue = cellMap.get("あいて") ?? "-";
+            const actionValue = cellMap.get("うごき") ?? "-";
+            const memoValue = cellMap.get("メモ") ?? "";
+            const amountValue = cellMap.get("きんがく") ?? "-";
+            const balanceValue = cellMap.get("ざんだか") ?? "-";
+
+            if (isMobile) {
+              return (
+                <tr
+                  key={row.id}
+                  className={`border-t hover:bg-secondary/30 ledger-row ledger-row--mobile ${dropClass} ${
+                    selectedId === row.original.id ? "bg-secondary/40" : ""
+                  } ${draggingId === row.original.id ? "opacity-40" : ""}`}
+                  onClick={() => {
+                    setSelectedId(row.original.id);
+                    setEditingId(row.original.id);
+                  }}
+                  onDragOver={(event) =>
+                    handleDragOverRow(event, dateKey, indexInGroup)
+                  }
+                  onDrop={(event) =>
+                    handleDropOnRow(event, dateKey, indexInGroup)
+                  }
+                >
+                  <td colSpan={table.getAllLeafColumns().length} className="p-0">
+                    <div className="ledger-mobile-card">
+                      <div className="ledger-mobile-col">
+                        <div className="ledger-mobile-item ledger-mobile-date">
+                          <span
+                            className="ledger-handle cursor-grab text-muted-foreground"
+                            draggable
+                            onDragStart={(event) =>
+                              handleDragStart(event, row.original.id)
+                            }
+                            onDragEnd={handleDragEnd}
+                            onClick={(event) => event.stopPropagation()}
+                            aria-label="ならびかえ"
+                          >
+                            ≡
+                          </span>
+                          <span className="ledger-mobile-value ledger-mobile-value--date ledger-mobile-value--nowrap">
+                            {dateValue}
+                          </span>
+                        </div>
+                        <div className="ledger-mobile-item">
+                          <span className="ledger-mobile-label">あいて</span>
+                          <span className="ledger-mobile-value">{counterpartyValue}</span>
+                        </div>
+                        <div className="ledger-mobile-item">
+                          <span className="ledger-mobile-label">メモ</span>
+                          <span className="ledger-mobile-value">{memoValue}</span>
+                        </div>
+                        <div className="ledger-mobile-item">
+                          <span className="ledger-mobile-label">ざんだか</span>
+                          <span className="ledger-mobile-value ledger-mobile-value--right ledger-mobile-value--nowrap">
+                            {balanceValue}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="ledger-mobile-col">
+                        <div className="ledger-mobile-item">
+                          <span className="ledger-mobile-label">いれもの</span>
+                          <span className="ledger-mobile-value">{assetValue}</span>
+                        </div>
+                        <div className="ledger-mobile-item">
+                          <span className="ledger-mobile-label">うごき</span>
+                          <span className="ledger-mobile-value">{actionValue}</span>
+                        </div>
+                        <div className="ledger-mobile-item">
+                          <span className="ledger-mobile-label">きんがく</span>
+                          <span className="ledger-mobile-value ledger-mobile-value--right ledger-mobile-value--nowrap">
+                            {amountValue}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              );
+            }
+
             return (
               <tr
                 key={row.id}

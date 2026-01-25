@@ -115,7 +115,9 @@ h1, h2, h3, .font-display {
 
 @media (max-width: 768px) {
   .ledger-table {
+    display: block;
     min-width: 0;
+    width: 100%;
   }
 
   .ledger-table thead {
@@ -124,6 +126,7 @@ h1, h2, h3, .font-display {
 
   .ledger-table tbody {
     display: block;
+    width: 100%;
   }
 
   .ledger-table tr {
@@ -138,6 +141,90 @@ h1, h2, h3, .font-display {
     background: rgba(255, 255, 255, 0.9);
     box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
     position: relative;
+  }
+
+  .ledger-table tr.ledger-row--mobile {
+    display: block;
+    width: 100%;
+    margin-bottom: 4px;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .ledger-table tr.ledger-row--mobile td {
+    display: block;
+    border: none;
+    padding: 0;
+    width: 100%;
+  }
+
+  .ledger-mobile-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 0;
+    padding: 4px 6px;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+  }
+
+  .ledger-mobile-col {
+    flex: 1;
+    align-self: flex-start;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .ledger-mobile-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .ledger-mobile-label {
+    flex: 0 0 48px;
+    font-size: 0.6rem;
+    color: hsl(var(--muted-foreground));
+    letter-spacing: 0.08em;
+  }
+
+  .ledger-mobile-value {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .ledger-mobile-value--right {
+    text-align: right;
+  }
+
+  .ledger-mobile-value--date {
+    margin-left: auto;
+    text-align: right;
+  }
+
+  .ledger-mobile-value--nowrap {
+    white-space: nowrap;
+  }
+
+  .ledger-mobile-date {
+    gap: 6px;
+  }
+
+  .ledger-row--mobile .ledger-handle {
+    position: static;
+    font-size: 12px;
+    line-height: 1;
   }
 
   .ledger-table td {
@@ -192,6 +279,11 @@ h1, h2, h3, .font-display {
     grid-row: 2;
   }
 
+  .ledger-table tr.ledger-row td:not([data-label="ひづけ"]):not([data-label="きんがく"]):not([data-label="ざんだか"]) {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
   .ledger-table td[data-label="きんがく"] {
     grid-column: 2 / 3;
     grid-row: 3;
@@ -237,12 +329,22 @@ h1, h2, h3, .font-display {
     padding-left: 6px;
   }
 
+  .ledger-table tr.ledger-row--mobile {
+    padding-left: 0;
+  }
+
   .ledger-table .ledger-handle {
     position: absolute;
     left: 6px;
     top: 6px;
     font-size: 12px;
     line-height: 1;
+  }
+
+  .ledger-table tr.ledger-row--mobile .ledger-handle {
+    position: static;
+    left: auto;
+    top: auto;
   }
 
   .ledger-table tr.ledger-row--edit td {
@@ -424,6 +526,18 @@ h1, h2, h3, .font-display {
   }
 
   .ledger-table .ledger-spacer {
+    display: none;
+  }
+
+  .ledger-table tr.ledger-row--mobile td {
+    display: block;
+    width: 100%;
+    padding: 0;
+    justify-content: initial;
+    align-items: initial;
+  }
+
+  .ledger-table tr.ledger-row--mobile td::before {
     display: none;
   }
 
