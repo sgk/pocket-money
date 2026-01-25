@@ -79,7 +79,7 @@ const AssetRow = ({
     const initialValue = form.initialBalance.trim();
     const parsedInitial = initialValue === "" ? 0 : Number(initialValue);
     if (Number.isNaN(parsedInitial)) {
-      toast.error("ざんだかを いれてね");
+      toast.error("のこりを いれてね");
       return;
     }
     onSave(asset.id, {
@@ -151,7 +151,7 @@ const AssetRow = ({
       />
       <Input
         type="number"
-        placeholder="はじめのざんだか"
+        placeholder="はじめののこり"
         value={form.initialBalance}
         onChange={(event) => handleChange({ initialBalance: event.target.value })}
         onKeyDown={(event) => {
@@ -440,7 +440,7 @@ export const AssetsSettingsPage = () => {
             onChange={(event) => setNewAsset({ ...newAsset, note: event.target.value })}
           />
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">ざんだか</span>
+            <span className="text-xs text-muted-foreground">のこり</span>
             <Input
               type="number"
               placeholder="0"
@@ -475,8 +475,8 @@ export const AssetsSettingsPage = () => {
               <span>なまえ</span>
               <span>しゅるい</span>
               <span>メモ</span>
-              <span>はじめのざんだか</span>
-              <span className="text-right">いまのざんだか</span>
+              <span>はじめののこり</span>
+              <span className="text-right">いまののこり</span>
               <span className="text-center">ゆうこう</span>
               <span className="text-center">けす</span>
             </div>

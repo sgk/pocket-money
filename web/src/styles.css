@@ -279,7 +279,7 @@ h1, h2, h3, .font-display {
     grid-row: 2;
   }
 
-  .ledger-table tr.ledger-row td:not([data-label="ひづけ"]):not([data-label="きんがく"]):not([data-label="ざんだか"]) {
+  .ledger-table tr.ledger-row td:not([data-label="ひづけ"]):not([data-label="きんがく"]):not([data-label="のこり"]) {
     white-space: normal;
     overflow-wrap: anywhere;
   }
@@ -289,7 +289,7 @@ h1, h2, h3, .font-display {
     grid-row: 3;
   }
 
-  .ledger-table td[data-label="ざんだか"] {
+  .ledger-table td[data-label="のこり"] {
     grid-column: 2 / 3;
     grid-row: 4;
   }
@@ -383,7 +383,7 @@ h1, h2, h3, .font-display {
     grid-column: 1 / 2;
   }
 
-  .ledger-table tr.ledger-row--opening td[data-label="ざんだか"] {
+  .ledger-table tr.ledger-row--opening td[data-label="のこり"] {
     grid-row: 1;
     grid-column: 2 / 3;
     justify-content: space-between;
@@ -427,7 +427,7 @@ h1, h2, h3, .font-display {
     gap: 2px;
   }
 
-  .ledger-table tr.ledger-row--opening td[data-label="ざんだか"] {
+  .ledger-table tr.ledger-row--opening td[data-label="のこり"] {
     display: flex;
     justify-content: flex-end;
   }

@@ -782,7 +782,7 @@ export const LedgerTable = ({
         },
       },
       {
-        header: "ざんだか",
+        header: "のこり",
         cell: ({ row }) => {
           if (!balancesById) {
             return "-";
@@ -794,7 +794,7 @@ export const LedgerTable = ({
           return formatJPYPlain(value);
         },
         meta: {
-          label: "ざんだか",
+          label: "のこり",
           headerClassName:
             "min-w-[120px] w-[120px] max-w-[120px] whitespace-nowrap",
           cellClassName:
@@ -1097,9 +1097,9 @@ export const LedgerTable = ({
               />
               <td
                 className="p-3 text-right w-[120px] min-w-[120px] max-w-[120px]"
-                data-label="ざんだか"
+                data-label="のこり"
               >
-                <span className="ledger-opening-label">ざんだか</span>
+                <span className="ledger-opening-label">のこり</span>
                 <span className="ledger-opening-value">{openingBalanceText}</span>
               </td>
             </tr>
@@ -1147,7 +1147,7 @@ export const LedgerTable = ({
             const actionValue = cellMap.get("うごき") ?? "-";
             const memoValue = cellMap.get("メモ") ?? "";
             const amountValue = cellMap.get("きんがく") ?? "-";
-            const balanceValue = cellMap.get("ざんだか") ?? "-";
+            const balanceValue = cellMap.get("のこり") ?? "-";
 
             if (isMobile) {
               return (
@@ -1195,12 +1195,6 @@ export const LedgerTable = ({
                           <span className="ledger-mobile-label">メモ</span>
                           <span className="ledger-mobile-value">{memoValue}</span>
                         </div>
-                        <div className="ledger-mobile-item">
-                          <span className="ledger-mobile-label">ざんだか</span>
-                          <span className="ledger-mobile-value ledger-mobile-value--right ledger-mobile-value--nowrap">
-                            {balanceValue}
-                          </span>
-                        </div>
                       </div>
                       <div className="ledger-mobile-col">
                         <div className="ledger-mobile-item">
@@ -1215,6 +1209,12 @@ export const LedgerTable = ({
                           <span className="ledger-mobile-label">きんがく</span>
                           <span className="ledger-mobile-value ledger-mobile-value--right ledger-mobile-value--nowrap">
                             {amountValue}
+                          </span>
+                        </div>
+                        <div className="ledger-mobile-item">
+                          <span className="ledger-mobile-label">のこり</span>
+                          <span className="ledger-mobile-value ledger-mobile-value--right ledger-mobile-value--nowrap">
+                            {balanceValue}
                           </span>
                         </div>
                       </div>
@@ -1324,9 +1324,9 @@ export const LedgerTable = ({
               />
               <td
                 className="p-3 text-right w-[120px] min-w-[120px] max-w-[120px]"
-                data-label="ざんだか"
+                data-label="のこり"
               >
-                <span className="ledger-opening-label">ざんだか</span>
+                <span className="ledger-opening-label">のこり</span>
                 <span className="ledger-opening-value">{openingBalanceText}</span>
               </td>
             </tr>
