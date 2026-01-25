@@ -105,7 +105,7 @@ export const LedgerPage = () => {
     <div className="mx-auto w-full max-w-6xl px-4 md:px-6 md:pr-4">
       <div className="ledger-table-wrap flex flex-col shadow-none">
         <div className="overflow-visible px-0 py-2 md:p-0">
-          <table className="ledger-table w-full border-collapse text-sm md:min-w-[1100px]">
+          <table className="ledger-table w-full border-collapse text-sm min-[901px]:min-w-[700px]">
             <tbody className="ledger-grid">
               <NewEntryRow
                 assets={assets}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Outlet } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -6,8 +6,12 @@ import { UserMenu } from "@/components/layout/user-menu";
 
 export const AppLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
-  const closeSidebar = () => setSidebarOpen(false);
+  const closeSidebar = () => {
+    setSidebarOpen(false);
+    menuButtonRef.current?.focus();
+  };
 
   return (
     <div className="page-shell h-screen overflow-hidden">
@@ -22,13 +26,14 @@ export const AppLayout = () => {
               className="rounded-md p-1 text-muted-foreground hover:bg-secondary min-[1200px]:invisible"
               onClick={toggleSidebar}
               aria-label={sidebarOpen ? "メニューをとじる" : "メニューをひらく"}
+              ref={menuButtonRef}
             >
               {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
             <div className="font-display text-lg leading-none">おこづかいノート</div>
             <UserMenu compact />
           </header>
-          <main className="relative z-0 flex-1 min-h-0 overflow-auto px-4 pb-0 pt-0 min-[1200px]:px-6 min-[1200px]:pb-0 min-[1200px]:pt-4">
+          <main className="relative z-0 flex-1 min-h-0 overflow-x-hidden overflow-y-auto px-4 pb-0 pt-0 min-[1200px]:px-6 min-[1200px]:pb-0 min-[1200px]:pt-4">
             <div className="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col">
               <Outlet />
             </div>
@@ -40,6 +45,7 @@ export const AppLayout = () => {
           sidebarOpen ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
         aria-hidden={!sidebarOpen}
+        inert={sidebarOpen ? undefined : ""}
       >
         <button
           type="button"
