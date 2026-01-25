@@ -34,10 +34,10 @@ export const DashboardPage = () => {
   const recent = transactions.slice(0, 10);
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+    <div className="flex min-h-0 flex-col">
       <Topbar title="まとめ" subtitle="いまのようすを みよう" />
 
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1">
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <Card>
             <Link

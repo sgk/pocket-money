@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -548,11 +548,33 @@ export const CategoriesSettingsPage = () => {
     }
   };
 
-  return (
-    <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
-      <Topbar title="つかいみち設定" subtitle="つかいみちを ふやす / なおす" />
+  const topbarRef = useRef<HTMLElement>(null);
+  const [topbarHeight, setTopbarHeight] = useState(0);
 
-      <Card className="mb-4 shrink-0">
+  useEffect(() => {
+    const update = () => {
+      if (topbarRef.current) {
+        setTopbarHeight(topbarRef.current.getBoundingClientRect().height);
+      }
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  return (
+    <div className="relative flex min-h-0 flex-col">
+      <Topbar
+        ref={topbarRef}
+        title="つかいみち設定"
+        subtitle="つかいみちを ふやす / なおす"
+      />
+
+      <div
+        className="sticky z-20 -mx-4 border-b bg-card/95 px-4 pb-3 backdrop-blur md:-mx-6 md:px-6"
+        style={{ top: topbarHeight }}
+      >
+        <Card className="mb-4 shrink-0">
         <CardHeader>
           <CardTitle className="text-base">あたらしい つかいみち</CardTitle>
         </CardHeader>
@@ -596,9 +618,10 @@ export const CategoriesSettingsPage = () => {
             <Button onClick={handleCreate}>たす</Button>
           </div>
         </CardContent>
-      </Card>
+        </Card>
+      </div>
 
-      <div className="flex-1 min-h-0 overflow-auto">
+      <div className="flex-1 min-h-0">
         <div className="grid gap-6">
           <CategoryList
             kind="expense"

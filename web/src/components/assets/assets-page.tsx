@@ -8,9 +8,9 @@ export const AssetsPage = () => {
   const { data: assets = [] } = useAssets();
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+    <div className="flex min-h-0 flex-col">
       <Topbar title="いれもの" subtitle="いれものごとのノートをみよう" />
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {assets.map((asset) => (
             <Link key={asset.id} to={`/assets/${asset.id}/ledger`}>
