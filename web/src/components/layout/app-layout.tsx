@@ -38,20 +38,28 @@ export const AppLayout = () => {
           </main>
         </div>
       </div>
-      {sidebarOpen ? (
-        <div className="fixed inset-0 z-30 min-[1200px]:hidden">
-          <button
-            type="button"
-            className="absolute inset-0 bg-black/20"
-            onClick={closeSidebar}
-            aria-label="メニューをとじる"
-          />
-          <Sidebar
-            onNavigate={closeSidebar}
-            className="relative z-10 h-full w-[33vw] max-w-[280px] border-r bg-card/95 p-5 shadow-elevated"
-          />
-        </div>
-      ) : null}
+      <div
+        className={`fixed inset-0 z-30 min-[1200px]:hidden transition ${
+          sidebarOpen ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+        aria-hidden={!sidebarOpen}
+      >
+        <button
+          type="button"
+          className={`absolute inset-0 bg-black/20 transition-opacity duration-200 ${
+            sidebarOpen ? "opacity-100" : "opacity-0"
+          }`}
+          onClick={closeSidebar}
+          aria-label="メニューをとじる"
+          tabIndex={sidebarOpen ? 0 : -1}
+        />
+        <Sidebar
+          onNavigate={closeSidebar}
+          className={`relative z-10 h-full w-[33vw] max-w-[280px] border-r bg-card/95 p-5 shadow-elevated transition-transform duration-200 ${
+            sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        />
+      </div>
     </div>
   );
 };
