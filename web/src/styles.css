@@ -366,6 +366,18 @@ h1, h2, h3, .font-display {
     box-shadow: none;
   }
 
+  .ledger-table tr.ledger-row--edit {
+    margin-left: -16px;
+    margin-right: -16px;
+    padding-left: 16px;
+    padding-right: 16px;
+    width: calc(100% + 32px);
+    border-left: none;
+    border-right: none;
+    background: hsl(var(--card));
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  }
+
   .ledger-table tr.ledger-row--new {
     border: none;
     border-radius: 0;
