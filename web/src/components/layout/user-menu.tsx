@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ChevronDown, User } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useBootstrap } from "@/lib/query";
@@ -18,7 +18,9 @@ export const UserMenu = ({ compact = false, onOpenChange }: UserMenuProps) => {
   const menuRef = useRef<HTMLDivElement>(null);
 
   const email = data?.profile?.email?.trim();
+  const displayName = data?.profile?.displayName?.trim();
   const label = email || "メールなし";
+  const menuLabel = displayName || label;
   const photoUrl = data?.profile?.photoUrl;
 
   useEffect(() => {
@@ -73,31 +75,12 @@ export const UserMenu = ({ compact = false, onOpenChange }: UserMenuProps) => {
             <User className="h-4 w-4" />
           </span>
         )}
-        {compact ? null : (
-          <span className="max-w-[120px] truncate text-sm sm:max-w-[180px]">
-            {label}
-          </span>
-        )}
+        {compact ? null : null}
         <ChevronDown className="h-4 w-4 text-muted-foreground" />
       </button>
       {open ? (
         <div className="absolute right-0 z-50 mt-2 w-56 rounded-lg border bg-card p-2 text-sm shadow-lg">
-          <div className="px-2 py-1 text-xs text-muted-foreground">せってい</div>
-          <Link
-            to="/settings/assets"
-            className="block rounded-md px-3 py-2 hover:bg-secondary"
-            onClick={() => setOpen(false)}
-          >
-            いれもの設定
-          </Link>
-          <Link
-            to="/settings/categories"
-            className="block rounded-md px-3 py-2 hover:bg-secondary"
-            onClick={() => setOpen(false)}
-          >
-            つかいみち設定
-          </Link>
-          <div className="my-2 border-t" />
+          <div className="px-2 py-1 text-xs text-muted-foreground">{menuLabel}</div>
           <button
             type="button"
             className="w-full rounded-md px-3 py-2 text-left text-rose-600 hover:bg-rose-50"

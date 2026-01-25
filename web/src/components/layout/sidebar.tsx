@@ -1,5 +1,5 @@
 import { Link, NavLink } from "react-router-dom";
-import { Home, List, Wallet } from "lucide-react";
+import { Home, List, Settings, Wallet } from "lucide-react";
 import { useAssets } from "@/lib/query";
 
 const navItems = [
@@ -20,9 +20,9 @@ export const Sidebar = ({ onNavigate, className = "" }: SidebarProps) => {
 
   return (
     <aside
-      className={`relative z-40 w-full shrink-0 border-b bg-card/80 p-2 shadow-elevated backdrop-blur min-[1200px]:h-screen min-[1200px]:w-64 min-[1200px]:border-b-0 min-[1200px]:border-r min-[1200px]:p-5 min-[1200px]:overflow-hidden ${className}`}
+      className={`relative z-40 w-full shrink-0 border-b bg-card/80 px-2 pb-2 pt-16 shadow-elevated backdrop-blur min-[1200px]:h-screen min-[1200px]:w-64 min-[1200px]:border-b-0 min-[1200px]:border-r min-[1200px]:p-5 min-[1200px]:overflow-hidden ${className}`}
     >
-      <div className="mb-1 min-[1200px]:mb-8">
+      <div className="mb-1 hidden min-[1200px]:mb-8 min-[1200px]:block">
         <Link
           to="/"
           className="font-display text-lg leading-none min-[1200px]:text-2xl"
@@ -78,6 +78,35 @@ export const Sidebar = ({ onNavigate, className = "" }: SidebarProps) => {
             </NavLink>
           ))
         )}
+        <div className="my-2 border-t" />
+        <NavLink
+          to="/settings/assets"
+          onClick={onNavigate}
+          className={({ isActive }) =>
+            `flex w-full items-center justify-start gap-2 rounded-md px-3 py-2 text-sm transition ${
+              isActive
+                ? "bg-primary text-primary-foreground"
+                : "text-foreground hover:bg-secondary"
+            }`
+          }
+        >
+          <Settings className="h-4 w-4" />
+          <span className="whitespace-nowrap">いれもの設定</span>
+        </NavLink>
+        <NavLink
+          to="/settings/categories"
+          onClick={onNavigate}
+          className={({ isActive }) =>
+            `flex w-full items-center justify-start gap-2 rounded-md px-3 py-2 text-sm transition ${
+              isActive
+                ? "bg-primary text-primary-foreground"
+                : "text-foreground hover:bg-secondary"
+            }`
+          }
+        >
+          <Settings className="h-4 w-4" />
+          <span className="whitespace-nowrap">つかいみち設定</span>
+        </NavLink>
       </nav>
     </aside>
   );
