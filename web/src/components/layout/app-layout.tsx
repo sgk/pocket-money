@@ -1,23 +1,57 @@
+import { useState } from "react";
 import { Outlet } from "react-router-dom";
+import { Menu, X } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { UserMenu } from "@/components/layout/user-menu";
 
 export const AppLayout = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const toggleSidebar = () => setSidebarOpen((prev) => !prev);
+  const closeSidebar = () => setSidebarOpen(false);
+
   return (
     <div className="page-shell h-screen overflow-hidden">
-      <div className="flex h-full flex-col md:flex-row">
-        <Sidebar />
+      <div className="flex h-full flex-col min-[1200px]:flex-row">
+        <div className="hidden min-[1200px]:block">
+          <Sidebar />
+        </div>
         <div className="flex flex-1 min-h-0 flex-col">
-          <header className="relative z-40 hidden shrink-0 justify-end px-4 pt-4 md:flex md:px-6">
+          <header className="relative z-40 flex items-center justify-between border-b bg-card/80 px-4 py-2 shadow-elevated backdrop-blur min-[1200px]:hidden">
+            <button
+              type="button"
+              className="rounded-md p-1 text-muted-foreground hover:bg-secondary"
+              onClick={toggleSidebar}
+              aria-label={sidebarOpen ? "メニューをとじる" : "メニューをひらく"}
+            >
+              {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+            <div className="font-display text-lg leading-none">おこづかいノート</div>
+            <UserMenu compact />
+          </header>
+          <header className="relative z-40 hidden shrink-0 justify-end px-4 pt-4 min-[1200px]:flex min-[1200px]:px-6">
             <UserMenu />
           </header>
-          <main className="relative z-0 flex-1 min-h-0 overflow-auto px-4 pb-0 pt-0 md:px-6 md:pb-0 md:pt-4">
+          <main className="relative z-0 flex-1 min-h-0 overflow-auto px-4 pb-0 pt-0 min-[1200px]:px-6 min-[1200px]:pb-0 min-[1200px]:pt-4">
             <div className="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col">
               <Outlet />
             </div>
           </main>
         </div>
       </div>
+      {sidebarOpen ? (
+        <div className="fixed inset-0 z-30 min-[1200px]:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/20"
+            onClick={closeSidebar}
+            aria-label="メニューをとじる"
+          />
+          <Sidebar
+            onNavigate={closeSidebar}
+            className="relative z-10 h-full w-[33vw] max-w-[280px] border-r bg-card/95 p-5 shadow-elevated"
+          />
+        </div>
+      ) : null}
     </div>
   );
 };
