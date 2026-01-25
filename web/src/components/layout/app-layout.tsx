@@ -16,10 +16,10 @@ export const AppLayout = () => {
           <Sidebar />
         </div>
         <div className="flex flex-1 min-h-0 flex-col">
-          <header className="relative z-40 flex items-center justify-between border-b bg-card/80 px-4 py-2 shadow-elevated backdrop-blur min-[1200px]:hidden">
+          <header className="relative z-40 flex items-center justify-between border-b bg-card/80 px-4 py-2 shadow-elevated backdrop-blur min-[1200px]:px-6">
             <button
               type="button"
-              className="rounded-md p-1 text-muted-foreground hover:bg-secondary"
+              className="rounded-md p-1 text-muted-foreground hover:bg-secondary min-[1200px]:invisible"
               onClick={toggleSidebar}
               aria-label={sidebarOpen ? "メニューをとじる" : "メニューをひらく"}
             >
@@ -27,9 +27,6 @@ export const AppLayout = () => {
             </button>
             <div className="font-display text-lg leading-none">おこづかいノート</div>
             <UserMenu compact />
-          </header>
-          <header className="relative z-40 hidden shrink-0 justify-end px-4 pt-4 min-[1200px]:flex min-[1200px]:px-6">
-            <UserMenu />
           </header>
           <main className="relative z-0 flex-1 min-h-0 overflow-auto px-4 pb-0 pt-0 min-[1200px]:px-6 min-[1200px]:pb-0 min-[1200px]:pt-4">
             <div className="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col">
