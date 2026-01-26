@@ -15,29 +15,32 @@ export const AppLayout = () => {
 
   return (
     <div className="page-shell h-screen overflow-hidden">
-      <div className="flex h-full flex-col min-[1200px]:flex-row">
-        <div className="hidden min-[1200px]:block">
-          <Sidebar />
-        </div>
-        <div className="flex flex-1 min-h-0 flex-col">
-          <header className="relative z-40 flex items-center justify-between border-b bg-card/80 px-4 py-2 shadow-elevated backdrop-blur min-[1200px]:px-6">
-            <button
-              type="button"
-              className="rounded-md p-1 text-muted-foreground hover:bg-secondary min-[1200px]:invisible"
-              onClick={toggleSidebar}
-              aria-label={sidebarOpen ? "メニューをとじる" : "メニューをひらく"}
-              ref={menuButtonRef}
-            >
-              {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
-            <div className="font-display text-lg leading-none">おこづかいノート</div>
-            <UserMenu compact />
-          </header>
-          <main className="relative z-0 flex-1 min-h-0 overflow-x-hidden overflow-y-auto px-4 pb-0 pt-0 min-[1200px]:px-6 min-[1200px]:pb-0 min-[1200px]:pt-4">
-            <div className="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col">
-              <Outlet />
-            </div>
-          </main>
+      <div className="flex h-full flex-col">
+        <header className="relative z-40 flex items-center justify-between border-b bg-card/80 px-4 py-2 shadow-elevated backdrop-blur min-[1200px]:px-6">
+          <button
+            type="button"
+            className="rounded-md p-1 text-muted-foreground hover:bg-secondary min-[1200px]:invisible"
+            onClick={toggleSidebar}
+            aria-label={sidebarOpen ? "メニューをとじる" : "メニューをひらく"}
+            ref={menuButtonRef}
+          >
+            {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+          <div className="font-display text-lg leading-none">おこづかいノート</div>
+          <UserMenu compact />
+        </header>
+
+        <div className="flex h-full flex-1 min-h-0 min-[1200px]:flex-row">
+          <div className="hidden min-[1200px]:block">
+            <Sidebar />
+          </div>
+          <div className="flex flex-1 min-h-0 flex-col">
+            <main className="relative z-0 flex-1 min-h-0 overflow-x-hidden overflow-y-auto px-4 pb-0 pt-0 min-[1200px]:px-6 min-[1200px]:pb-0 min-[1200px]:pt-0">
+              <div className="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col">
+                <Outlet />
+              </div>
+            </main>
+          </div>
         </div>
       </div>
       <div
