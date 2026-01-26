@@ -134,7 +134,7 @@ export const Filters = ({
           </Select>
         </div>
       </div>
-      <div className="hidden gap-3 sm:grid">
+      <div className="hidden gap-3 sm:flex sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <Select value={preset} onValueChange={(value) => setPreset(value as PresetValue)}>
             <SelectTrigger className="w-24">
