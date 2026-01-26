@@ -390,6 +390,16 @@ h1, h2, h3, .font-display {
     padding-left: 6px;
   }
 
+  @media (min-width: 901px) {
+    .ledger-table tr.ledger-row {
+      padding-left: 0;
+    }
+
+    .ledger-table .ledger-handle {
+      left: 0;
+    }
+  }
+
   .ledger-table tr.ledger-row--mobile {
     padding-left: 0;
   }

@@ -132,12 +132,14 @@ export const LedgerPage = () => {
         </div>
       )}
 
-      {filters.order === "asc" && <div className="h-[0.4rem]" />}
+      {filters.order === "asc" && <div className="h-[0.4rem] min-[901px]:hidden" />}
 
       <div className="flex min-h-0 flex-1 flex-col">
         <div
           style={{ paddingBottom: filters.order === "desc" ? summaryHeight : 0 }}
-          className={`min-h-0 flex-1 ${filters.order === "desc" ? "mt-[0.4rem]" : ""}`}
+          className={`min-h-0 flex-1 min-[901px]:-mx-4 min-[1200px]:-mx-6 ${
+            filters.order === "desc" ? "max-[900px]:mt-[0.4rem]" : ""
+          }`}
         >
           <LedgerTable
             transactions={filtered}
