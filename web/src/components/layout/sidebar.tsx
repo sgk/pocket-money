@@ -20,7 +20,7 @@ export const Sidebar = ({ onNavigate, className = "" }: SidebarProps) => {
 
   return (
     <aside
-      className={`relative z-40 w-full shrink-0 border-b bg-card/80 px-2 pb-2 pt-0 shadow-elevated backdrop-blur min-[1200px]:h-screen min-[1200px]:w-64 min-[1200px]:border-b-0 min-[1200px]:border-r min-[1200px]:p-5 min-[1200px]:overflow-hidden ${className}`}
+      className={`relative z-40 w-full shrink-0 border-b bg-card/80 px-2 pb-2 pt-16 shadow-elevated backdrop-blur min-[1200px]:pt-0 min-[1200px]:h-screen min-[1200px]:w-64 min-[1200px]:border-b-0 min-[1200px]:border-r min-[1200px]:p-5 min-[1200px]:overflow-hidden ${className}`}
     >
       <nav className="mt-4 flex flex-col gap-2 min-[1200px]:mt-0">
         {navItems.map((item) => {
