@@ -124,6 +124,8 @@ export const LedgerPage = () => {
         <Filters filters={filters} setFilters={setFilters} />
       </Topbar>
 
+      <div className="h-[0.4rem]" />
+
       {filters.order === "desc" && (
         <div className="bg-card border-b border-border -mx-4 px-4 py-[0.4rem] md:-mx-6 md:px-6">
           <table className="ledger-table w-full">
