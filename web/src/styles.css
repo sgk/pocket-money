@@ -43,6 +43,26 @@ body,
   /* ページ全体の横スクロールを防ぎ、縦スクロールは許可する */
   overflow-x: hidden;
   overflow-y: auto;
+  /* スクロールバーを非表示にする（スクロール機能は維持） */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+/* Webkit系ブラウザ（Chrome/Safari）のスクロールバーを非表示 */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#root::-webkit-scrollbar {
+  display: none;
+}
+
+/* 全ての要素のスクロールバーを非表示（スクロール機能は維持） */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
 }
 
 h1, h2, h3, .font-display {
@@ -366,7 +386,6 @@ h1, h2, h3, .font-display {
 
   .ledger-table tr.ledger-row--edit {
     gap: 1px 6px;
-    padding: 0 4px;
     align-items: end;
     border-radius: 0;
     box-shadow: none;
@@ -376,8 +395,7 @@ h1, h2, h3, .font-display {
     /* 編集行の負のマージン/幅計算は親コンテナをはみ出す原因になるため除去 */
     margin-left: 0;
     margin-right: 0;
-    padding-left: 0;
-    padding-right: 0;
+    padding: 0;
     width: 100%;
     box-sizing: border-box;
     border-left: none;
@@ -391,6 +409,8 @@ h1, h2, h3, .font-display {
     border-radius: 0;
     box-shadow: none;
     background: transparent;
+    /* フィルター部の gap-3 (0.75rem) と同じだけ上部に余白を確保し、"さがす" の下側マージンと揃える */
+    margin-top: 0.375rem;
   }
 
   .ledger-table tr.ledger-row--opening td::before {

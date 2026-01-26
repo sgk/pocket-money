@@ -77,10 +77,12 @@ export const Filters = ({
 
   return (
     <div className="grid gap-3">
-      <div className="grid gap-2 sm:hidden">
-        <div className="flex items-center gap-2">
+      {/* md 未満は縦積みレイアウトで幅不足によるはみ出しを防ぐ */}
+      <div className="grid gap-3 md:hidden">
+        {/* 530px未満では日付を折返し、530px以上で1行維持 */}
+        <div className="flex flex-nowrap max-[530px]:flex-wrap items-center gap-1">
           <Select value={preset} onValueChange={(value) => setPreset(value as PresetValue)}>
-            <SelectTrigger className="w-24">
+            <SelectTrigger className="!w-auto min-w-[84px] flex-shrink-0">
               <SelectValue placeholder="きかん" />
             </SelectTrigger>
             <SelectContent>
@@ -98,9 +100,9 @@ export const Filters = ({
               setFilters({ ...filters, from: event.target.value });
               setPreset("custom");
             }}
-            className="w-[110px] flex-1 min-w-0"
+            className="flex-1 min-w-[100px] max-[530px]:min-w-[140px]"
           />
-          <span className="text-sm text-muted-foreground">～</span>
+          <span className="text-sm text-muted-foreground flex-shrink-0">～</span>
           <Input
             type="date"
             value={filters.to}
@@ -108,15 +110,15 @@ export const Filters = ({
               setFilters({ ...filters, to: event.target.value });
               setPreset("custom");
             }}
-            className="w-[110px] flex-1 min-w-0"
+            className="flex-1 min-w-[100px] max-[530px]:min-w-[140px]"
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-nowrap max-[400px]:flex-wrap items-center gap-2">
           <Input
             placeholder="さがす（あいて/メモ）"
             value={filters.search}
             onChange={(event) => setFilters({ ...filters, search: event.target.value })}
-            className="flex-1 min-w-0"
+            className="flex-1 min-w-[180px] w-full max-[400px]:min-w-0"
           />
           <Select
             value={filters.order}
@@ -134,7 +136,7 @@ export const Filters = ({
           </Select>
         </div>
       </div>
-      <div className="hidden gap-3 sm:flex sm:items-center sm:gap-4">
+      <div className="hidden md:flex md:flex-wrap md:items-center md:gap-4">
         <div className="flex items-center gap-2">
           <Select value={preset} onValueChange={(value) => setPreset(value as PresetValue)}>
             <SelectTrigger className="w-24">

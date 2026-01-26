@@ -1070,11 +1070,11 @@ export const LedgerTable = ({
 
   return (
     <div
-      className="ledger-table-wrap flex flex-col bg-transparent shadow-none min-w-0"
+      className="ledger-table-wrap flex flex-col bg-transparent shadow-none min-w-0 max-w-full"
       data-order={isDesc ? "desc" : "asc"}
     >
-      <div className="overflow-x-hidden px-0 py-0 md:p-0">
-        <table className="ledger-table w-full border-collapse text-sm min-[901px]:min-w-[700px]">
+      <div className="overflow-x-hidden px-0 py-0 md:p-0 max-w-full">
+        <table className="ledger-table w-full border-collapse text-sm">
         {renderMode !== "body-only" ? (
           <thead className="bg-secondary/50">
             {table.getHeaderGroups().map((headerGroup) => (

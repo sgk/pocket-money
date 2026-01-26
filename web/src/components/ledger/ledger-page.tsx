@@ -124,7 +124,7 @@ export const LedgerPage = () => {
         <Filters filters={filters} setFilters={setFilters} />
       </Topbar>
 
-      <div className="px-4 md:-mx-6 md:pr-0" style={{ paddingBottom: summaryHeight }}>
+      <div style={{ paddingBottom: summaryHeight }}>
         <LedgerTable
           transactions={filtered}
           assets={assets}
