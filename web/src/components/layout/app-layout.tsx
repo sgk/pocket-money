@@ -36,7 +36,7 @@ export const AppLayout = () => {
           </div>
           <div className="flex flex-1 min-h-0 flex-col">
             <main className="relative z-0 flex-1 min-h-0 overflow-x-hidden overflow-y-auto px-4 pb-0 pt-0 min-[1200px]:px-6 min-[1200px]:pb-0 min-[1200px]:pt-0">
-              <div className="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col">
+              <div className="flex h-full min-h-0 w-full flex-col">
                 <Outlet />
               </div>
             </main>

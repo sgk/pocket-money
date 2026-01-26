@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -616,6 +616,9 @@ export const LedgerTable = ({
   openingDate,
   order,
   onEditingChange,
+  renderMode = "full",
+  entryRow,
+  entryPosition = "top",
 }: {
   transactions: Transaction[];
   assets: Asset[];
@@ -626,6 +629,9 @@ export const LedgerTable = ({
   openingDate?: string;
   order: "desc" | "asc";
   onEditingChange?: (isEditing: boolean) => void;
+  renderMode?: "full" | "header-only" | "body-only";
+  entryRow?: React.ReactNode;
+  entryPosition?: "top" | "bottom";
 }) => {
   const { token } = useAuth();
   const invalidate = useInvalidateLedger();
@@ -657,6 +663,13 @@ export const LedgerTable = ({
     openingBalanceValue === null ? "-" : formatJPYPlain(openingBalanceValue);
   const openingDateText = openingDate ? formatDateSlash(openingDate) : "-";
   const isDesc = order === "desc";
+
+  const entryRowNode = useMemo(() => {
+    if (!entryRow) return null;
+    return React.isValidElement(entryRow)
+      ? React.cloneElement(entryRow, { key: "entry-row" })
+      : entryRow;
+  }, [entryRow]);
 
   useEffect(() => {
     onEditingChange?.(editingId !== null);
@@ -1060,26 +1073,30 @@ export const LedgerTable = ({
       className="ledger-table-wrap flex flex-col bg-transparent shadow-none"
       data-order={isDesc ? "desc" : "asc"}
     >
-      <div className="overflow-visible px-0 py-2 md:p-0">
+      <div className="overflow-visible px-0 py-0 md:p-0">
         <table className="ledger-table w-full border-collapse text-sm min-[901px]:min-w-[700px]">
-        <thead className="bg-secondary/50">
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <th
-                  key={header.id}
-                  className={`p-3 text-center font-medium ${
-                    (header.column.columnDef.meta as ColumnMeta | undefined)?.headerClassName ??
-                    ""
-                  }`}
-                >
-                  {flexRender(header.column.columnDef.header, header.getContext())}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody className="ledger-grid">
+        {renderMode !== "body-only" ? (
+          <thead className="bg-secondary/50">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <th
+                    key={header.id}
+                    className={`p-3 text-center font-medium ${
+                      (header.column.columnDef.meta as ColumnMeta | undefined)?.headerClassName ??
+                      ""
+                    }`}
+                  >
+                    {flexRender(header.column.columnDef.header, header.getContext())}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+        ) : null}
+        {renderMode !== "header-only" ? (
+          <tbody className="ledger-grid">
+          {isDesc ? entryRowNode : null}
           {!isDesc ? (
             <tr className="border-t bg-secondary/10 ledger-row ledger-row--opening">
               <td className="p-3" data-label="ひづけ">
@@ -1307,6 +1324,7 @@ export const LedgerTable = ({
               </tr>
             );
           })}
+          {!isDesc ? entryRowNode : null}
           {isDesc ? (
             <tr className="border-t bg-secondary/10 ledger-row ledger-row--opening">
               <td className="p-3" data-label="ひづけ">
@@ -1332,6 +1350,7 @@ export const LedgerTable = ({
             </tr>
           ) : null}
         </tbody>
+        ) : null}
         </table>
       </div>
       <datalist id="merchant-suggest">
