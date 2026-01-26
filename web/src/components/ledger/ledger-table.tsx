@@ -809,9 +809,9 @@ export const LedgerTable = ({
         meta: {
           label: "のこり",
           headerClassName:
-            "min-w-[80px] w-[80px] max-w-[80px] whitespace-nowrap",
+            "min-w-[96px] w-[96px] max-w-[96px] whitespace-nowrap",
           cellClassName:
-            "min-w-[80px] w-[80px] max-w-[80px] whitespace-nowrap text-right",
+            "min-w-[96px] w-[96px] max-w-[96px] whitespace-nowrap text-right",
         },
       },
     ],

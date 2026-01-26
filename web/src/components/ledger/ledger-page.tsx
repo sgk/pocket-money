@@ -125,7 +125,7 @@ export const LedgerPage = () => {
       </Topbar>
 
       {filters.order === "desc" && (
-        <div className="bg-card border-b border-border -mx-4 px-4 py-[0.4rem] md:-mx-6 md:px-6">
+        <div className="bg-card border-b border-border -mx-4 px-4 py-[0.4rem] md:-mx-6 md:px-6 min-[901px]:px-0 min-[1200px]:px-0">
           <table className="ledger-table w-full">
             <tbody>{entryRow}</tbody>
           </table>
@@ -156,7 +156,7 @@ export const LedgerPage = () => {
         </div>
 
         {filters.order === "asc" && (
-          <div className="bg-card border-t border-border -mx-4 px-4 py-[0.4rem] md:-mx-6 md:px-6">
+          <div className="bg-card border-t border-border -mx-4 px-4 py-[0.4rem] md:-mx-6 md:px-6 min-[901px]:px-0 min-[1200px]:px-0">
             <table className="ledger-table w-full">
               <tbody>{entryRow}</tbody>
             </table>
