@@ -412,6 +412,7 @@ h1, h2, h3, .font-display {
     display: block;
     border-top: none;
     padding: 1px 0;
+    background: hsl(var(--card));
   }
 
   .ledger-table tr.ledger-row--edit td::before {
@@ -437,6 +438,16 @@ h1, h2, h3, .font-display {
     border-right: none;
     background: hsl(var(--card));
     border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  }
+
+  @media (min-width: 901px) {
+    .ledger-table tr.ledger-row--edit {
+      background: hsl(var(--card)) !important;
+    }
+
+    .ledger-table tr.ledger-row--edit td {
+      background: hsl(var(--card)) !important;
+    }
   }
 
   .ledger-table tr.ledger-row--new {

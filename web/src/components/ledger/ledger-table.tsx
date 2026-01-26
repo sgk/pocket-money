@@ -263,7 +263,7 @@ const EditableRow = ({
   return (
     <tr
       onKeyDown={handleKeyDown}
-      className="border-t bg-secondary/30 ledger-row ledger-row--edit"
+      className="border-t bg-card ledger-row ledger-row--edit"
     >
       <td className="p-2" data-label="ひづけ">
         <Input
