@@ -132,7 +132,7 @@ export const LedgerPage = () => {
         </div>
       )}
 
-      <div style={{ paddingBottom: summaryHeight }} className={filters.order === "desc" ? "mt-[0.4rem]" : ""}>
+      <div style={{ paddingBottom: filters.order === "desc" ? summaryHeight : 0 }} className={filters.order === "desc" ? "mt-[0.4rem]" : ""}>
         <LedgerTable
           transactions={filtered}
           assets={assets}
@@ -142,14 +142,22 @@ export const LedgerPage = () => {
           openingDate={filters.from}
           order={filters.order}
           onEditingChange={setIsEditing}
-          entryRow={filters.order === "asc" ? entryRow : undefined}
+          entryRow={undefined}
           entryPosition={filters.order === "desc" ? "top" : "bottom"}
         />
       </div>
 
+      {filters.order === "asc" && (
+        <div className="bg-card border-t border-border -mx-4 px-4 py-[0.4rem] md:-mx-6 md:px-6 mt-auto">
+          <table className="ledger-table w-full">
+            <tbody>{entryRow}</tbody>
+          </table>
+        </div>
+      )}
+
       <section
         ref={summaryRef}
-        className="sticky bottom-0 z-20 mt-auto shrink-0 border-t bg-card/95 backdrop-blur -mx-4 md:-mx-6"
+        className="sticky bottom-0 z-20 shrink-0 border-t bg-card/95 backdrop-blur -mx-4 md:-mx-6"
         style={{ marginBottom: "-1px" }}
       >
         <div className="w-full px-4 py-2 md:px-6">
