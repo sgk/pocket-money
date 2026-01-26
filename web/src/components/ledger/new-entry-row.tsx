@@ -251,7 +251,7 @@ export const NewEntryRow = ({
   return (
     <tr
       onKeyDown={handleKeyDown}
-      className={`bg-secondary/30 ledger-row ledger-row--edit ledger-row--new ${
+      className={`ledger-row ledger-row--edit ledger-row--new ${
         isDisabled ? "opacity-50 pointer-events-none" : ""
       }`}
       aria-disabled={isDisabled}

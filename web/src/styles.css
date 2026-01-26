@@ -160,13 +160,24 @@ h1, h2, h3, .font-display {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     width: 100%;
     gap: 3px 8px;
-    margin-bottom: 4px;
     padding: 4px 6px;
-    border: 1px solid rgba(15, 23, 42, 0.12);
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    background: transparent;
     position: relative;
+  }
+
+  .ledger-table tr::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 100vw;
+    transform: translateX(-50%);
+    background: inherit;
+    border-bottom: inherit;
+    pointer-events: none;
+    z-index: -1;
   }
 
   .ledger-table tr.ledger-row--mobile {
@@ -226,14 +237,26 @@ h1, h2, h3, .font-display {
     display: flex;
     align-items: flex-start;
     gap: 10px;
-    margin: 0;
     padding: 4px 6px;
     width: 100%;
     box-sizing: border-box;
-    border: 1px solid rgba(15, 23, 42, 0.12);
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    background: transparent;
+    position: relative;
+  }
+
+  .ledger-mobile-card::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 100vw;
+    transform: translateX(-50%);
+    background: inherit;
+    border-bottom: inherit;
+    pointer-events: none;
+    z-index: -1;
   }
 
   .ledger-mobile-col {
@@ -464,9 +487,12 @@ h1, h2, h3, .font-display {
     border: none;
     border-radius: 0;
     box-shadow: none;
-    background: transparent;
     margin-top: 0;
     padding: 0;
+  }
+
+  .ledger-table tr.ledger-row--new::before {
+    display: none;
   }
 
   .ledger-table tr.ledger-row--opening td::before {
