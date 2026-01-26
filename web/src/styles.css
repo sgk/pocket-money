@@ -187,6 +187,41 @@ h1, h2, h3, .font-display {
     width: 100%;
   }
 
+  .ledger-table tr.ledger-row--edit {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.4rem 0.6rem;
+    padding: 0.4rem 0.6rem !important;
+    padding-top: 0.4rem !important;
+    padding-bottom: 0.4rem !important;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .ledger-table tr.ledger-row--edit::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 100vw;
+    transform: translateX(-50%);
+    background: hsl(var(--card));
+    border-top: 1px solid rgba(15, 23, 42, 0.12);
+    border-bottom: 1px solid rgba(15, 23, 42, 0.12);
+    pointer-events: none;
+  }
+
+  .ledger-table tr.ledger-row--edit td {
+    position: relative;
+    z-index: 1;
+    padding: 0 !important;
+    border: none;
+  }
+
   .ledger-mobile-card {
     display: flex;
     align-items: flex-start;
@@ -588,3 +623,4 @@ h1, h2, h3, .font-display {
     background-image: none;
   }
 }
+
