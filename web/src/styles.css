@@ -488,7 +488,7 @@ h1, h2, h3, .font-display {
     border-radius: 0;
     box-shadow: none;
     margin-top: 0;
-    padding: 0;
+    padding: 0.4rem 6px;
   }
 
   .ledger-table tr.ledger-row--new::before {

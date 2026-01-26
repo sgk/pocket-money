@@ -125,7 +125,7 @@ export const LedgerPage = () => {
       </Topbar>
 
       {filters.order === "desc" && (
-        <div className="bg-card border-b border-border -mx-4 px-4 py-[0.4rem] md:-mx-6 md:px-6 min-[901px]:px-0 min-[1200px]:px-0">
+        <div className="bg-card border-b border-border -mx-4 md:-mx-6 min-[901px]:px-0 min-[1200px]:px-0">
           <table className="ledger-table w-full">
             <tbody>{entryRow}</tbody>
           </table>
@@ -137,9 +137,7 @@ export const LedgerPage = () => {
       <div className="flex min-h-0 flex-1 flex-col">
         <div
           style={{ paddingBottom: filters.order === "desc" ? summaryHeight : 0 }}
-          className={`min-h-0 flex-1 min-[901px]:-mx-4 min-[1200px]:-mx-6 ${
-            filters.order === "desc" ? "max-[900px]:mt-[0.4rem]" : ""
-          }`}
+          className="min-h-0 flex-1 min-[901px]:-mx-4 min-[1200px]:-mx-6"
         >
           <LedgerTable
             transactions={filtered}
@@ -156,7 +154,7 @@ export const LedgerPage = () => {
         </div>
 
         {filters.order === "asc" && (
-          <div className="bg-card border-t border-border -mx-4 px-4 py-[0.4rem] md:-mx-6 md:px-6 min-[901px]:px-0 min-[1200px]:px-0">
+          <div className="bg-card border-t border-border -mx-4 md:-mx-6 min-[901px]:px-0 min-[1200px]:px-0">
             <table className="ledger-table w-full">
               <tbody>{entryRow}</tbody>
             </table>
