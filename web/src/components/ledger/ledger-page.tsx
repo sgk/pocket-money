@@ -124,8 +124,6 @@ export const LedgerPage = () => {
         <Filters filters={filters} setFilters={setFilters} />
       </Topbar>
 
-      <div className="h-[0.4rem]" />
-
       {filters.order === "desc" && (
         <div className="bg-card border-b border-border -mx-4 px-4 py-[0.4rem] md:-mx-6 md:px-6">
           <table className="ledger-table w-full">
@@ -134,28 +132,35 @@ export const LedgerPage = () => {
         </div>
       )}
 
-      <div style={{ paddingBottom: filters.order === "desc" ? summaryHeight : 0 }} className={filters.order === "desc" ? "mt-[0.4rem]" : ""}>
-        <LedgerTable
-          transactions={filtered}
-          assets={assets}
-          categories={categories}
-          balancesById={balancesById}
-          openingBalances={openingBalances}
-          openingDate={filters.from}
-          order={filters.order}
-          onEditingChange={setIsEditing}
-          entryRow={undefined}
-          entryPosition={filters.order === "desc" ? "top" : "bottom"}
-        />
-      </div>
+      {filters.order === "asc" && <div className="h-[0.4rem]" />}
 
-      {filters.order === "asc" && (
-        <div className="bg-card border-t border-border -mx-4 px-4 py-[0.4rem] md:-mx-6 md:px-6 mt-auto">
-          <table className="ledger-table w-full">
-            <tbody>{entryRow}</tbody>
-          </table>
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div
+          style={{ paddingBottom: filters.order === "desc" ? summaryHeight : 0 }}
+          className={`min-h-0 flex-1 ${filters.order === "desc" ? "mt-[0.4rem]" : ""}`}
+        >
+          <LedgerTable
+            transactions={filtered}
+            assets={assets}
+            categories={categories}
+            balancesById={balancesById}
+            openingBalances={openingBalances}
+            openingDate={filters.from}
+            order={filters.order}
+            onEditingChange={setIsEditing}
+            entryRow={undefined}
+            entryPosition={filters.order === "desc" ? "top" : "bottom"}
+          />
         </div>
-      )}
+
+        {filters.order === "asc" && (
+          <div className="bg-card border-t border-border -mx-4 px-4 py-[0.4rem] md:-mx-6 md:px-6">
+            <table className="ledger-table w-full">
+              <tbody>{entryRow}</tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       <section
         ref={summaryRef}
