@@ -513,7 +513,10 @@ h1, h2, h3, .font-display {
   .ledger-table td {
     width: auto !important;
     min-width: 0 !important;
-    max-width: none !important;
+    /* セルが親コンテナよりはみ出さないように最大幅を制限し、長い単語は分割して折返す */
+    max-width: 100% !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   .ledger-table tr.ledger-drop-top td,
