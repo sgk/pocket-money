@@ -49,6 +49,24 @@ const fetchJson = async <T>(
 };
 
 export const api = {
+  loginWithGoogle: async (credential: string) => {
+    const res = await fetch(buildUrl("/api/login"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ credential }),
+    });
+
+    if (!res.ok) {
+      const message = await res.text();
+      throw new Error(message || "ログインに失敗しました");
+    }
+
+    const data = (await res.json()) as { token?: string };
+    if (!data.token) {
+      throw new Error("ログインに失敗しました");
+    }
+    return data.token;
+  },
   bootstrap: (token: string) =>
     fetchJson<BootstrapResponse>(token, "/api/bootstrap", { method: "POST" }),
   getAssets: (token: string) => fetchJson<Asset[]>(token, "/api/assets"),

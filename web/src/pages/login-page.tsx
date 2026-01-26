@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { api } from "@/lib/api";
 
 declare global {
   interface Window {
@@ -20,10 +21,30 @@ declare global {
 }
 
 export const LoginPage = () => {
-  const { token } = useAuth();
+  const { token, setToken } = useAuth();
   const navigate = useNavigate();
   const googleButtonRef = useRef<HTMLDivElement>(null);
   const [clientId, setClientId] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleCredential = useCallback(
+    async (response: { credential: string }) => {
+      setError(null);
+      setIsSubmitting(true);
+      try {
+        const sessionToken = await api.loginWithGoogle(response.credential);
+        setToken(sessionToken);
+        navigate("/", { replace: true });
+      } catch (err) {
+        console.error(err);
+        setError("ログインに失敗しました。もう一度試してください。");
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [navigate, setToken]
+  );
 
   useEffect(() => {
     if (token) {
@@ -67,8 +88,8 @@ export const LoginPage = () => {
       }
       google.accounts.id.initialize({
         client_id: clientId,
-        ux_mode: "redirect",
-        login_uri: `${window.location.origin}/login`,
+        callback: handleCredential,
+        ux_mode: "popup",
       });
       if (googleButtonRef.current) {
         google.accounts.id.renderButton(googleButtonRef.current, {
@@ -89,7 +110,7 @@ export const LoginPage = () => {
       return () => script.removeEventListener("load", initialize);
     }
     initialize();
-  }, [clientId]);
+  }, [clientId, handleCredential]);
 
   return (
     <div className="page-shell flex h-full items-center justify-center overflow-auto p-6">
@@ -104,10 +125,16 @@ export const LoginPage = () => {
             </p>
             <div className="mt-4" ref={googleButtonRef} />
           </div>
+          {isSubmitting ? (
+            <p className="text-xs text-muted-foreground">ログイン処理中...</p>
+          ) : null}
           {!clientId ? (
             <p className="text-xs text-destructive">
               GoogleのIDが未設定です
             </p>
+          ) : null}
+          {error ? (
+            <p className="text-xs text-destructive">{error}</p>
           ) : null}
         </CardContent>
       </Card>
