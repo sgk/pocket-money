@@ -134,7 +134,7 @@ export const Filters = ({
           </Select>
         </div>
       </div>
-      <div className="hidden gap-3 sm:flex sm:items-center sm:justify-between">
+      <div className="hidden gap-3 sm:flex sm:items-center sm:gap-4">
         <div className="flex items-center gap-2">
           <Select value={preset} onValueChange={(value) => setPreset(value as PresetValue)}>
             <SelectTrigger className="w-24">
@@ -173,7 +173,7 @@ export const Filters = ({
             placeholder="さがす（あいて/メモ）"
             value={filters.search}
             onChange={(event) => setFilters({ ...filters, search: event.target.value })}
-            className="flex-1 min-w-[220px]"
+            className="min-w-[220px] w-[320px]"
           />
           <Select
             value={filters.order}
