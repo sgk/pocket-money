@@ -37,7 +37,9 @@ html,
 body,
 #root {
   height: 100%;
-  overflow: hidden;
+  /* ページ全体の横スクロールを防ぎ、縦スクロールは許可する */
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 h1, h2, h3, .font-display {
