@@ -61,7 +61,7 @@ export const AppLayout = () => {
         />
         <Sidebar
           onNavigate={closeSidebar}
-          className={`relative z-10 h-full w-[33vw] max-w-[280px] border-r bg-card/95 p-5 shadow-elevated transition-transform duration-200 ${
+          className={`relative z-10 h-full w-[33vw] max-w-[280px] border-r bg-card/95 px-5 pb-5 shadow-elevated transition-transform duration-200 ${
             sidebarOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         />
