@@ -137,7 +137,7 @@ export const LedgerPage = () => {
       <div className="flex min-h-0 flex-1 flex-col">
         <div
           style={{ paddingBottom: filters.order === "desc" ? summaryHeight : 0 }}
-          className="min-h-0 flex-1 min-[901px]:-mx-4 min-[1200px]:-mx-6"
+          className="min-h-0 flex-1 overflow-y-auto min-[901px]:-mx-4 min-[1200px]:-mx-6"
         >
           <LedgerTable
             transactions={filtered}

@@ -1099,7 +1099,7 @@ export const LedgerTable = ({
           {isDesc ? entryRowNode : null}
           {!isDesc ? (
             <tr className="border-t bg-secondary/10 ledger-row ledger-row--opening">
-              <td className="p-3" data-label="ひづけ">
+              <td className="p-3">
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground opacity-0" aria-hidden>
                     ≡
@@ -1327,7 +1327,7 @@ export const LedgerTable = ({
           {!isDesc ? entryRowNode : null}
           {isDesc ? (
             <tr className="border-t bg-secondary/10 ledger-row ledger-row--opening">
-              <td className="p-3" data-label="ひづけ">
+              <td className="p-3">
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground opacity-0" aria-hidden>
                     ≡
