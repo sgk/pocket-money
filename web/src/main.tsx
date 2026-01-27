@@ -6,6 +6,7 @@ import { AuthProvider } from "@/lib/auth";
 import { Toaster } from "@/components/ui/toast";
 import { App } from "@/app";
 import "@/styles.css";
+import { registerSW } from "virtual:pwa-register";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -16,6 +17,8 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+registerSW({ immediate: true });
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

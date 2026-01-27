@@ -57,3 +57,14 @@
 - `useTransactions` に `staleTime: 60秒` を設定しています
 - `refetchOnWindowFocus: false` を設定しています
 - 取引系の更新では `invalidateQueries(["transactions"])` に加えて、`If-Modified-Since` 用のローカルキャッシュもクリアします
+
+## スマホへのインストール（PWA）
+- `vite-plugin-pwa` を導入し、Service Worker と manifest を生成しています
+- 本番ビルド後にインストール可能になります
+- 確認手順は次のとおりです
+1. `npm --prefix web run build`
+2. `make run`
+3. スマホのブラウザで `http://<PCのIPアドレス>:8000/` を開く
+4. ブラウザの「ホーム画面に追加」または「インストール」を実行する
+- アイコンは現在 `web/public/favicon.svg` を使っています
+- iOSの見た目を整えるには、PNGの `apple-touch-icon` と 192/512px のアイコンを追加してください
