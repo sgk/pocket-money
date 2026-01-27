@@ -35,9 +35,9 @@ export const DashboardPage = () => {
 
   return (
     <div className="flex min-h-0 flex-col">
-      <Topbar title="まとめ" subtitle="いまのようすを みよう" />
+      <Topbar title="まとめ" subtitle="いまのようすを みよう" dense />
 
-      <div className="flex-1">
+      <div className="flex-1 min-h-0 overflow-y-auto pt-0 pb-4 md:pb-6">
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <Card>
             <Link
