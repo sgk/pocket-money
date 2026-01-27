@@ -160,7 +160,7 @@ export const DataSettingsPage = () => {
     try {
       setIsImporting(true);
       const text = await file.text();
-      
+
       let json: any[] = [];
       if (file.name.toLowerCase().endsWith(".csv")) {
           json = csvToJson(text);
@@ -174,7 +174,7 @@ export const DataSettingsPage = () => {
       }
 
       if (!Array.isArray(json)) throw new Error("Invalid format: Root must be an array");
-      
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await api.importTransactions(token, json as any);
       toast.success("インポートしました");

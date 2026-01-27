@@ -578,12 +578,7 @@ export const CategoriesSettingsPage = () => {
         <CardHeader>
           <CardTitle className="text-base">あたらしい つかいみち</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-3 grid-cols-[1fr_auto_auto] items-center">
-          <Input
-            placeholder="なまえ"
-            value={newCategory.name}
-            onChange={(event) => setNewCategory({ ...newCategory, name: event.target.value })}
-          />
+        <CardContent className="grid gap-3 grid-cols-[auto_1fr_auto] items-center">
           <div className="flex items-center">
             <div className="inline-flex overflow-hidden rounded-md border border-input">
               <Button
@@ -614,6 +609,11 @@ export const CategoriesSettingsPage = () => {
               </Button>
             </div>
           </div>
+          <Input
+            placeholder="なまえ"
+            value={newCategory.name}
+            onChange={(event) => setNewCategory({ ...newCategory, name: event.target.value })}
+          />
           <div className="flex justify-end">
             <Button onClick={handleCreate}>たす</Button>
           </div>
