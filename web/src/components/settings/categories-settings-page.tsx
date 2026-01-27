@@ -568,13 +568,14 @@ export const CategoriesSettingsPage = () => {
         ref={topbarRef}
         title="つかいみち設定"
         subtitle="つかいみちを ふやす / なおす"
+        dense
       />
 
       <div
-        className="sticky z-20 -mx-4 border-b bg-card/95 px-4 pb-3 backdrop-blur md:-mx-6 md:px-6"
+        className="sticky z-20 -mx-4 border-b bg-card px-4 pb-3 pt-3 backdrop-blur md:-mx-6 md:px-6"
         style={{ top: topbarHeight }}
       >
-        <Card className="mb-4 shrink-0">
+        <Card className="shrink-0">
         <CardHeader>
           <CardTitle className="text-base">あたらしい つかいみち</CardTitle>
         </CardHeader>
