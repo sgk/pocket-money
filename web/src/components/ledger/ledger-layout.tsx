@@ -99,29 +99,12 @@ export const LedgerLayout = ({
         <Filters filters={filters} setFilters={setFilters} />
       </Topbar>
 
-      {filters.order === "desc" && (
-        <div className="bg-card border-b border-border -mx-4 px-4 py-[0.4rem] md:-mx-6 md:px-6">
-          <table className="ledger-table w-full">
-            <colgroup>
-              <col style={{ width: '120px' }} />
-              <col />
-              <col />
-              <col />
-              <col />
-              <col style={{ width: '120px' }} />
-              <col style={{ width: '120px' }} />
-            </colgroup>
-            <tbody>{entryRow}</tbody>
-          </table>
-        </div>
-      )}
-
       {filters.order === "asc" && <div className="h-0 min-[901px]:hidden" />}
 
       <div className="flex min-h-0 flex-1 flex-col">
         <div
           style={{ paddingBottom: filters.order === "desc" ? summaryHeight : 0 }}
-          className="min-h-0 flex-1 overflow-y-auto overflow-x-clip max-[900px]:-mx-4 min-[901px]:-mx-4 min-[1200px]:-mx-6"
+          className="min-h-0 flex-1 overflow-y-scroll overflow-x-clip max-[900px]:-mx-4 min-[901px]:-mx-4 min-[1200px]:-mx-6"
         >
           <div className="max-[900px]:px-4 min-[901px]:px-0">
             <LedgerTable
@@ -134,28 +117,12 @@ export const LedgerLayout = ({
               openingDate={openingDate}
               order={filters.order}
               onEditingChange={setIsEditing}
-              entryRow={undefined}
+              entryRow={entryRow}
               entryPosition={filters.order === "desc" ? "top" : "bottom"}
             />
           </div>
         </div>
 
-        {filters.order === "asc" && (
-          <div className="bg-card border-t border-border -mx-4 px-4 py-[0.4rem] md:-mx-6 md:px-6">
-            <table className="ledger-table w-full">
-              <colgroup>
-                <col style={{ width: '120px' }} />
-                <col />
-                <col />
-                <col />
-                <col />
-                <col style={{ width: '120px' }} />
-                <col style={{ width: '120px' }} />
-              </colgroup>
-              <tbody>{entryRow}</tbody>
-            </table>
-          </div>
-        )}
       </div>
 
       <section

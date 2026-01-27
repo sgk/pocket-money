@@ -1074,7 +1074,7 @@ export const LedgerTable = ({
       <div className="overflow-x-hidden max-[900px]:overflow-x-visible p-0 max-w-full">
         <table className="ledger-table w-full border-collapse text-sm m-0">
         <colgroup>
-          <col style={{ width: '120px' }} />
+          <col style={{ width: '160px' }} />
           <col />
           <col />
           <col />
@@ -1083,9 +1083,9 @@ export const LedgerTable = ({
           <col style={{ width: '120px' }} />
         </colgroup>
         {renderMode !== "body-only" ? (
-          <thead className="bg-secondary/50">
+          <thead className="">
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
+              <tr key={headerGroup.id} className="ledger-table-header-row">
                 {headerGroup.headers.map((header) => {
                   return (
                     <th
@@ -1101,11 +1101,11 @@ export const LedgerTable = ({
                 })}
               </tr>
             ))}
+            {isDesc ? entryRowNode : null}
           </thead>
         ) : null}
         {renderMode !== "header-only" ? (
           <tbody className="ledger-grid">
-          {isDesc ? entryRowNode : null}
           {!isDesc ? (
             <tr className="border-t bg-secondary/10 ledger-row ledger-row--opening">
               <td className="p-3">
