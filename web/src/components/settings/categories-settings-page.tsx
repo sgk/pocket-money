@@ -616,7 +616,7 @@ export const CategoriesSettingsPage = () => {
             onChange={(event) => setNewCategory({ ...newCategory, name: event.target.value })}
           />
           <div className="flex justify-end">
-            <Button onClick={handleCreate}>たす</Button>
+            <Button onClick={handleCreate}>ついか</Button>
           </div>
         </CardContent>
         </Card>
