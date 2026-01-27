@@ -107,7 +107,7 @@ export const LedgerPage = () => {
 
   return (
     <div
-      className="flex min-h-full flex-col"
+      className="flex h-full flex-col"
       style={
         {
           "--ledger-top-offset": `${topbarHeight}px`,
