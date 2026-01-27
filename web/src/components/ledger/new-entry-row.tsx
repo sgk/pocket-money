@@ -256,7 +256,7 @@ export const NewEntryRow = ({
       }`}
       aria-disabled={isDisabled}
     >
-      <td className="p-2 min-w-[72px]" data-label="ひづけ">
+      <td className="p-2 whitespace-nowrap" data-label="ひづけ">
         <Input
           ref={dateRef}
           type="date"
@@ -265,7 +265,7 @@ export const NewEntryRow = ({
           disabled={isDisabled}
         />
       </td>
-      <td className="p-2 min-w-[90px]" data-label="いれもの">
+      <td className="p-2 whitespace-normal break-words" data-label="いれもの">
         {entry.type === "transfer" ? (
           <div>
             <Select
@@ -366,7 +366,7 @@ export const NewEntryRow = ({
           />
         )}
       </td>
-      <td className="p-2 min-w-[100px]" data-label="うごき">
+      <td className="p-2 whitespace-normal break-words" data-label="うごき">
         <Select
           value={categoryValue}
           onValueChange={(value) => {
@@ -478,7 +478,7 @@ export const NewEntryRow = ({
           </SelectContent>
         </Select>
       </td>
-      <td className="p-2 min-w-[90px]" data-label="メモ">
+      <td className="p-2 whitespace-normal break-words" data-label="メモ">
         <Input
           list="memo-suggest"
           placeholder="メモ"
@@ -487,7 +487,7 @@ export const NewEntryRow = ({
           disabled={isDisabled}
         />
       </td>
-      <td className="p-2 min-w-[80px]" data-label="きんがく">
+      <td className="p-2 whitespace-nowrap text-right" data-label="きんがく">
         <div className="ledger-amount-inline">
           <Input
             type="number"
@@ -507,7 +507,7 @@ export const NewEntryRow = ({
         </div>
       </td>
       <td
-        className="ledger-action-cell p-2 text-center w-[120px] min-w-[120px] max-w-[120px]"
+        className="ledger-action-cell p-2 text-center"
         data-label=""
       >
         <Button

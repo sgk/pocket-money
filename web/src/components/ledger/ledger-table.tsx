@@ -540,7 +540,7 @@ const EditableRow = ({
         </div>
       </td>
       <td
-        className="ledger-action-cell p-2 text-right w-[120px] min-w-[120px] max-w-[120px]"
+        className="ledger-action-cell p-2 text-right"
         data-label=""
       >
         <div className="flex items-center justify-end gap-1">
@@ -705,8 +705,8 @@ export const LedgerTable = ({
         cell: ({ row }) => formatDateSlash(row.original.occurredAt),
         meta: {
           label: "ひづけ",
-          headerClassName: "min-w-[72px] whitespace-nowrap",
-          cellClassName: "min-w-[72px] whitespace-nowrap",
+          headerClassName: "whitespace-nowrap",
+          cellClassName: "whitespace-nowrap",
         },
       },
       {
@@ -714,8 +714,8 @@ export const LedgerTable = ({
         cell: ({ row }) => {
           const tx = row.original;
           if (tx.type === "transfer") {
-            if (fixedAssetId) {
-              return assetName(fixedAssetId);
+            if (fixedAssetId && tx.toAssetId === fixedAssetId) {
+              return assetName(tx.toAssetId);
             }
             return assetName(tx.fromAssetId);
           }
@@ -723,8 +723,8 @@ export const LedgerTable = ({
         },
         meta: {
           label: "いれもの",
-          headerClassName: "min-w-[90px]",
-          cellClassName: "min-w-[90px] whitespace-normal break-words",
+          headerClassName: "whitespace-normal break-words",
+          cellClassName: "whitespace-normal break-words",
         },
       },
       {
@@ -741,8 +741,8 @@ export const LedgerTable = ({
         },
         meta: {
           label: "あいて",
-          headerClassName: "min-w-[90px]",
-          cellClassName: "min-w-[90px] whitespace-normal break-words",
+          headerClassName: "whitespace-normal break-words",
+          cellClassName: "whitespace-normal break-words",
         },
       },
       {
@@ -762,8 +762,8 @@ export const LedgerTable = ({
         },
         meta: {
           label: "うごき",
-          headerClassName: "min-w-[100px]",
-          cellClassName: "min-w-[100px] whitespace-normal break-words",
+          headerClassName: "whitespace-normal break-words",
+          cellClassName: "whitespace-normal break-words",
         },
       },
       {
@@ -780,8 +780,8 @@ export const LedgerTable = ({
         },
         meta: {
           label: "メモ",
-          headerClassName: "min-w-[90px]",
-          cellClassName: "min-w-[90px] whitespace-normal break-words",
+          headerClassName: "whitespace-normal break-words",
+          cellClassName: "whitespace-normal break-words",
         },
       },
       {
@@ -790,8 +790,8 @@ export const LedgerTable = ({
         cell: ({ row }) => formatJPYPlain(row.original.amount),
         meta: {
           label: "きんがく",
-          headerClassName: "min-w-[80px] whitespace-nowrap",
-          cellClassName: "min-w-[80px] whitespace-nowrap text-right",
+          headerClassName: "whitespace-nowrap",
+          cellClassName: "whitespace-nowrap text-right",
         },
       },
       {
@@ -808,10 +808,8 @@ export const LedgerTable = ({
         },
         meta: {
           label: "のこり",
-          headerClassName:
-            "min-w-[120px] w-[120px] max-w-[120px] whitespace-nowrap",
-          cellClassName:
-            "min-w-[120px] w-[120px] max-w-[120px] whitespace-nowrap text-right",
+          headerClassName: "whitespace-nowrap",
+          cellClassName: "whitespace-nowrap text-right",
         },
       },
     ],
@@ -1075,21 +1073,32 @@ export const LedgerTable = ({
     >
       <div className="overflow-x-hidden max-[900px]:overflow-x-visible p-0 max-w-full">
         <table className="ledger-table w-full border-collapse text-sm m-0">
+        <colgroup>
+          <col style={{ width: '120px' }} />
+          <col />
+          <col />
+          <col />
+          <col />
+          <col style={{ width: '120px' }} />
+          <col style={{ width: '120px' }} />
+        </colgroup>
         {renderMode !== "body-only" ? (
           <thead className="bg-secondary/50">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className={`p-3 text-center font-medium ${
-                      (header.column.columnDef.meta as ColumnMeta | undefined)?.headerClassName ??
-                      ""
-                    }`}
-                  >
-                    {flexRender(header.column.columnDef.header, header.getContext())}
-                  </th>
-                ))}
+                {headerGroup.headers.map((header) => {
+                  return (
+                    <th
+                      key={header.id}
+                      className={`p-3 text-center font-medium ${
+                        (header.column.columnDef.meta as ColumnMeta | undefined)?.headerClassName ??
+                        ""
+                      }`}
+                    >
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                    </th>
+                  );
+                })}
               </tr>
             ))}
           </thead>
@@ -1113,7 +1122,7 @@ export const LedgerTable = ({
                 data-label=""
               />
               <td
-                className="p-3 text-right w-[120px] min-w-[120px] max-w-[120px]"
+                className="p-3 text-right"
                 data-label="のこり"
               >
                 <span className="ledger-opening-label">のこり</span>
@@ -1341,7 +1350,7 @@ export const LedgerTable = ({
                 data-label=""
               />
               <td
-                className="p-3 text-right w-[120px] min-w-[120px] max-w-[120px]"
+                className="p-3 text-right"
                 data-label="のこり"
               >
                 <span className="ledger-opening-label">のこり</span>
