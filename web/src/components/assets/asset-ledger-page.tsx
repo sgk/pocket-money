@@ -141,35 +141,13 @@ export const AssetLedgerPage = () => {
     return () => observer.disconnect();
   }, []);
 
-  const entryContent = (
-    <div className="mx-auto w-full max-w-6xl px-4 md:px-6 md:pr-4">
-      <div className="ledger-table-wrap flex flex-col shadow-none">
-        <div className="overflow-visible px-0 py-2 md:p-0">
-          <table className="ledger-table w-full border-collapse text-sm min-[901px]:min-w-[700px]">
-            <tbody className="ledger-grid">
-              <NewEntryRow
-                assets={assets}
-                categories={categories}
-                fixedAssetId={assetId}
-                disabled={isEditing}
-              />
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-
-  const entryPanelTop = (
-    <div className="sticky z-20 -mx-4 bg-card/95 md:-mx-6 top-[var(--ledger-top-offset)] border-b">
-      {entryContent}
-    </div>
-  );
-
-  const entryPanelBottom = (
-    <div className="border-b">
-      {entryContent}
-    </div>
+  const entryRow = (
+    <NewEntryRow
+      assets={assets}
+      categories={categories}
+      fixedAssetId={assetId}
+      disabled={isEditing}
+    />
   );
 
   return (
@@ -190,7 +168,15 @@ export const AssetLedgerPage = () => {
         <Filters filters={filters} setFilters={setFilters} />
       </Topbar>
 
-      {filters.order === "desc" ? entryPanelTop : null}
+      {filters.order === "desc" && (
+        <div className="bg-card border-b border-border -mx-4 px-4 py-[0.4rem] md:-mx-6 md:px-6">
+          <table className="ledger-table w-full">
+            <tbody>{entryRow}</tbody>
+          </table>
+        </div>
+      )}
+
+      {filters.order === "asc" && <div className="h-0 min-[901px]:hidden" />}
 
       <div className="flex min-h-0 flex-1 flex-col">
         <div
@@ -211,15 +197,22 @@ export const AssetLedgerPage = () => {
             />
           </div>
         </div>
+
+        {filters.order === "asc" && (
+          <div className="bg-card border-t border-border -mx-4 px-4 py-[0.4rem] md:-mx-6 md:px-6">
+            <table className="ledger-table w-full">
+              <tbody>{entryRow}</tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <section
         ref={summaryRef}
-        className="sticky bottom-0 z-20 mt-auto shrink-0 border-t bg-card/95 backdrop-blur -mx-4 md:-mx-6"
+        className="sticky bottom-0 z-20 shrink-0 border-t bg-card/95 backdrop-blur -mx-4 md:-mx-6"
         style={{ marginBottom: "-1px" }}
       >
-        {filters.order === "asc" ? entryPanelBottom : null}
-        <div className="mx-auto w-full max-w-6xl px-4 py-2 md:px-6">
+        <div className="w-full px-4 py-2 md:px-6">
           <div className="flex flex-nowrap items-center gap-2 text-xs sm:text-sm">
             <span className="shrink-0 text-muted-foreground">まとめ</span>
             <div className="flex min-w-0 flex-1 items-center gap-2">
