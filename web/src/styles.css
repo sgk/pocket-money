@@ -162,8 +162,7 @@ h1, h2, h3, .font-display {
     gap: 3px 8px;
     margin-bottom: 0;
     padding: 0.4rem 0;
-    border: none;
-    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    border: none !important;
     border-radius: 0;
     background: transparent;
     box-shadow: none;
@@ -179,7 +178,7 @@ h1, h2, h3, .font-display {
     width: 100vw;
     transform: translateX(-50%);
     background: inherit;
-    border-bottom: inherit;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
     pointer-events: none;
     z-index: -1;
   }
@@ -244,7 +243,6 @@ h1, h2, h3, .font-display {
     width: 100%;
     box-sizing: border-box;
     border: none;
-    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
     border-radius: 0;
     background: transparent;
     box-shadow: none;
@@ -260,7 +258,7 @@ h1, h2, h3, .font-display {
     width: 100vw;
     transform: translateX(-50%);
     background: inherit;
-    border-bottom: inherit;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
     pointer-events: none;
     z-index: -1;
   }
@@ -476,7 +474,6 @@ h1, h2, h3, .font-display {
     border-left: none;
     border-right: none;
     background: hsl(var(--card));
-    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
   }
 
   @media (min-width: 901px) {
