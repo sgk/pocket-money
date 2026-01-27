@@ -251,12 +251,12 @@ export const NewEntryRow = ({
   return (
     <tr
       onKeyDown={handleKeyDown}
-      className={`ledger-row ledger-row--edit ledger-row--new ${
+      className={`bg-secondary/30 ledger-row ledger-row--edit ledger-row--new ${
         isDisabled ? "opacity-50 pointer-events-none" : ""
       }`}
       aria-disabled={isDisabled}
     >
-      <td className="p-3" data-label="ひづけ">
+      <td className="p-2" data-label="ひづけ">
         <Input
           ref={dateRef}
           type="date"
@@ -265,7 +265,7 @@ export const NewEntryRow = ({
           disabled={isDisabled}
         />
       </td>
-      <td className="p-3" data-label="いれもの">
+      <td className="p-2" data-label="いれもの">
         {entry.type === "transfer" ? (
           <div>
             <Select
@@ -338,7 +338,7 @@ export const NewEntryRow = ({
           </Select>
         )}
       </td>
-      <td className="p-3" data-label="あいて">
+      <td className="p-2" data-label="あいて">
         {entry.type === "expense" ? (
           <Input
             list="merchant-suggest"
@@ -366,7 +366,7 @@ export const NewEntryRow = ({
           />
         )}
       </td>
-      <td className="p-3" data-label="うごき">
+      <td className="p-2" data-label="うごき">
         <Select
           value={categoryValue}
           onValueChange={(value) => {
@@ -478,7 +478,7 @@ export const NewEntryRow = ({
           </SelectContent>
         </Select>
       </td>
-      <td className="p-3" data-label="メモ">
+      <td className="p-2" data-label="メモ">
         <Input
           list="memo-suggest"
           placeholder="メモ"
@@ -487,7 +487,7 @@ export const NewEntryRow = ({
           disabled={isDisabled}
         />
       </td>
-      <td className="p-3" data-label="きんがく">
+      <td className="p-2" data-label="きんがく">
         <div className="ledger-amount-inline">
           <Input
             type="number"
@@ -507,7 +507,7 @@ export const NewEntryRow = ({
         </div>
       </td>
       <td
-        className="ledger-action-cell p-3 text-center w-[96px] min-w-[96px] max-w-[96px]"
+        className="ledger-action-cell p-2 text-center w-[80px] min-w-[80px] max-w-[80px]"
         data-label=""
       >
         <Button

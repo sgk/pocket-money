@@ -809,9 +809,9 @@ export const LedgerTable = ({
         meta: {
           label: "のこり",
           headerClassName:
-            "min-w-[96px] w-[96px] max-w-[96px] whitespace-nowrap",
+            "min-w-[80px] w-[80px] max-w-[80px] whitespace-nowrap",
           cellClassName:
-            "min-w-[96px] w-[96px] max-w-[96px] whitespace-nowrap text-right",
+            "min-w-[80px] w-[80px] max-w-[80px] whitespace-nowrap text-right",
         },
       },
     ],
@@ -1098,7 +1098,7 @@ export const LedgerTable = ({
           <tbody className="ledger-grid">
           {isDesc ? entryRowNode : null}
           {!isDesc ? (
-            <tr className="bg-secondary/10 ledger-row ledger-row--opening">
+            <tr className="border-t bg-secondary/10 ledger-row ledger-row--opening">
               <td className="p-3" data-label="ひづけ">
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground opacity-0" aria-hidden>
@@ -1326,7 +1326,7 @@ export const LedgerTable = ({
           })}
           {!isDesc ? entryRowNode : null}
           {isDesc ? (
-            <tr className="bg-secondary/10 ledger-row ledger-row--opening">
+            <tr className="border-t bg-secondary/10 ledger-row ledger-row--opening">
               <td className="p-3" data-label="ひづけ">
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground opacity-0" aria-hidden>

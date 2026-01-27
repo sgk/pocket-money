@@ -152,17 +152,20 @@ h1, h2, h3, .font-display {
 
   .ledger-table tbody {
     display: block;
-    width: 100%;
+    padding: 0;
   }
 
   .ledger-table tr {
-    display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     width: 100%;
     gap: 3px 8px;
-    padding: 4px 6px;
+    margin-bottom: 0;
+    padding: 0.4rem 0;
+    border: none;
     border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 0;
     background: transparent;
+    box-shadow: none;
     position: relative;
   }
 
@@ -183,7 +186,7 @@ h1, h2, h3, .font-display {
   .ledger-table tr.ledger-row--mobile {
     display: block;
     width: 100%;
-    margin-bottom: 4px;
+    margin-bottom: 0;
     padding: 0;
     border: none;
     border-radius: 0;
@@ -203,9 +206,7 @@ h1, h2, h3, .font-display {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 0.4rem 0.6rem;
-    padding: 0.4rem 0.6rem !important;
-    padding-top: 0.4rem !important;
-    padding-bottom: 0.4rem !important;
+    padding: 0.4rem 0 !important;
     border: none;
     border-radius: 0;
     background: transparent;
@@ -237,11 +238,15 @@ h1, h2, h3, .font-display {
     display: flex;
     align-items: flex-start;
     gap: 10px;
-    padding: 4px 6px;
+    margin: 0;
+    padding: 0.4rem 0;
     width: 100%;
     box-sizing: border-box;
+    border: none;
     border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 0;
     background: transparent;
+    box-shadow: none;
     position: relative;
   }
 
@@ -316,7 +321,7 @@ h1, h2, h3, .font-display {
     width: auto;
     border-right: none;
     border-top: 1px dashed rgba(15, 23, 42, 0.1);
-    padding: 1px 2px;
+    padding: 1px 0;
   }
 
   .ledger-table td:nth-child(-n + 2) {
@@ -409,18 +414,18 @@ h1, h2, h3, .font-display {
     justify-content: flex-end;
   }
 
-  .ledger-table tr.ledger-row {
-    padding-left: 6px;
+  .ledger-table tr.ledger-row--opening td[data-label="ひづけ"] > div {
+    width: 100%;
+    justify-content: flex-end;
   }
 
-  @media (min-width: 901px) {
-    .ledger-table tr.ledger-row {
-      padding-left: 0;
-    }
+  .ledger-table tr.ledger-row--opening td[data-label="のこり"] {
+    justify-content: flex-end;
+    text-align: right;
+  }
 
-    .ledger-table .ledger-handle {
-      left: 0;
-    }
+  .ledger-table tr.ledger-row {
+    padding-left: 0;
   }
 
   .ledger-table tr.ledger-row--mobile {
@@ -429,7 +434,7 @@ h1, h2, h3, .font-display {
 
   .ledger-table .ledger-handle {
     position: absolute;
-    left: 6px;
+    left: 0;
     top: 6px;
     font-size: 12px;
     line-height: 1;
@@ -464,7 +469,7 @@ h1, h2, h3, .font-display {
     /* 編集行の負のマージン/幅計算は親コンテナをはみ出す原因になるため除去 */
     margin-left: 0;
     margin-right: 0;
-    padding: 0;
+    padding: 0.4rem 0;
     width: 100%;
     box-sizing: border-box;
     border-left: none;
@@ -487,17 +492,14 @@ h1, h2, h3, .font-display {
     border: none;
     border-radius: 0;
     box-shadow: none;
+    background: transparent;
     margin-top: 0;
-    padding: 0.4rem 6px;
-  }
-
-  .ledger-table tr.ledger-row--new::before {
-    display: none;
+    padding: 0.4rem 0;
   }
 
   .ledger-table tr.ledger-row--opening td::before {
-    content: "";
-    display: none;
+    content: attr(data-label);
+    display: block;
   }
 
   .ledger-table tr.ledger-row--opening td[data-label="ひづけ"] {
@@ -505,20 +507,23 @@ h1, h2, h3, .font-display {
     grid-column: 1 / 2;
   }
 
+  .ledger-table tr.ledger-row--opening {
+    padding: 0.4rem 0;
+  }
+
+  .ledger-table tr.ledger-row--opening td {
+    padding: 1px 0;
+  }
+
   .ledger-table tr.ledger-row--opening td[data-label="のこり"] {
     grid-row: 1;
     grid-column: 2 / 3;
-    justify-content: space-between;
+    justify-content: flex-end;
+    text-align: right;
   }
 
   .ledger-opening-label {
-    display: block;
-    flex: 0 0 48px;
-    margin-bottom: 0;
-    font-size: 0.6rem;
-    color: hsl(var(--muted-foreground));
-    letter-spacing: 0.08em;
-    text-align: left;
+    display: none;
   }
 
   .ledger-opening-value {
@@ -584,6 +589,12 @@ h1, h2, h3, .font-display {
   .ledger-table tr.ledger-row td[data-label="ひづけ"]::before {
     content: "";
     display: none;
+  }
+
+  .ledger-table tr.ledger-row--opening td[data-label="ひづけ"]::before,
+  .ledger-table tr.ledger-row--opening td[data-label="のこり"]::before {
+    content: attr(data-label);
+    display: block;
   }
 
   .ledger-table tr.ledger-row--edit td[data-label="ひづけ"]::before {
