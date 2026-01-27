@@ -7,6 +7,7 @@ import { AssetsPage } from "@/components/assets/assets-page";
 import { AssetLedgerPage } from "@/components/assets/asset-ledger-page";
 import { AssetsSettingsPage } from "@/components/settings/assets-settings-page";
 import { CategoriesSettingsPage } from "@/components/settings/categories-settings-page";
+import { DataSettingsPage } from "@/components/settings/data-settings-page";
 
 export const RoutesConfig = () => (
   <Routes>
@@ -18,6 +19,7 @@ export const RoutesConfig = () => (
       <Route path="assets/:assetId/ledger" element={<AssetLedgerPage />} />
       <Route path="settings/assets" element={<AssetsSettingsPage />} />
       <Route path="settings/categories" element={<CategoriesSettingsPage />} />
+      <Route path="settings/data" element={<DataSettingsPage />} />
     </Route>
   </Routes>
 );

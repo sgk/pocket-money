@@ -1,8 +1,10 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from app.core.auth import create_session_token_from_google
 from app.core.errors import AppError
+from app.api.deps import get_current_user
+from app.services import transactions_service
 
 
 router = APIRouter(prefix="/api", tags=["auth"])
@@ -19,3 +21,7 @@ def login(body: LoginRequest):
         raise AppError(400, "credential is required")
     token = create_session_token_from_google(credential)
     return {"token": token}
+
+@router.delete("/me", status_code=204)
+def delete_account(user=Depends(get_current_user)):
+    transactions_service.delete_user_account(user.uid)

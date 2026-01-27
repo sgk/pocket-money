@@ -95,6 +95,20 @@ export const Sidebar = ({ onNavigate, className = "" }: SidebarProps) => {
           <Settings className="h-4 w-4" />
           <span className="whitespace-nowrap">つかいみち設定</span>
         </NavLink>
+        <NavLink
+          to="/settings/data"
+          onClick={onNavigate}
+          className={({ isActive }) =>
+            `flex w-full items-center justify-start gap-2 rounded-md px-3 py-2 text-sm transition ${
+              isActive
+                ? "bg-primary text-primary-foreground"
+                : "text-foreground hover:bg-secondary"
+            }`
+          }
+        >
+          <Settings className="h-4 w-4" />
+          <span className="whitespace-nowrap">データ管理</span>
+        </NavLink>
       </nav>
     </aside>
   );

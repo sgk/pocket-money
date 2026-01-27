@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import APIRouter, Depends, Query
 
@@ -78,3 +78,15 @@ def update_transaction(tx_id: str, payload: TransactionUpdate, user=Depends(get_
 @router.delete("/{tx_id}", response_model=TransactionOut)
 def delete_transaction(tx_id: str, user=Depends(get_current_user)):
     return transactions_service.delete_transaction(user.uid, tx_id)
+
+@router.get("/export", response_model=List[dict])
+def export_transactions_route(user=Depends(get_current_user)):
+    return transactions_service.export_transactions(user.uid)
+
+@router.post("/import", status_code=204)
+def import_transactions_route(body: List[dict], user=Depends(get_current_user)):
+    transactions_service.import_transactions(user.uid, body)
+
+@router.delete("/all", status_code=204)
+def delete_all_transactions_route(user=Depends(get_current_user)):
+    transactions_service.delete_all_transactions(user.uid)

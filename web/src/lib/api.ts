@@ -108,6 +108,16 @@ export const api = {
       includeOpeningBalances?: boolean;
     }
   ) => fetchJson<TransactionsResponse>(token, "/api/transactions", {}, params),
+  exportTransactions: (token: string) => fetchJson<Transaction[]>(token, "/api/transactions/export"),
+  importTransactions: (token: string, transactions: Transaction[]) =>
+    fetchJson<void>(token, "/api/transactions/import", {
+      method: "POST",
+      body: JSON.stringify(transactions),
+    }),
+  deleteAllTransactions: (token: string) =>
+    fetchJson<void>(token, "/api/transactions/all", { method: "DELETE" }),
+  deleteAccount: (token: string) =>
+    fetchJson<void>(token, "/api/auth/me", { method: "DELETE" }),
   createExpense: (token: string, payload: Record<string, unknown>) =>
     fetchJson<Transaction>(token, "/api/transactions/expense", {
       method: "POST",

@@ -567,3 +567,175 @@ def list_transactions(
         result["openingBalances"] = balances
 
     return result
+
+def export_transactions(uid: str) -> List[dict]:
+    query = firestore.transactions_collection(uid)
+    docs = query.stream()
+    results = []
+    for doc in docs:
+        data = doc.to_dict()
+        data["id"] = doc.id
+        # Convert datetimes to isoformat for JSON serialization
+        if isinstance(data.get("occurredAt"), datetime):
+            data["occurredAt"] = data["occurredAt"].isoformat()
+        if isinstance(data.get("createdAt"), datetime):
+            data["createdAt"] = data["createdAt"].isoformat()
+        if isinstance(data.get("updatedAt"), datetime):
+            data["updatedAt"] = data["updatedAt"].isoformat()
+        results.append(data)
+    return results
+
+def import_transactions(uid: str, transactions: List[dict]):
+    if not transactions:
+        return
+
+    # 1. Fetch existing IDs to skip
+    existing_ids = set()
+    docs = firestore.transactions_collection(uid).select([]).stream()
+    for doc in docs:
+        existing_ids.add(doc.id)
+    
+    new_txs = []
+    for tx in transactions:
+        tx_id = tx.get("id")
+        if tx_id and tx_id not in existing_ids:
+            new_txs.append(tx)
+    
+    if not new_txs:
+        return
+
+    # 2. Calculate balance deltas
+    total_deltas: Dict[str, int] = {}
+    min_occurred_at = None
+    
+    for tx in new_txs:
+        # Normalize date
+        if isinstance(tx.get("occurredAt"), str):
+             try:
+                dt = datetime.fromisoformat(tx["occurredAt"].replace('Z', '+00:00'))
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                tx["occurredAt"] = dt
+             except ValueError:
+                continue
+        
+        if "amount" in tx:
+            tx["amount"] = int(tx["amount"])
+            
+        effect = tx_effect(tx)
+        for asset_id, delta in effect.items():
+            total_deltas[asset_id] = total_deltas.get(asset_id, 0) + delta
+            
+        if min_occurred_at is None or tx["occurredAt"] < min_occurred_at:
+            min_occurred_at = tx["occurredAt"]
+
+    # 3. Batched Write
+    client = firestore.get_client()
+    batch = client.batch()
+    count = 0
+    now = _now()
+    
+    # Write Transactions
+    for tx in new_txs:
+        tx_id = tx.get("id")
+        data = tx.copy()
+        if "id" in data:
+            del data["id"]
+            
+        if isinstance(data.get("createdAt"), str):
+             try:
+                data["createdAt"] = datetime.fromisoformat(data["createdAt"].replace('Z', '+00:00'))
+             except:
+                data["createdAt"] = now
+        else:
+            data["createdAt"] = now
+            
+        data["updatedAt"] = now
+        data["createdBy"] = uid
+        
+        if data.get("dayOrder") is None:
+             data["dayOrder"] = _default_day_order(now)
+
+        doc_ref = firestore.transactions_collection(uid).document(tx_id)
+        batch.set(doc_ref, data)
+        count += 1
+        
+        if count >= 400:
+            batch.commit()
+            batch = client.batch()
+            count = 0
+            
+    # Write Asset Updates (currentBalance)
+    for asset_id, delta in total_deltas.items():
+        if delta == 0:
+            continue
+        asset_ref = firestore.asset_doc(uid, asset_id)
+        batch.update(asset_ref, {"currentBalance": fs.Increment(delta), "updatedAt": now})
+        count += 1
+        if count >= 400:
+            batch.commit()
+            batch = client.batch()
+            count = 0
+
+    if count > 0:
+        batch.commit()
+
+    # handle dirty separately
+    if min_occurred_at:
+         def update_dirty(tx: fs.Transaction):
+             user_ref = firestore.user_doc(uid)
+             snap = user_ref.get(transaction=tx)
+             existing = snap.to_dict().get("balanceDirtyFrom") if snap.exists else None
+             _queue_balance_dirty(tx, user_ref, existing, _month_start(min_occurred_at))
+         
+         firestore.run_in_transaction(update_dirty)
+
+def _delete_collection(coll_ref, batch_size):
+    docs = coll_ref.limit(batch_size).stream()
+    deleted = 0
+    for doc in docs:
+        doc.reference.delete()
+        deleted += 1
+    
+    if deleted >= batch_size:
+        _delete_collection(coll_ref, batch_size)
+
+def delete_all_transactions(uid: str):
+    coll = firestore.transactions_collection(uid)
+    _delete_collection(coll, 100)
+    
+    # Reset Assets
+    assets = firestore.assets_collection(uid).stream()
+    batch = firestore.get_client().batch()
+    count = 0
+    now = _now()
+    
+    for asset in assets:
+        data = asset.to_dict()
+        initial = int(data.get("initialBalance", 0))
+        batch.update(asset.reference, {"currentBalance": initial, "updatedAt": now})
+        count += 1
+        if count >= 400:
+            batch.commit()
+            batch = firestore.get_client().batch()
+            count = 0
+    
+    if count > 0:
+        batch.commit()
+        
+    firestore.user_doc(uid).update({"balanceDirtyFrom": fs.DELETE_FIELD})
+
+def delete_user_account(uid: str):
+    delete_all_transactions(uid)
+    
+    # Delete categories
+    _delete_collection(firestore.categories_collection(uid), 100)
+    
+    # Delete assets (Wait, delete_all_transactions resets them, but here we want to DELETE them)
+    # delete_all_transactions() calls _delete_collection(transactions).
+    # It attempts to reset assets. If we are deleting account, reset is wasteful but fine.
+    # But then we delete the asset docs themselves.
+    _delete_collection(firestore.assets_collection(uid), 100)
+    
+    # Delete user doc
+    firestore.user_doc(uid).delete()
