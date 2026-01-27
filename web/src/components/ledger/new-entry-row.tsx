@@ -289,7 +289,7 @@ export const NewEntryRow = ({
               }}
               disabled={Boolean(fixedAssetId) || isDisabled}
             >
-              <SelectTrigger>
+              <SelectTrigger className={(fixedAssetId ?? (entry.transferDirection === "out" ? entry.fromAssetId : entry.toAssetId)) === "" || (fixedAssetId ?? (entry.transferDirection === "out" ? entry.fromAssetId : entry.toAssetId)) === assetPlaceholderValue ? "text-muted-foreground/40" : ""}>
                 <SelectValue placeholder="いれもの" />
               </SelectTrigger>
               <SelectContent>
@@ -319,7 +319,7 @@ export const NewEntryRow = ({
             }}
             disabled={Boolean(fixedAssetId) || isDisabled}
           >
-            <SelectTrigger>
+            <SelectTrigger className={(fixedAssetId ?? entry.assetId) === "" || (fixedAssetId ?? entry.assetId) === assetPlaceholderValue ? "text-muted-foreground/40" : ""}>
               <SelectValue placeholder="いれもの" />
             </SelectTrigger>
             <SelectContent>
@@ -424,7 +424,7 @@ export const NewEntryRow = ({
           }}
           disabled={isDisabled}
         >
-          <SelectTrigger>
+          <SelectTrigger className={categoryValue === "" || categoryValue === placeholderValue ? "text-muted-foreground/40" : ""}>
             <SelectValue placeholder="うごき" />
           </SelectTrigger>
           <SelectContent>
