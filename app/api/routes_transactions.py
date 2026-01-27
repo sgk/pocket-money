@@ -1,7 +1,8 @@
 from datetime import datetime, timezone
+from email.utils import format_datetime, parsedate_to_datetime
 from typing import Optional, List
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Header, Query, Response
 
 from app.api.deps import get_current_user
 from app.core.errors import AppError
@@ -30,8 +31,30 @@ def _parse_dt(value: Optional[str]) -> Optional[datetime]:
     return parsed
 
 
+def _to_utc(dt: datetime) -> datetime:
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
+def _http_date(dt: datetime) -> str:
+    normalized = _to_utc(dt).replace(microsecond=0)
+    return format_datetime(normalized, usegmt=True)
+
+
+def _parse_if_modified_since(value: Optional[str]) -> Optional[datetime]:
+    if not value:
+        return None
+    try:
+        parsed = parsedate_to_datetime(value)
+    except (TypeError, ValueError) as exc:
+        raise AppError(400, "Invalid If-Modified-Since") from exc
+    return _to_utc(parsed).replace(microsecond=0)
+
+
 @router.get("", response_model=dict)
 def list_transactions(
+    response: Response,
     user=Depends(get_current_user),
     from_dt: Optional[str] = Query(None, alias="from"),
     to_dt: Optional[str] = Query(None, alias="to"),
@@ -41,7 +64,16 @@ def list_transactions(
     limit: int = Query(50, ge=1, le=200),
     cursor: Optional[str] = None,
     include_opening_balances: bool = Query(False, alias="includeOpeningBalances"),
+    if_modified_since: Optional[str] = Header(None, alias="If-Modified-Since"),
 ):
+    last_modified = transactions_service.get_transactions_last_modified(user.uid)
+    last_modified_http = _http_date(last_modified)
+    response.headers["Last-Modified"] = last_modified_http
+
+    ims_dt = _parse_if_modified_since(if_modified_since)
+    if ims_dt and _to_utc(last_modified).replace(microsecond=0) <= ims_dt:
+        return Response(status_code=304, headers={"Last-Modified": last_modified_http})
+
     return transactions_service.list_transactions(
         user.uid,
         _parse_dt(from_dt),

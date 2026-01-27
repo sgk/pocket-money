@@ -58,6 +58,8 @@ export const useTransactions = (filters: TransactionsFilters) => {
       }),
     enabled: Boolean(token),
     placeholderData: { items: [], nextCursor: null },
+    staleTime: 1000 * 60,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -73,6 +75,7 @@ export const useMonthlySummary = (year: number, month: number) => {
 export const useInvalidateLedger = () => {
   const queryClient = useQueryClient();
   return () => {
+    api.clearTransactionsCache();
     queryClient.invalidateQueries({ queryKey: ["transactions"] });
     queryClient.invalidateQueries({ queryKey: ["summary"] });
     queryClient.invalidateQueries({ queryKey: ["assets"] });

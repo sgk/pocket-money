@@ -48,6 +48,43 @@ const fetchJson = async <T>(
   return (await res.json()) as T;
 };
 
+type TransactionsParams = {
+  from?: string;
+  to?: string;
+  type?: string;
+  assetId?: string;
+  categoryName?: string;
+  limit?: number;
+  cursor?: string;
+  includeOpeningBalances?: boolean;
+};
+
+type TransactionsCacheEntry = {
+  lastModified: string;
+  data: TransactionsResponse;
+};
+
+const transactionsCache = new Map<string, TransactionsCacheEntry>();
+
+const transactionsCacheKey = (token: string, params: TransactionsParams): string => {
+  const normalized = {
+    token,
+    from: params.from ?? "",
+    to: params.to ?? "",
+    type: params.type ?? "",
+    assetId: params.assetId ?? "",
+    categoryName: params.categoryName ?? "",
+    limit: params.limit ?? 200,
+    cursor: params.cursor ?? "",
+    includeOpeningBalances: params.includeOpeningBalances ? "1" : "0",
+  };
+  return JSON.stringify(normalized);
+};
+
+const clearTransactionsCache = () => {
+  transactionsCache.clear();
+};
+
 export const api = {
   loginWithGoogle: async (credential: string) => {
     const res = await fetch(buildUrl("/api/login"), {
@@ -95,19 +132,41 @@ export const api = {
     }),
   deleteCategory: (token: string, categoryId: string) =>
     fetchJson<void>(token, `/api/categories/${categoryId}`, { method: "DELETE" }),
-  getTransactions: (
-    token: string,
-    params: {
-      from?: string;
-      to?: string;
-      type?: string;
-      assetId?: string;
-      categoryName?: string;
-      limit?: number;
-      cursor?: string;
-      includeOpeningBalances?: boolean;
+  getTransactions: async (token: string, params: TransactionsParams) => {
+    const key = transactionsCacheKey(token, params);
+    const cached = transactionsCache.get(key);
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    };
+    if (cached) {
+      headers["If-Modified-Since"] = cached.lastModified;
     }
-  ) => fetchJson<TransactionsResponse>(token, "/api/transactions", {}, params),
+
+    const res = await fetch(buildUrl("/api/transactions", params), {
+      headers,
+    });
+
+    if (res.status === 304) {
+      if (!cached) {
+        throw new Error("取引キャッシュがありません");
+      }
+      return cached.data;
+    }
+
+    if (!res.ok) {
+      const message = await res.text();
+      throw new Error(message || "API エラーが発生しました");
+    }
+
+    const data = (await res.json()) as TransactionsResponse;
+    const lastModified = res.headers.get("Last-Modified");
+    if (lastModified) {
+      transactionsCache.set(key, { lastModified, data });
+    }
+    return data;
+  },
   exportTransactions: (token: string) => fetchJson<Transaction[]>(token, "/api/transactions/export"),
   importTransactions: (token: string, transactions: Transaction[]) =>
     fetchJson<void>(token, "/api/transactions/import", {
@@ -142,4 +201,5 @@ export const api = {
     fetchJson<void>(token, `/api/transactions/${txId}`, { method: "DELETE" }),
   getMonthlySummary: (token: string, year: number, month: number) =>
     fetchJson<MonthlySummary>(token, "/api/summary/monthly", {}, { year, month }),
+  clearTransactionsCache,
 };

@@ -30,6 +30,7 @@ def bootstrap(user=Depends(get_current_user)):
             profile = {
                 "createdAt": now,
                 "updatedAt": now,
+                "transactionsUpdatedAt": now,
                 "displayName": user.display_name,
                 "email": user.email,
                 "photoUrl": user.photo_url,

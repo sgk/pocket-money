@@ -75,6 +75,26 @@ def _queue_balance_dirty(
         transaction.set(user_ref, {"balanceDirtyFrom": next_dirty}, merge=True)
 
 
+def _touch_transactions_updated_at(
+    transaction: fs.Transaction, user_ref, now: datetime
+):
+    transaction.set(user_ref, {"transactionsUpdatedAt": now}, merge=True)
+
+
+def get_transactions_last_modified(uid: str) -> datetime:
+    user_ref = firestore.user_doc(uid)
+    snap = user_ref.get()
+    now = _now()
+    if snap.exists:
+        data = snap.to_dict()
+        last_modified = data.get("transactionsUpdatedAt")
+        if isinstance(last_modified, datetime):
+            return _to_utc(last_modified)
+    # 最終更新時刻が未初期化の既存ユーザー向けに、ここで初期化する
+    user_ref.set({"transactionsUpdatedAt": now}, merge=True)
+    return now
+
+
 def _seed_balances(uid: str, as_of: datetime) -> Dict[str, int]:
     balances: Dict[str, int] = {}
     for doc in firestore.assets_collection(uid).stream():
@@ -327,6 +347,7 @@ def create_expense(uid: str, payload: ExpenseCreate) -> dict:
         _queue_balance_dirty(
             transaction, user_ref, existing_dirty, _month_start(data["occurredAt"])
         )
+        _touch_transactions_updated_at(transaction, user_ref, now)
         doc_ref = firestore.transactions_collection(uid).document()
         transaction.set(doc_ref, data)
         data["id"] = doc_ref.id
@@ -355,6 +376,7 @@ def create_income(uid: str, payload: IncomeCreate) -> dict:
         _queue_balance_dirty(
             transaction, user_ref, existing_dirty, _month_start(data["occurredAt"])
         )
+        _touch_transactions_updated_at(transaction, user_ref, now)
         doc_ref = firestore.transactions_collection(uid).document()
         transaction.set(doc_ref, data)
         data["id"] = doc_ref.id
@@ -383,6 +405,7 @@ def create_transfer(uid: str, payload: TransferCreate) -> dict:
         _queue_balance_dirty(
             transaction, user_ref, existing_dirty, _month_start(data["occurredAt"])
         )
+        _touch_transactions_updated_at(transaction, user_ref, now)
         doc_ref = firestore.transactions_collection(uid).document()
         transaction.set(doc_ref, data)
         data["id"] = doc_ref.id
@@ -436,6 +459,7 @@ def update_transaction(uid: str, tx_id: str, payload: TransactionUpdate) -> dict
             new_month = _month_start(_to_utc(new_tx["occurredAt"]))
             dirty_from = old_month if old_month <= new_month else new_month
             _queue_balance_dirty(transaction, user_ref, existing_dirty, dirty_from)
+        _touch_transactions_updated_at(transaction, user_ref, now)
 
         updates = {}
         for key, value in patch.items():
@@ -476,6 +500,7 @@ def delete_transaction(uid: str, tx_id: str) -> dict:
         _queue_balance_dirty(
             transaction, user_ref, existing_dirty, _month_start(old_tx["occurredAt"])
         )
+        _touch_transactions_updated_at(transaction, user_ref, now)
         transaction.delete(tx_ref)
         old_tx["id"] = tx_id
         return old_tx
@@ -568,6 +593,7 @@ def list_transactions(
 
     return result
 
+
 def export_transactions(uid: str) -> List[dict]:
     query = firestore.transactions_collection(uid)
     docs = query.stream()
@@ -584,6 +610,7 @@ def export_transactions(uid: str) -> List[dict]:
             data["updatedAt"] = data["updatedAt"].isoformat()
         results.append(data)
     return results
+
 
 def import_transactions(uid: str, transactions: List[dict]):
     if not transactions:
@@ -691,13 +718,17 @@ def import_transactions(uid: str, transactions: List[dict]):
 
     # handle dirty separately
     if min_occurred_at:
-         def update_dirty(tx: fs.Transaction):
-             user_ref = firestore.user_doc(uid)
-             snap = user_ref.get(transaction=tx)
-             existing = snap.to_dict().get("balanceDirtyFrom") if snap.exists else None
-             _queue_balance_dirty(tx, user_ref, existing, _month_start(min_occurred_at))
+        def update_dirty(tx: fs.Transaction):
+            user_ref = firestore.user_doc(uid)
+            snap = user_ref.get(transaction=tx)
+            existing = snap.to_dict().get("balanceDirtyFrom") if snap.exists else None
+            _queue_balance_dirty(tx, user_ref, existing, _month_start(min_occurred_at))
+            _touch_transactions_updated_at(tx, user_ref, now)
 
-         firestore.run_in_transaction(update_dirty)
+        firestore.run_in_transaction(update_dirty)
+    else:
+        firestore.user_doc(uid).set({"transactionsUpdatedAt": now}, merge=True)
+
 
 def _delete_collection(coll_ref, batch_size):
     docs = coll_ref.limit(batch_size).stream()
@@ -708,6 +739,7 @@ def _delete_collection(coll_ref, batch_size):
 
     if deleted >= batch_size:
         _delete_collection(coll_ref, batch_size)
+
 
 def delete_all_transactions(uid: str):
     coll = firestore.transactions_collection(uid)
@@ -732,7 +764,10 @@ def delete_all_transactions(uid: str):
     if count > 0:
         batch.commit()
 
-    firestore.user_doc(uid).update({"balanceDirtyFrom": fs.DELETE_FIELD})
+    firestore.user_doc(uid).update(
+        {"balanceDirtyFrom": fs.DELETE_FIELD, "transactionsUpdatedAt": now}
+    )
+
 
 def delete_user_account(uid: str):
     delete_all_transactions(uid)

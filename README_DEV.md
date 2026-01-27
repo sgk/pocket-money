@@ -44,4 +44,16 @@
 - Googleログインが前提です
 - 開発時に認証をスキップしたい場合は、`.env` に `DEV_USER_ID` を設定してください
 - ログイン有効期限は `SESSION_EXPIRE_DAYS` で調整できます
- - 長期セッションの署名に `SESSION_SECRET` が必要です
+- 長期セッションの署名に `SESSION_SECRET` が必要です
+
+## 取引APIのキャッシュ方針（Last-Modified / 304）
+- `/api/transactions` は `Last-Modified` ヘッダーを返します
+- クライアントは同じ条件（資産・期間など）で再取得する際に `If-Modified-Since` を付けます
+- 変更がなければAPIは `304 Not Modified` を返し、クライアントは手元の結果を再利用します
+- 変更検知はユーザー単位の `transactionsUpdatedAt` で行います
+- `transactionsUpdatedAt` は取引の作成・更新・削除・一括削除・インポートで更新されます
+- `transactionsUpdatedAt` は資産の作成・更新・無効化でも更新されます（初期残高が元帳に影響するため）
+フロント側（React Query）の挙動:
+- `useTransactions` に `staleTime: 60秒` を設定しています
+- `refetchOnWindowFocus: false` を設定しています
+- 取引系の更新では `invalidateQueries(["transactions"])` に加えて、`If-Modified-Since` 用のローカルキャッシュもクリアします
