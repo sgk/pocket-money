@@ -174,7 +174,7 @@ export const AssetLedgerPage = () => {
 
   return (
     <div
-      className="flex min-h-full flex-col"
+      className="flex h-full flex-col"
       style={
         {
           "--ledger-top-offset": `${topbarHeight}px`,
@@ -192,18 +192,25 @@ export const AssetLedgerPage = () => {
 
       {filters.order === "desc" ? entryPanelTop : null}
 
-      <div style={{ paddingBottom: summaryHeight }}>
-        <LedgerTable
-          transactions={filtered}
-          assets={assets}
-          categories={categories}
-          fixedAssetId={assetId}
-          balancesById={balancesById}
-          openingBalances={openingBalances}
-          openingDate={filters.from}
-          order={filters.order}
-          onEditingChange={setIsEditing}
-        />
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div
+          style={{ paddingBottom: filters.order === "desc" ? summaryHeight : 0 }}
+          className="min-h-0 flex-1 overflow-y-auto overflow-x-clip max-[900px]:-mx-4 min-[901px]:-mx-4 min-[1200px]:-mx-6"
+        >
+          <div className="max-[900px]:px-4 min-[901px]:px-0">
+            <LedgerTable
+              transactions={filtered}
+              assets={assets}
+              categories={categories}
+              fixedAssetId={assetId}
+              balancesById={balancesById}
+              openingBalances={openingBalances}
+              openingDate={filters.from}
+              order={filters.order}
+              onEditingChange={setIsEditing}
+            />
+          </div>
+        </div>
       </div>
 
       <section
