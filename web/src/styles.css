@@ -140,6 +140,46 @@ h1, h2, h3, .font-display {
 }
 
 @media (max-width: 900px) {
+  .ledger-table tr.ledger-drop-top td {
+    box-shadow: none !important;
+    position: relative;
+    z-index: 10;
+  }
+
+  .ledger-table tr.ledger-drop-bottom td {
+    box-shadow: none !important;
+    position: relative;
+    z-index: 10;
+  }
+
+  .ledger-table tr.ledger-drop-top td::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 0;
+    right: 0;
+    width: 100vw;
+    height: 2px;
+    transform: translateX(-50%);
+    background: rgb(56 189 248);
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .ledger-table tr.ledger-drop-bottom td::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    right: 0;
+    width: 100vw;
+    height: 2px;
+    transform: translateX(-50%);
+    background: rgb(56 189 248);
+    pointer-events: none;
+    z-index: 10;
+  }
+
   .ledger-table {
     display: block;
     min-width: 0;
@@ -465,10 +505,12 @@ h1, h2, h3, .font-display {
   }
 
   .ledger-table tr.ledger-row--edit {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     /* 編集行の負のマージン/幅計算は親コンテナをはみ出す原因になるため除去 */
     margin-left: 0;
     margin-right: 0;
-    padding: 0.4rem 0;
+    padding: 0.4rem 0 !important;
     width: 100%;
     box-sizing: border-box;
     border-left: none;
@@ -492,7 +534,15 @@ h1, h2, h3, .font-display {
     box-shadow: none;
     background: transparent;
     margin-top: 0;
-    padding: 0.4rem 0;
+    padding: 0.4rem 0 !important;
+  }
+
+  /* 入力フォームの編集行のスタイル調整（左右のパディング除去） */
+  .ledger-table tr.ledger-row--new td {
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
   }
 
   .ledger-table tr.ledger-row--opening td::before {
@@ -632,29 +682,7 @@ h1, h2, h3, .font-display {
     word-break: break-word;
   }
 
-  .ledger-table tr.ledger-drop-top td,
-  .ledger-table tr.ledger-drop-bottom td {
-    box-shadow: none !important;
-  }
 
-  .ledger-table tr.ledger-drop-top::before,
-  .ledger-table tr.ledger-drop-bottom::after {
-    content: "";
-    position: absolute;
-    left: 10px;
-    right: 10px;
-    height: 2px;
-    background: rgb(56 189 248);
-    pointer-events: none;
-  }
-
-  .ledger-table tr.ledger-drop-top::before {
-    top: -6px;
-  }
-
-  .ledger-table tr.ledger-drop-bottom::after {
-    bottom: -6px;
-  }
 
   .ledger-table td[data-label=""]::before {
     content: "";

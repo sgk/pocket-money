@@ -100,7 +100,7 @@ export const LedgerLayout = ({
       </Topbar>
 
       {filters.order === "desc" && (
-        <div className="bg-card border-b border-border -mx-4 py-[0.4rem] md:-mx-6">
+        <div className="bg-card border-b border-border -mx-4 px-4 py-[0.4rem] md:-mx-6 md:px-6">
           <table className="ledger-table w-full">
             <colgroup>
               <col style={{ width: '120px' }} />
@@ -141,7 +141,7 @@ export const LedgerLayout = ({
         </div>
 
         {filters.order === "asc" && (
-          <div className="bg-card border-t border-border -mx-4 py-[0.4rem] md:-mx-6">
+          <div className="bg-card border-t border-border -mx-4 px-4 py-[0.4rem] md:-mx-6 md:px-6">
             <table className="ledger-table w-full">
               <colgroup>
                 <col style={{ width: '120px' }} />
