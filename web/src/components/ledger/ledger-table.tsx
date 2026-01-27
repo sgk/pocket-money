@@ -540,7 +540,7 @@ const EditableRow = ({
         </div>
       </td>
       <td
-        className="ledger-action-cell p-2 text-right w-[80px] min-w-[80px] max-w-[80px]"
+        className="ledger-action-cell p-2 text-right w-[120px] min-w-[120px] max-w-[120px]"
         data-label=""
       >
         <div className="flex items-center justify-end gap-1">
@@ -809,9 +809,9 @@ export const LedgerTable = ({
         meta: {
           label: "のこり",
           headerClassName:
-            "min-w-[80px] w-[80px] max-w-[80px] whitespace-nowrap",
+            "min-w-[120px] w-[120px] max-w-[120px] whitespace-nowrap",
           cellClassName:
-            "min-w-[80px] w-[80px] max-w-[80px] whitespace-nowrap text-right",
+            "min-w-[120px] w-[120px] max-w-[120px] whitespace-nowrap text-right",
         },
       },
     ],
@@ -1113,7 +1113,7 @@ export const LedgerTable = ({
                 data-label=""
               />
               <td
-                className="p-3 text-right w-[80px] min-w-[80px] max-w-[80px]"
+                className="p-3 text-right w-[120px] min-w-[120px] max-w-[120px]"
                 data-label="のこり"
               >
                 <span className="ledger-opening-label">のこり</span>
@@ -1341,7 +1341,7 @@ export const LedgerTable = ({
                 data-label=""
               />
               <td
-                className="p-3 text-right w-[80px] min-w-[80px] max-w-[80px]"
+                className="p-3 text-right w-[120px] min-w-[120px] max-w-[120px]"
                 data-label="のこり"
               >
                 <span className="ledger-opening-label">のこり</span>

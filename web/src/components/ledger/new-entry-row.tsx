@@ -507,7 +507,7 @@ export const NewEntryRow = ({
         </div>
       </td>
       <td
-        className="ledger-action-cell p-2 text-center w-[80px] min-w-[80px] max-w-[80px]"
+        className="ledger-action-cell p-2 text-center w-[120px] min-w-[120px] max-w-[120px]"
         data-label=""
       >
         <Button
