@@ -22,6 +22,6 @@ def login(body: LoginRequest):
     token = create_session_token_from_google(credential)
     return {"token": token}
 
-@router.delete("/me", status_code=204)
+@router.delete("/auth/me", status_code=204)
 def delete_account(user=Depends(get_current_user)):
     transactions_service.delete_user_account(user.uid)

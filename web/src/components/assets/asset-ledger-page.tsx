@@ -40,7 +40,7 @@ export const AssetLedgerPage = () => {
       assetId,
     });
   }, [transactions, openingBalances, assetId]);
-  
+
   const endingBalance = useMemo(() => {
     if (!assetId) {
       return 0;

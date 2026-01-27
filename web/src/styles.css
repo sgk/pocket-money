@@ -735,7 +735,7 @@ h1, h2, h3, .font-display {
     padding: 0.75rem !important; /* p-3相当 */
     margin: 0;
   }
-  
+
   .ledger-table tr.ledger-row--edit td::before,
   .ledger-table tr.ledger-row--new td::before {
     content: none !important;

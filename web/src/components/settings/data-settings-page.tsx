@@ -13,7 +13,92 @@ export const DataSettingsPage = () => {
   const [isImporting, setIsImporting] = useState(false);
   const [isDeletingData, setIsDeletingData] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [isExportingCsv, setIsExportingCsv] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const jsonToCsv = (items: any[]) => {
+    if (items.length === 0) return "";
+    const headers = [
+      "id",
+      "type",
+      "occurredAt",
+      "amount",
+      "memo",
+      "assetId",
+      "categoryName",
+      "merchant",
+      "source",
+      "fromAssetId",
+      "toAssetId",
+      "fee",
+      "counterparty",
+      "dayOrder",
+    ];
+    const csvRows = [headers.join(",")];
+    for (const item of items) {
+      const values = headers.map((header) => {
+        let val = item[header] ?? "";
+        if (typeof val === "string") {
+            val = val.replace(/"/g, '""');
+            if (val.includes(",") || val.includes('"') || val.includes("\n")) {
+                val = `"${val}"`;
+            }
+        }
+        return val;
+      });
+      csvRows.push(values.join(","));
+    }
+    return "\uFEFF" + csvRows.join("\n");
+  };
+
+  const csvToJson = (csv: string) => {
+    const lines = csv.split(/\r?\n/).filter((line) => line.trim() !== "");
+    if (lines.length === 0) return [];
+    const headers = lines[0].split(",");
+    const result = [];
+    for (let i = 1; i < lines.length; i++) {
+      const obj: any = {};
+      const currentLine = lines[i];
+      // Simple CSV parser ignoring comma inside quotes for now as jsonToCsv escapes them
+      // But for robustness, let's use a regex split or similar if we expect complex data.
+      // For now, let's stick to simple split but handle quoted strings better if needed.
+      // Actually, standard split(",") is risky. Let's do a proper parse.
+      const values = [];
+      let inQuote = false;
+      let val = "";
+      for (let char of currentLine) {
+          if (char === '"') {
+              inQuote = !inQuote;
+          } else if (char === ',' && !inQuote) {
+              values.push(val);
+              val = "";
+          } else {
+              val += char;
+          }
+      }
+      values.push(val);
+      // Handle cleanup of quotes
+      const cleanValues = values.map(v => {
+          if (v.startsWith('"') && v.endsWith('"')) {
+              return v.slice(1, -1).replace(/""/g, '"');
+          }
+          return v;
+      });
+
+      headers.forEach((header, index) => {
+        const val = cleanValues[index];
+        if (val !== undefined && val !== "") {
+          obj[header] = isNaN(Number(val)) ? val : val; // Keep number strings as strings if they look like IDs, but amounts need to be numbers?
+          // Actually the API expects numbers for amount/fee/dayOrder.
+          if (["amount", "fee", "dayOrder"].includes(header)) {
+              obj[header] = Number(val);
+          }
+        }
+      });
+      result.push(obj);
+    }
+    return result;
+  };
 
   const handleExport = async () => {
     if (!token) return;
@@ -29,12 +114,36 @@ export const DataSettingsPage = () => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      toast.success("エクスポートしました");
+      toast.success("JSONをエクスポートしました");
     } catch (e) {
       toast.error("エクスポートに失敗しました");
       console.error(e);
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handleExportCsv = async () => {
+    if (!token) return;
+    try {
+      setIsExportingCsv(true);
+      const data = await api.exportTransactions(token);
+      const csv = jsonToCsv(data);
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `pocket-money-export-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("CSVをエクスポートしました");
+    } catch (e) {
+        toast.error("エクスポートに失敗しました");
+        console.error(e);
+    } finally {
+        setIsExportingCsv(false);
     }
   };
 
@@ -51,13 +160,26 @@ export const DataSettingsPage = () => {
     try {
       setIsImporting(true);
       const text = await file.text();
-      const json = JSON.parse(text);
-      if (!Array.isArray(json)) throw new Error("Invalid format");
+      
+      let json: any[] = [];
+      if (file.name.toLowerCase().endsWith(".csv")) {
+          json = csvToJson(text);
+          if (json.length === 0) throw new Error("No data found in CSV");
+      } else {
+          try {
+              json = JSON.parse(text);
+          } catch(e) {
+              throw new Error("Invalid JSON format");
+          }
+      }
+
+      if (!Array.isArray(json)) throw new Error("Invalid format: Root must be an array");
+      
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await api.importTransactions(token, json as any);
       toast.success("インポートしました");
     } catch (e) {
-      toast.error("インポートに失敗しました");
+      toast.error("インポートに失敗しました: " + (e instanceof Error ? e.message : "Unkown error"));
       console.error(e);
     } finally {
       setIsImporting(false);
@@ -105,22 +227,26 @@ export const DataSettingsPage = () => {
             <CardHeader>
               <CardTitle>エクスポート</CardTitle>
               <CardDescription>
-                すべての取引データをJSON形式でダウンロードします。
-                データにはIDが含まれており、バックアップや復元に使用できます。
+                すべての取引データをダウンロードします。
+                バックアップやExcel・スプレッドシート等での利用に使用できます。
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex flex-col gap-4 sm:flex-row">
               <Button onClick={handleExport} disabled={isExporting}>
-                {isExporting ? "エクスポート中..." : "エクスポート"}
+                {isExporting ? "エクスポート中..." : "JSON形式でエクスポート"}
+              </Button>
+              <Button onClick={handleExportCsv} disabled={isExportingCsv} variant="outline">
+                {isExportingCsv ? "エクスポート中..." : "CSV形式でエクスポート"}
               </Button>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>インポート</CardTitle>
+              <CardTitle>インポート (JSON / CSV)</CardTitle>
               <CardDescription>
-                JSONファイルから取引データを読み込みます。
+                JSONまたはCSVファイルから取引データを読み込みます。
+                ファイル形式は拡張子で自動判別されます。
                 既存のデータと同じIDを持つ記録はスキップされ、重複を防ぎます。
               </CardDescription>
             </CardHeader>
@@ -129,7 +255,7 @@ export const DataSettingsPage = () => {
                 <Input
                   ref={fileInputRef}
                   type="file"
-                  accept="application/json"
+                  accept=".json,.csv,text/csv,application/json"
                   onChange={handleImport}
                   disabled={isImporting}
                   className="max-w-sm"

@@ -594,6 +594,12 @@ def import_transactions(uid: str, transactions: List[dict]):
     docs = firestore.transactions_collection(uid).select([]).stream()
     for doc in docs:
         existing_ids.add(doc.id)
+
+    # 1b. Fetch existing Asset IDs to ensure we don't update missing assets
+    existing_asset_ids = set()
+    asset_docs = firestore.assets_collection(uid).select([]).stream()
+    for asset_doc in asset_docs:
+        existing_asset_ids.add(asset_doc.id)
     
     new_txs = []
     for tx in transactions:
@@ -669,6 +675,9 @@ def import_transactions(uid: str, transactions: List[dict]):
     for asset_id, delta in total_deltas.items():
         if delta == 0:
             continue
+        if asset_id not in existing_asset_ids:
+            continue
+            
         asset_ref = firestore.asset_doc(uid, asset_id)
         batch.update(asset_ref, {"currentBalance": fs.Increment(delta), "updatedAt": now})
         count += 1

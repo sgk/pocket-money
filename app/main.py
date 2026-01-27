@@ -96,4 +96,9 @@ def spa_settings_categories():
     return serve_index()
 
 
+@app.get("/settings/data")
+def spa_settings_data():
+    return serve_index()
+
+
 app.mount("/", StaticFiles(directory=dist_dir), name="static")
