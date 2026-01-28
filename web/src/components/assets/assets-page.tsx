@@ -3,13 +3,15 @@ import { Topbar } from "@/components/layout/topbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAssets } from "@/lib/query";
 import { formatJPY } from "@/lib/money";
+import { useText } from "@/lib/text";
 
 export const AssetsPage = () => {
+  const { t } = useText();
   const { data: assets = [] } = useAssets();
 
   return (
     <div className="flex min-h-0 flex-col">
-      <Topbar title="いれもの" subtitle="いれものごとのノートをみよう" />
+      <Topbar title={t("assetsTitle")} subtitle={t("assetsSubtitle")} />
       <div className="flex-1">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {assets.map((asset) => (
@@ -23,7 +25,9 @@ export const AssetsPage = () => {
                     {formatJPY(asset.currentBalance)}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    はじめののこり {formatJPY(asset.initialBalance)}
+                    {t("dashboardInitialBalance", {
+                      amount: formatJPY(asset.initialBalance),
+                    })}
                   </p>
                 </CardContent>
               </Card>

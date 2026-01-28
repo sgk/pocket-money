@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
+import { useText } from "@/lib/text";
 
 const emptyEntry = () => ({
   date: todayISO(),
@@ -32,6 +33,8 @@ const emptyEntry = () => ({
   toAssetName: "",
 });
 
+const OTHER_CATEGORY_NAME = "その他";
+
 export const NewEntryRow = ({
   assets,
   categories,
@@ -43,6 +46,7 @@ export const NewEntryRow = ({
   fixedAssetName?: string;
   disabled?: boolean;
 }) => {
+  const { t } = useText();
   const isDisabled = Boolean(disabled);
   const buildInitialEntry = (assetName?: string) => {
     const base = emptyEntry();
@@ -73,7 +77,7 @@ export const NewEntryRow = ({
   const categoryOptions = useMemo(
     () =>
       categories.filter(
-        (category) => category.isActive && category.name !== "その他"
+        (category) => category.isActive && category.name !== OTHER_CATEGORY_NAME
       ),
     [categories]
   );
@@ -158,26 +162,26 @@ export const NewEntryRow = ({
   const validateEntry = () => {
     const amount = Number(entry.amount);
     if (Number.isNaN(amount) || entry.amount === "") {
-      toast.error("きんがくを いれてね");
+      toast.error(t("toastAmountRequired"));
       return false;
     }
     if (entry.type === "expense" || entry.type === "income") {
       if (!entry.assetName) {
-        toast.error("いれものを えらんでね");
+        toast.error(t("toastAssetRequired"));
         return false;
       }
       if (!entry.categoryName) {
-        toast.error("うごきを えらんでね");
+        toast.error(t("toastCategoryRequired"));
         return false;
       }
     }
     if (entry.type === "transfer") {
       if (!entry.fromAssetName || !entry.toAssetName) {
-        toast.error("うつす いれものを えらんでね");
+        toast.error(t("toastTransferAssetRequired"));
         return false;
       }
       if (entry.fromAssetName === entry.toAssetName) {
-        toast.error("おなじ いれものには うつせないよ");
+        toast.error(t("toastTransferSameAsset"));
         return false;
       }
     }
@@ -186,7 +190,7 @@ export const NewEntryRow = ({
 
   const handleSubmit = async () => {
     if (!token) {
-      toast.error("ログインしてね");
+      toast.error(t("toastLoginRequired"));
       return;
     }
     if (!validateEntry()) {
@@ -234,7 +238,7 @@ export const NewEntryRow = ({
         storage.setLastAssetName(entry.fromAssetName);
       }
       if (created) {
-        toast.success("きろくを たしたよ");
+        toast.success(t("toastEntryAdded"));
         invalidate();
         resetEntry();
       }
@@ -264,7 +268,7 @@ export const NewEntryRow = ({
       }`}
       aria-disabled={isDisabled}
     >
-      <td className="p-3 whitespace-nowrap" data-label="ひづけ">
+      <td className="p-3 whitespace-nowrap" data-label={t("labelDate")} data-col="date">
         <Input
           ref={dateRef}
           type="date"
@@ -273,7 +277,11 @@ export const NewEntryRow = ({
           disabled={isDisabled}
         />
       </td>
-      <td className="p-3 whitespace-normal break-words" data-label="いれもの">
+      <td
+        className="p-3 whitespace-normal break-words"
+        data-label={t("labelAsset")}
+        data-col="asset"
+      >
         {entry.type === "transfer" ? (
           <div>
             <Select
@@ -298,14 +306,14 @@ export const NewEntryRow = ({
               disabled={Boolean(fixedAssetName) || isDisabled}
             >
               <SelectTrigger className={(fixedAssetName ?? (entry.transferDirection === "out" ? entry.fromAssetName : entry.toAssetName)) === "" || (fixedAssetName ?? (entry.transferDirection === "out" ? entry.fromAssetName : entry.toAssetName)) === assetPlaceholderValue ? "text-muted-foreground/40" : ""}>
-                <SelectValue placeholder="いれもの" />
+                <SelectValue placeholder={t("placeholderAsset")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem
                   value={assetPlaceholderValue}
                   className="text-muted-foreground"
                 >
-                  いれもの
+                  {t("placeholderAsset")}
                 </SelectItem>
                 {assetOptions.map((asset) => (
                   <SelectItem key={asset.id} value={asset.name}>
@@ -328,14 +336,14 @@ export const NewEntryRow = ({
             disabled={Boolean(fixedAssetName) || isDisabled}
           >
             <SelectTrigger className={(fixedAssetName ?? entry.assetName) === "" || (fixedAssetName ?? entry.assetName) === assetPlaceholderValue ? "text-muted-foreground/40" : ""}>
-              <SelectValue placeholder="いれもの" />
+              <SelectValue placeholder={t("placeholderAsset")} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem
                 value={assetPlaceholderValue}
                 className="text-muted-foreground"
               >
-                いれもの
+                {t("placeholderAsset")}
               </SelectItem>
               {assetOptions.map((asset) => (
                 <SelectItem key={asset.id} value={asset.name}>
@@ -346,11 +354,11 @@ export const NewEntryRow = ({
           </Select>
         )}
       </td>
-      <td className="p-3" data-label="あいて">
+      <td className="p-3" data-label={t("labelCounterparty")} data-col="counterparty">
         {entry.type === "expense" ? (
           <Input
             list="merchant-suggest"
-            placeholder="あいて"
+            placeholder={t("placeholderCounterparty")}
             value={entry.merchant}
             onChange={(event) => setEntry({ ...entry, merchant: event.target.value })}
             disabled={isDisabled}
@@ -358,14 +366,14 @@ export const NewEntryRow = ({
         ) : entry.type === "income" ? (
           <Input
             list="source-suggest"
-            placeholder="あいて"
+            placeholder={t("placeholderCounterparty")}
             value={entry.source}
             onChange={(event) => setEntry({ ...entry, source: event.target.value })}
             disabled={isDisabled}
           />
         ) : (
           <Input
-            placeholder="あいて"
+            placeholder={t("placeholderCounterparty")}
             value={entry.counterparty}
             onChange={(event) =>
               setEntry({ ...entry, counterparty: event.target.value })
@@ -374,7 +382,11 @@ export const NewEntryRow = ({
           />
         )}
       </td>
-      <td className="p-3 whitespace-normal break-words" data-label="うごき">
+      <td
+        className="p-3 whitespace-normal break-words"
+        data-label={t("labelCategory")}
+        data-col="category"
+      >
         <Select
           value={categoryValue}
           onValueChange={(value) => {
@@ -433,13 +445,15 @@ export const NewEntryRow = ({
           disabled={isDisabled}
         >
           <SelectTrigger className={categoryValue === "" || categoryValue === placeholderValue ? "text-muted-foreground/40" : ""}>
-            <SelectValue placeholder="うごき" />
+            <SelectValue placeholder={t("placeholderCategory")} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={placeholderValue} className="text-muted-foreground">
-              うごき
+              {t("placeholderCategory")}
             </SelectItem>
-            <div className="px-2 pt-2 text-xs text-muted-foreground">だした</div>
+            <div className="px-2 pt-2 text-xs text-muted-foreground">
+              {t("labelExpense")}
+            </div>
             {expenseCategories.map((category) => (
               <SelectItem
                 key={`expense:${category.name}`}
@@ -448,8 +462,11 @@ export const NewEntryRow = ({
                 {category.name}
               </SelectItem>
             ))}
-            <SelectItem key="expense:その他" value="expense::その他">
-              その他
+            <SelectItem
+              key={`expense:${OTHER_CATEGORY_NAME}`}
+              value={`expense::${OTHER_CATEGORY_NAME}`}
+            >
+              {t("labelOther")}
             </SelectItem>
             {assetOptions
               .filter((asset) => asset.name !== transferBaseAssetName)
@@ -458,10 +475,12 @@ export const NewEntryRow = ({
                   key={`transfer-out:${asset.id}`}
                   value={`transfer-out::${asset.name}`}
                 >
-                  →{asset.name} へ
+                  {t("transferToOption", { assetName: asset.name })}
                 </SelectItem>
               ))}
-            <div className="px-2 pt-2 text-xs text-muted-foreground">いれた</div>
+            <div className="px-2 pt-2 text-xs text-muted-foreground">
+              {t("labelIncome")}
+            </div>
             {incomeCategories.map((category) => (
               <SelectItem
                 key={`income:${category.name}`}
@@ -470,8 +489,11 @@ export const NewEntryRow = ({
                 {category.name}
               </SelectItem>
             ))}
-            <SelectItem key="income:その他" value="income::その他">
-              その他
+            <SelectItem
+              key={`income:${OTHER_CATEGORY_NAME}`}
+              value={`income::${OTHER_CATEGORY_NAME}`}
+            >
+              {t("labelOther")}
             </SelectItem>
             {assetOptions
               .filter((asset) => asset.name !== transferBaseAssetName)
@@ -480,26 +502,34 @@ export const NewEntryRow = ({
                   key={`transfer-in:${asset.id}`}
                   value={`transfer-in::${asset.name}`}
                 >
-                  ←{asset.name} から
+                  {t("transferFromOption", { assetName: asset.name })}
                 </SelectItem>
               ))}
           </SelectContent>
         </Select>
       </td>
-      <td className="p-3 whitespace-normal break-words" data-label="メモ">
+      <td
+        className="p-3 whitespace-normal break-words"
+        data-label={t("labelMemo")}
+        data-col="memo"
+      >
         <Input
           list="memo-suggest"
-          placeholder="メモ"
+          placeholder={t("placeholderMemo")}
           value={entry.memo}
           onChange={(event) => setEntry({ ...entry, memo: event.target.value })}
           disabled={isDisabled}
         />
       </td>
-      <td className="p-3 whitespace-nowrap text-right" data-label="きんがく">
+      <td
+        className="p-3 whitespace-nowrap text-right"
+        data-label={t("labelAmount")}
+        data-col="amount"
+      >
         <div className="ledger-amount-inline">
           <Input
             type="number"
-            placeholder="きんがく"
+            placeholder={t("placeholderAmount")}
             value={entry.amount}
             onChange={(event) => setEntry({ ...entry, amount: event.target.value })}
             disabled={isDisabled}
@@ -510,20 +540,21 @@ export const NewEntryRow = ({
             disabled={isSaving || isDisabled || !isEntryValid}
             className="ledger-inline-action"
           >
-            ついか
+            {t("actionAdd")}
           </Button>
         </div>
       </td>
       <td
         className="ledger-action-cell p-3 text-center"
         data-label=""
+        data-col="action"
       >
         <Button
           type="button"
           onClick={handleSubmit}
           disabled={isSaving || isDisabled || !isEntryValid}
         >
-          ついか
+          {t("actionAdd")}
         </Button>
       </td>
     </tr>

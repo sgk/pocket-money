@@ -3,14 +3,18 @@ import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { useBootstrap } from "@/lib/query";
 import { RoutesConfig } from "@/routes";
+import { useText } from "@/lib/text";
 
-const LoadingScreen = () => (
-  <div className="flex min-h-screen items-center justify-center">
-    <div className="rounded-lg border bg-card p-6 shadow-sm">
-      <p className="text-sm text-muted-foreground">じゅんびちゅう...</p>
+const LoadingScreen = () => {
+  const { t } = useText();
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="rounded-lg border bg-card p-6 shadow-sm">
+        <p className="text-sm text-muted-foreground">{t("loading")}</p>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export const App = () => {
   const { token, logout } = useAuth();

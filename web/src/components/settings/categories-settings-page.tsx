@@ -10,13 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
 import type { Category } from "@/lib/types";
+import { useText } from "@/lib/text";
 
 type CategoryKind = "expense" | "income";
 
-const CATEGORY_KIND_LABEL: Record<CategoryKind, string> = {
-  expense: "だした",
-  income: "いれた",
-};
+const OTHER_CATEGORY_NAME = "その他";
 
 const normalizeKind = (category: Category): CategoryKind =>
   category.kind === "income" ? "income" : "expense";
@@ -54,11 +52,13 @@ const CategoryRow = ({
     onDragStart: (event: React.DragEvent<HTMLDivElement>) => void;
   };
 }) => {
+  const { t } = useText();
   const inactive = !category.isActive;
   const [name, setName] = useState(category.name);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSubmittedName, setLastSubmittedName] = useState<string | null>(null);
   const rowRef = useRef<HTMLDivElement | null>(null);
+  const kindLabel = kind === "income" ? t("categoriesSettingsIncome") : t("categoriesSettingsExpense");
 
   useEffect(() => {
     setName(category.name);
@@ -96,7 +96,7 @@ const CategoryRow = ({
     const trimmed = name.trim();
     if (trimmed === "") {
       setName(category.name);
-      toast.error("なまえを いれてね");
+      toast.error(t("toastNameRequired"));
       return false;
     }
     if (trimmed === category.name || trimmed === lastSubmittedName) {
@@ -171,7 +171,7 @@ const CategoryRow = ({
         <div
           className="cursor-grab text-muted-foreground"
           {...dragHandleProps}
-          aria-label="ドラッグ"
+          aria-label={t("assetsSettingsDragAria")}
         >
           ≡
         </div>
@@ -201,7 +201,7 @@ const CategoryRow = ({
             type="checkbox"
             checked={category.isActive}
             onChange={(event) => onToggleActive(category.id, event.target.checked)}
-            aria-label={`${CATEGORY_KIND_LABEL[kind]} ${category.name}`}
+            aria-label={`${kindLabel} ${category.name}`}
           />
         </div>
       ) : (
@@ -219,7 +219,7 @@ const CategoryRow = ({
                 event.stopPropagation();
                 void handleSave().then((ok) => ok && onRequestClose());
               }}
-              aria-label="ほぞん"
+              aria-label={t("actionSave")}
               disabled={isSaveDisabled}
             >
               <Check className="h-4 w-4 text-emerald-600" />
@@ -233,7 +233,7 @@ const CategoryRow = ({
                 event.stopPropagation();
                 handleCancel();
               }}
-              aria-label="キャンセル"
+              aria-label={t("actionCancel")}
             >
               <X className="h-4 w-4 text-muted-foreground" />
             </Button>
@@ -246,7 +246,7 @@ const CategoryRow = ({
                 event.stopPropagation();
                 onDeleteCategory(category.id);
               }}
-              aria-label={`${category.name} を けす`}
+              aria-label={t("assetsSettingsDeleteAria", { name: category.name })}
             >
               <Trash2 className="h-4 w-4 text-rose-600" />
             </Button>
@@ -287,15 +287,17 @@ const CategoryList = ({
   editingId: string | null;
   onEditingChange: (next: string | null) => void;
 }) => {
+  const { t } = useText();
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [indicatorIndex, setIndicatorIndex] = useState<number | null>(null);
   const dragCounter = useRef(0);
+  const kindLabel = kind === "income" ? t("categoriesSettingsIncome") : t("categoriesSettingsExpense");
 
   const ordered = useMemo(() => {
     const list = categories
       .filter(
         (category) =>
-          normalizeKind(category) === kind && category.name !== "その他"
+          normalizeKind(category) === kind && category.name !== OTHER_CATEGORY_NAME
       )
       .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
     const ids = list.map((item) => item.id);
@@ -465,7 +467,7 @@ const CategoryList = ({
       onDragLeave={handleDragLeaveList}
     >
       <div className="grid grid-cols-[1fr_72px_112px] items-center gap-2 px-3 text-base">
-        <span>{CATEGORY_KIND_LABEL[kind]}</span>
+        <span>{kindLabel}</span>
         <span />
         <span />
       </div>
@@ -477,7 +479,7 @@ const CategoryList = ({
           onDragOver={(event) => handleDragOverSlot(event, 0)}
           onDrop={(event) => handleDropOnSlot(event, 0)}
         >
-          ここにいれる
+          {t("categoriesSettingsDropHere")}
         </div>
       ) : (
         <div className="grid gap-0.5">
@@ -535,6 +537,7 @@ const CategoryList = ({
 };
 
 export const CategoriesSettingsPage = () => {
+  const { t } = useText();
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const { data: categories = [] } = useCategories();
@@ -552,13 +555,13 @@ export const CategoriesSettingsPage = () => {
   useEffect(() => {
     const expenseIds = categories
       .filter(
-        (category) => normalizeKind(category) === "expense" && category.name !== "その他"
+        (category) => normalizeKind(category) === "expense" && category.name !== OTHER_CATEGORY_NAME
       )
       .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
       .map((category) => category.id);
     const incomeIds = categories
       .filter(
-        (category) => normalizeKind(category) === "income" && category.name !== "その他"
+        (category) => normalizeKind(category) === "income" && category.name !== OTHER_CATEGORY_NAME
       )
       .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
       .map((category) => category.id);
@@ -587,7 +590,7 @@ export const CategoriesSettingsPage = () => {
   const getOrderedList = (kind: CategoryKind, order: string[]) => {
     const list = categories
       .filter(
-        (category) => normalizeKind(category) === kind && category.name !== "その他"
+        (category) => normalizeKind(category) === kind && category.name !== OTHER_CATEGORY_NAME
       )
       .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
     const ids = list.map((item) => item.id);
@@ -600,15 +603,15 @@ export const CategoriesSettingsPage = () => {
 
   const handleCreate = async () => {
     if (!token) {
-      toast.error("ログインしてね");
+      toast.error(t("toastLoginRequired"));
       return;
     }
     if (!newCategory.name.trim()) {
-      toast.error("なまえを いれてね");
+      toast.error(t("toastNameRequired"));
       return;
     }
-    if (newCategory.name.trim() === "その他") {
-      toast.error("「その他」は つかえないよ");
+    if (newCategory.name.trim() === OTHER_CATEGORY_NAME) {
+      toast.error(t("toastOtherNotAllowed"));
       return;
     }
     try {
@@ -622,7 +625,7 @@ export const CategoriesSettingsPage = () => {
           kind: newCategory.kind,
         });
       });
-      toast.success("うごきを たしたよ");
+      toast.success(t("toastCategoryAdded"));
       setNewCategory({ name: "", kind: "expense" });
       queryClient.invalidateQueries({ queryKey: ["categories"] });
     } catch (error) {
@@ -632,7 +635,7 @@ export const CategoriesSettingsPage = () => {
 
   const handleToggleActive = async (id: string, value: boolean) => {
     if (!token) {
-      toast.error("ログインしてね");
+      toast.error(t("toastLoginRequired"));
       return;
     }
     try {
@@ -647,7 +650,7 @@ export const CategoriesSettingsPage = () => {
 
   const handleReorder = async (list: Category[]) => {
     if (!token) {
-      toast.error("ログインしてね");
+      toast.error(t("toastLoginRequired"));
       return;
     }
     try {
@@ -668,10 +671,10 @@ export const CategoriesSettingsPage = () => {
 
   const handleDeleteCategory = async (id: string) => {
     if (!token) {
-      toast.error("ログインしてね");
+      toast.error(t("toastLoginRequired"));
       return;
     }
-    const ok = window.confirm("この うごきを けす？");
+    const ok = window.confirm(t("confirmDeleteCategory"));
     if (!ok) {
       return;
     }
@@ -693,16 +696,16 @@ export const CategoriesSettingsPage = () => {
     payload: { name: string }
   ): Promise<boolean> => {
     if (!token) {
-      toast.error("ログインしてね");
+      toast.error(t("toastLoginRequired"));
       return false;
     }
     const nextName = payload.name.trim();
     if (!nextName) {
-      toast.error("なまえを いれてね");
+      toast.error(t("toastNameRequired"));
       return false;
     }
-    if (nextName === "その他") {
-      toast.error("「その他」は つかえないよ");
+    if (nextName === OTHER_CATEGORY_NAME) {
+      toast.error(t("toastOtherNotAllowed"));
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       return false;
     }
@@ -710,7 +713,7 @@ export const CategoriesSettingsPage = () => {
       (category) => category.id !== id && category.name === nextName
     );
     if (conflicts.length > 0) {
-      const ok = window.confirm("おなじ なまえがあるよ。まとめていい？");
+      const ok = window.confirm(t("confirmCategoryMerge"));
       if (!ok) {
         queryClient.invalidateQueries({ queryKey: ["categories"] });
         return false;
@@ -738,7 +741,7 @@ export const CategoriesSettingsPage = () => {
     insertIndex: number
   ) => {
     if (!token) {
-      toast.error("ログインしてね");
+      toast.error(t("toastLoginRequired"));
       return;
     }
     const fromOrder = fromKind === "expense" ? expenseOrder : incomeOrder;
@@ -804,8 +807,8 @@ export const CategoriesSettingsPage = () => {
     <div className="relative flex min-h-0 flex-col">
       <Topbar
         ref={topbarRef}
-        title="うごき設定"
-        subtitle="うごきを ふやす / なおす"
+        title={t("categoriesSettingsTitle")}
+        subtitle={t("categoriesSettingsSubtitle")}
         dense
       />
 
@@ -815,7 +818,7 @@ export const CategoriesSettingsPage = () => {
       >
         <div className="shrink-0">
         <div className="pb-1">
-          <div className="text-base font-semibold">あたらしい うごき</div>
+          <div className="text-base font-semibold">{t("categoriesSettingsNewTitle")}</div>
         </div>
         <div className="grid gap-3 grid-cols-[auto_1fr_auto] items-center">
           <div className="flex items-center">
@@ -831,7 +834,7 @@ export const CategoriesSettingsPage = () => {
                 }`}
                 onClick={() => setNewCategory({ ...newCategory, kind: "expense" })}
               >
-                だした
+                {t("categoriesSettingsExpense")}
               </Button>
               <Button
                 type="button"
@@ -844,18 +847,18 @@ export const CategoriesSettingsPage = () => {
                 }`}
                 onClick={() => setNewCategory({ ...newCategory, kind: "income" })}
               >
-                いれた
+                {t("categoriesSettingsIncome")}
               </Button>
             </div>
           </div>
           <Input
-            placeholder="なまえ"
+            placeholder={t("assetsSettingsName")}
             value={newCategory.name}
             onChange={(event) => setNewCategory({ ...newCategory, name: event.target.value })}
           />
           <div className="flex justify-end">
             <Button onClick={handleCreate} disabled={!canCreate || isSaving}>
-              ついか
+              {t("categoriesSettingsAdd")}
             </Button>
           </div>
         </div>

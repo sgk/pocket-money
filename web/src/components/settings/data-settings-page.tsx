@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
+import { useText } from "@/lib/text";
 
 export const DataSettingsPage = () => {
+  const { t } = useText();
   const { token, logout } = useAuth();
   const invalidate = useInvalidateLedger();
   const [isExporting, setIsExporting] = useState(false);
@@ -119,9 +121,9 @@ export const DataSettingsPage = () => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      toast.success("JSONをエクスポートしました");
+      toast.success(t("toastExportJsonSuccess"));
     } catch (e) {
-      toast.error("エクスポートに失敗しました");
+      toast.error(t("toastExportError"));
       console.error(e);
     } finally {
       setIsExporting(false);
@@ -143,9 +145,9 @@ export const DataSettingsPage = () => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      toast.success("CSVをエクスポートしました");
+      toast.success(t("toastExportCsvSuccess"));
     } catch (e) {
-        toast.error("エクスポートに失敗しました");
+        toast.error(t("toastExportError"));
         console.error(e);
     } finally {
         setIsExportingCsv(false);
@@ -155,7 +157,7 @@ export const DataSettingsPage = () => {
   const handleImportFile = async (file: File) => {
     if (!token) return;
 
-    if (!window.confirm("これまでのデータに追加で読み込みます。IDが重複するデータはスキップされます。よろしいですか？")) {
+    if (!window.confirm(t("dataImportConfirm"))) {
         if (fileInputRef.current) fileInputRef.current.value = "";
         return;
     }
@@ -180,10 +182,12 @@ export const DataSettingsPage = () => {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await api.importTransactions(token, json as any);
-      toast.success("インポートしました");
+      toast.success(t("toastImportSuccess"));
       invalidate();
     } catch (e) {
-      toast.error("インポートに失敗しました: " + (e instanceof Error ? e.message : "Unkown error"));
+      toast.error(
+        `${t("toastImportError")}: ${e instanceof Error ? e.message : t("unknownError")}`
+      );
       console.error(e);
     } finally {
       setIsImporting(false);
@@ -242,13 +246,13 @@ export const DataSettingsPage = () => {
 
   const handleDeleteAll = async () => {
     if (!token) return;
-    if (!window.confirm("本当に全ての取引データを削除しますか？この操作は取り消せません。")) return;
+    if (!window.confirm(t("dataResetConfirm"))) return;
     try {
       setIsDeletingData(true);
       await api.deleteAllTransactions(token);
-      toast.success("全てのデータを削除しました");
+      toast.success(t("toastResetSuccess"));
     } catch (e) {
-      toast.error("削除に失敗しました");
+      toast.error(t("toastResetError"));
     } finally {
       setIsDeletingData(false);
     }
@@ -256,16 +260,16 @@ export const DataSettingsPage = () => {
 
   const handleDeleteAccount = async () => {
     if (!token) return;
-    if (!window.confirm("本当に退会しますか？全てのデータが完全に削除され、復元できません。")) return;
+    if (!window.confirm(t("dataDeleteAccountConfirm"))) return;
     try {
       setIsDeletingAccount(true);
       await api.deleteAccount(token);
-      toast.success("退会しました");
+      toast.success(t("toastDeleteAccountSuccess"));
       logout();
       // Redirect handled by logout usually, or:
       window.location.href = "/login";
     } catch (e) {
-      toast.error("退会に失敗しました");
+      toast.error(t("toastDeleteAccountError"));
     } finally {
       setIsDeletingAccount(false);
     }
@@ -273,23 +277,23 @@ export const DataSettingsPage = () => {
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <Topbar title="データ管理" />
+      <Topbar title={t("dataSettingsTitle")} />
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="mx-auto max-w-2xl space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>エクスポート</CardTitle>
+              <CardTitle>{t("dataExportTitle")}</CardTitle>
               <CardDescription>
-                すべての取引データをダウンロードします。
-                バックアップやExcel・スプレッドシート等での利用に使用できます。
+                {t("dataExportDescription1")}
+                {t("dataExportDescription2")}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4 sm:flex-row">
               <Button onClick={handleExport} disabled={isExporting}>
-                {isExporting ? "エクスポート中..." : "JSON形式でエクスポート"}
+                {isExporting ? t("dataExporting") : t("dataExportJson")}
               </Button>
               <Button onClick={handleExportCsv} disabled={isExportingCsv} variant="outline">
-                {isExportingCsv ? "エクスポート中..." : "CSV形式でエクスポート"}
+                {isExportingCsv ? t("dataExporting") : t("dataExportCsv")}
               </Button>
             </CardContent>
           </Card>
@@ -302,12 +306,12 @@ export const DataSettingsPage = () => {
             onDrop={handleDrop}
           >
             <CardHeader>
-              <CardTitle>インポート (JSON / CSV)</CardTitle>
+              <CardTitle>{t("dataImportTitle")}</CardTitle>
               <CardDescription>
-                JSONまたはCSVファイルから取引データを読み込みます。
-                ファイル形式は拡張子で自動判別されます。
-                既存のデータと同じIDを持つ記録はスキップされ、重複を防ぎます。
-                ファイルはこのカードへドラッグ&ドロップでも読み込めます。
+                {t("dataImportDescription1")}
+                {t("dataImportDescription2")}
+                {t("dataImportDescription3")}
+                {t("dataImportDescription4")}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -326,24 +330,24 @@ export const DataSettingsPage = () => {
 
           <Card className="border-destructive/50">
             <CardHeader>
-              <CardTitle className="text-destructive">危険な操作</CardTitle>
+              <CardTitle className="text-destructive">{t("dataDangerTitle")}</CardTitle>
               <CardDescription>
-                データの削除や退会を行います。これらの操作は取り消せません。
+                {t("dataDangerDescription")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-col gap-2">
-                <h4 className="font-medium">データのリセット</h4>
-                <p className="text-sm text-muted-foreground">すべての取引履歴を削除しますが、アカウントは残ります。</p>
+                <h4 className="font-medium">{t("dataResetTitle")}</h4>
+                <p className="text-sm text-muted-foreground">{t("dataResetDescription")}</p>
                 <Button variant="destructive" onClick={handleDeleteAll} disabled={isDeletingData} className="w-fit">
-                  {isDeletingData ? "削除中..." : "全データを削除"}
+                  {isDeletingData ? t("dataResetDeleting") : t("dataResetButton")}
                 </Button>
               </div>
               <div className="border-t pt-4 flex flex-col gap-2">
-                <h4 className="font-medium">退会</h4>
-                <p className="text-sm text-muted-foreground">アカウントとすべてのデータを完全に削除します。</p>
+                <h4 className="font-medium">{t("dataDeleteAccountTitle")}</h4>
+                <p className="text-sm text-muted-foreground">{t("dataDeleteAccountDescription")}</p>
                 <Button variant="destructive" onClick={handleDeleteAccount} disabled={isDeletingAccount} className="w-fit">
-                  {isDeletingAccount ? "処理中..." : "退会する"}
+                  {isDeletingAccount ? t("dataDeleteAccountProcessing") : t("dataDeleteAccountButton")}
                 </Button>
               </div>
             </CardContent>

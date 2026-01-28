@@ -22,12 +22,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
+import { useText } from "@/lib/text";
 
 type ColumnMeta = {
   label?: string;
+  colKey?: string;
   headerClassName?: string;
   cellClassName?: string;
 };
+
+const OTHER_CATEGORY_NAME = "その他";
 
 const EditableRow = ({
   transaction,
@@ -42,6 +46,7 @@ const EditableRow = ({
   fixedAssetName?: string;
   onCancel: () => void;
 }) => {
+  const { t } = useText();
   const { token } = useAuth();
   const invalidate = useInvalidateLedger();
   const [isSaving, setIsSaving] = useState(false);
@@ -79,10 +84,10 @@ const EditableRow = ({
   });
 
   const expenseCategories = categories.filter(
-    (category) => category.kind !== "income" && category.name !== "その他"
+    (category) => category.kind !== "income" && category.name !== OTHER_CATEGORY_NAME
   );
   const incomeCategories = categories.filter(
-    (category) => category.kind === "income" && category.name !== "その他"
+    (category) => category.kind === "income" && category.name !== OTHER_CATEGORY_NAME
   );
 
   const withCustomCategory = (
@@ -92,7 +97,7 @@ const EditableRow = ({
     if (form.type !== kind) {
       return base;
     }
-    if (!form.categoryName || form.categoryName === "その他") {
+    if (!form.categoryName || form.categoryName === OTHER_CATEGORY_NAME) {
       return base;
     }
     if (base.some((category) => category.name === form.categoryName)) {
@@ -153,30 +158,30 @@ const EditableRow = ({
 
   const handleSave = async () => {
     if (!token) {
-      toast.error("ログインしてね");
+      toast.error(t("toastLoginRequired"));
       return;
     }
     if (form.amount === "" || Number.isNaN(Number(form.amount))) {
-      toast.error("きんがくを いれてね");
+      toast.error(t("toastAmountRequired"));
       return;
     }
     if (form.type === "expense" || form.type === "income") {
       if (!form.assetName) {
-        toast.error("いれものを えらんでね");
+        toast.error(t("toastAssetRequired"));
         return;
       }
       if (!form.categoryName) {
-        toast.error("うごきを えらんでね");
+        toast.error(t("toastCategoryRequired"));
         return;
       }
     }
     if (form.type === "transfer") {
       if (!form.fromAssetName || !form.toAssetName) {
-        toast.error("うつす いれものを えらんでね");
+        toast.error(t("toastTransferAssetRequired"));
         return;
       }
       if (form.fromAssetName === form.toAssetName) {
-        toast.error("おなじ いれものには うつせないよ");
+        toast.error(t("toastTransferSameAsset"));
         return;
       }
     }
@@ -215,7 +220,7 @@ const EditableRow = ({
         };
       }
       await api.updateTransaction(token, transaction.id, payload);
-      toast.success("きろくを なおしたよ");
+      toast.success(t("toastEntryUpdated"));
       invalidate();
       onCancel();
     } catch (error) {
@@ -227,17 +232,17 @@ const EditableRow = ({
 
   const handleDelete = async () => {
     if (!token) {
-      toast.error("ログインしてね");
+      toast.error(t("toastLoginRequired"));
       return;
     }
-    const ok = window.confirm("この きろくを けす？");
+    const ok = window.confirm(t("confirmDeleteEntry"));
     if (!ok) {
       return;
     }
     try {
       setIsSaving(true);
       await api.deleteTransaction(token, transaction.id);
-      toast.success("きろくを けしたよ");
+      toast.success(t("toastEntryDeleted"));
       invalidate();
       onCancel();
     } catch (error) {
@@ -297,14 +302,14 @@ const EditableRow = ({
       onKeyDown={handleKeyDown}
       className="border-t bg-card ledger-row ledger-row--edit"
     >
-      <td className="p-2" data-label="ひづけ">
+      <td className="p-2" data-label={t("labelDate")} data-col="date">
         <Input
           type="date"
           value={form.occurredAt}
           onChange={(event) => setForm({ ...form, occurredAt: event.target.value })}
         />
       </td>
-      <td className="p-2" data-label="いれもの">
+      <td className="p-2" data-label={t("labelAsset")} data-col="asset">
         {form.type === "transfer" ? (
           <Select
             value={fixedAssetName ?? (transferDirection === "out"
@@ -326,14 +331,14 @@ const EditableRow = ({
             disabled={disableTransferAsset}
           >
             <SelectTrigger>
-              <SelectValue placeholder="いれもの" />
+              <SelectValue placeholder={t("placeholderAsset")} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem
                 value={assetPlaceholderValue}
                 className="text-muted-foreground"
               >
-                いれもの
+                {t("placeholderAsset")}
               </SelectItem>
               {selectableAssets.map((asset) => (
                 <SelectItem key={asset.id} value={asset.name}>
@@ -355,14 +360,14 @@ const EditableRow = ({
             disabled={disableAsset}
           >
             <SelectTrigger>
-              <SelectValue placeholder="いれもの" />
+              <SelectValue placeholder={t("placeholderAsset")} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem
                 value={assetPlaceholderValue}
                 className="text-muted-foreground"
               >
-                いれもの
+                {t("placeholderAsset")}
               </SelectItem>
               {selectableAssets.map((asset) => (
                 <SelectItem key={asset.id} value={asset.name}>
@@ -373,24 +378,24 @@ const EditableRow = ({
           </Select>
         )}
       </td>
-      <td className="p-2" data-label="あいて">
+      <td className="p-2" data-label={t("labelCounterparty")} data-col="counterparty">
         {form.type === "expense" ? (
           <Input
             list="merchant-suggest"
-            placeholder="あいて"
+            placeholder={t("placeholderCounterparty")}
             value={form.merchant ?? ""}
             onChange={(event) => setForm({ ...form, merchant: event.target.value })}
           />
         ) : form.type === "income" ? (
           <Input
             list="source-suggest"
-            placeholder="あいて"
+            placeholder={t("placeholderCounterparty")}
             value={form.source ?? ""}
             onChange={(event) => setForm({ ...form, source: event.target.value })}
           />
         ) : (
           <Input
-            placeholder="あいて"
+            placeholder={t("placeholderCounterparty")}
             value={form.counterparty ?? ""}
             onChange={(event) =>
               setForm({ ...form, counterparty: event.target.value })
@@ -398,7 +403,7 @@ const EditableRow = ({
           />
         )}
       </td>
-      <td className="p-2" data-label="うごき">
+      <td className="p-2" data-label={t("labelCategory")} data-col="category">
         {form.type === "transfer" ? (
           <Select
             value={transferValue}
@@ -438,13 +443,15 @@ const EditableRow = ({
             }}
           >
             <SelectTrigger>
-              <SelectValue placeholder="うごき" />
+              <SelectValue placeholder={t("placeholderCategory")} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={placeholderValue} className="text-muted-foreground">
-                うごき
+                {t("placeholderCategory")}
               </SelectItem>
-              <div className="px-2 pt-2 text-xs text-muted-foreground">だした</div>
+              <div className="px-2 pt-2 text-xs text-muted-foreground">
+                {t("labelExpense")}
+              </div>
               {selectableAssets
                 .filter((asset) => asset.name !== transferBaseAssetName)
                 .map((asset) => (
@@ -452,10 +459,12 @@ const EditableRow = ({
                     key={`transfer-out:${asset.id}`}
                     value={`transfer-out::${asset.name}`}
                   >
-                    →{asset.name} へ
+                    {t("transferToOption", { assetName: asset.name })}
                   </SelectItem>
                 ))}
-              <div className="px-2 pt-2 text-xs text-muted-foreground">いれた</div>
+              <div className="px-2 pt-2 text-xs text-muted-foreground">
+                {t("labelIncome")}
+              </div>
               {selectableAssets
                 .filter((asset) => asset.name !== transferBaseAssetName)
                 .map((asset) => (
@@ -463,7 +472,7 @@ const EditableRow = ({
                     key={`transfer-in:${asset.id}`}
                     value={`transfer-in::${asset.name}`}
                   >
-                    ←{asset.name} から
+                    {t("transferFromOption", { assetName: asset.name })}
                   </SelectItem>
                 ))}
             </SelectContent>
@@ -488,13 +497,15 @@ const EditableRow = ({
             }}
           >
             <SelectTrigger>
-              <SelectValue placeholder="うごき" />
+              <SelectValue placeholder={t("placeholderCategory")} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={placeholderValue} className="text-muted-foreground">
-                うごき
+                {t("placeholderCategory")}
               </SelectItem>
-              <div className="px-2 pt-2 text-xs text-muted-foreground">だした</div>
+              <div className="px-2 pt-2 text-xs text-muted-foreground">
+                {t("labelExpense")}
+              </div>
               {availableExpenseCategories.map((category) => (
                 <SelectItem
                   key={`expense:${category.name}`}
@@ -503,8 +514,12 @@ const EditableRow = ({
                   {category.name}
                 </SelectItem>
               ))}
-              <SelectItem value="expense::その他">その他</SelectItem>
-              <div className="px-2 pt-2 text-xs text-muted-foreground">いれた</div>
+              <SelectItem value={`expense::${OTHER_CATEGORY_NAME}`}>
+                {t("labelOther")}
+              </SelectItem>
+              <div className="px-2 pt-2 text-xs text-muted-foreground">
+                {t("labelIncome")}
+              </div>
               {availableIncomeCategories.map((category) => (
                 <SelectItem
                   key={`income:${category.name}`}
@@ -513,24 +528,26 @@ const EditableRow = ({
                   {category.name}
                 </SelectItem>
               ))}
-              <SelectItem value="income::その他">その他</SelectItem>
+              <SelectItem value={`income::${OTHER_CATEGORY_NAME}`}>
+                {t("labelOther")}
+              </SelectItem>
             </SelectContent>
           </Select>
         )}
       </td>
-      <td className="p-2" data-label="メモ">
+      <td className="p-2" data-label={t("labelMemo")} data-col="memo">
         <Input
           list="memo-suggest"
-          placeholder="メモ"
+          placeholder={t("placeholderMemo")}
           value={form.memo}
           onChange={(event) => setForm({ ...form, memo: event.target.value })}
         />
       </td>
-      <td className="p-2" data-label="きんがく">
+      <td className="p-2" data-label={t("labelAmount")} data-col="amount">
         <div className="ledger-amount-inline">
           <Input
             type="number"
-            placeholder="きんがく"
+            placeholder={t("placeholderAmount")}
             value={form.amount}
             onChange={(event) => setForm({ ...form, amount: event.target.value })}
           />
@@ -541,7 +558,7 @@ const EditableRow = ({
               size="icon"
               onClick={handleSave}
               disabled={isSaving || isSaveDisabled}
-              aria-label="ほぞん"
+              aria-label={t("actionSave")}
               className="h-7 w-7"
             >
               <Check className="h-4 w-4 text-emerald-600" />
@@ -552,7 +569,7 @@ const EditableRow = ({
               size="icon"
               onClick={onCancel}
               disabled={isSaving}
-              aria-label="キャンセル"
+              aria-label={t("actionCancel")}
               className="h-7 w-7"
             >
               <X className="h-4 w-4 text-muted-foreground" />
@@ -563,7 +580,7 @@ const EditableRow = ({
               size="icon"
               onClick={handleDelete}
               disabled={isSaving}
-              aria-label="きろくを けす"
+              aria-label={t("actionDelete")}
               className="h-7 w-7"
             >
               <Trash2 className="h-4 w-4 text-rose-600" />
@@ -574,6 +591,7 @@ const EditableRow = ({
       <td
         className="ledger-action-cell p-2 text-right"
         data-label=""
+        data-col="action"
       >
         <div className="flex items-center justify-end gap-1">
           <Button
@@ -582,7 +600,7 @@ const EditableRow = ({
             size="icon"
             onClick={handleSave}
             disabled={isSaving || isSaveDisabled}
-            aria-label="ほぞん"
+            aria-label={t("actionSave")}
             className="h-7 w-7"
           >
             <Check className="h-4 w-4 text-emerald-600" />
@@ -593,7 +611,7 @@ const EditableRow = ({
             size="icon"
             onClick={onCancel}
             disabled={isSaving}
-            aria-label="キャンセル"
+            aria-label={t("actionCancel")}
             className="h-7 w-7"
           >
             <X className="h-4 w-4 text-muted-foreground" />
@@ -604,7 +622,7 @@ const EditableRow = ({
             size="icon"
             onClick={handleDelete}
             disabled={isSaving}
-            aria-label="きろくを けす"
+            aria-label={t("actionDelete")}
             className="h-7 w-7"
           >
             <Trash2 className="h-4 w-4 text-rose-600" />
@@ -665,6 +683,7 @@ export const LedgerTable = ({
   entryRow?: React.ReactNode;
   entryPosition?: "top" | "bottom";
 }) => {
+  const { t } = useText();
   const { token } = useAuth();
   const invalidate = useInvalidateLedger();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -726,17 +745,18 @@ export const LedgerTable = ({
   const columns = useMemo<ColumnDef<Transaction>[]>(
     () => [
       {
-        header: "ひづけ",
+        header: t("labelDate"),
         accessorKey: "occurredAt",
         cell: ({ row }) => formatDateSlash(row.original.occurredAt),
         meta: {
-          label: "ひづけ",
+          label: t("labelDate"),
+          colKey: "date",
           headerClassName: "whitespace-nowrap",
           cellClassName: "whitespace-nowrap",
         },
       },
       {
-        header: "いれもの",
+        header: t("labelAsset"),
         cell: ({ row }) => {
           const tx = row.original;
           if (tx.type === "transfer") {
@@ -748,13 +768,14 @@ export const LedgerTable = ({
           return tx.assetName ?? "";
         },
         meta: {
-          label: "いれもの",
+          label: t("labelAsset"),
+          colKey: "asset",
           headerClassName: "whitespace-normal break-words",
           cellClassName: "whitespace-normal break-words",
         },
       },
       {
-        header: "あいて",
+        header: t("labelCounterparty"),
         cell: ({ row }) => {
           const tx = row.original;
           if (tx.type === "expense") {
@@ -766,62 +787,72 @@ export const LedgerTable = ({
           return tx.counterparty ?? "";
         },
         meta: {
-          label: "あいて",
+          label: t("labelCounterparty"),
+          colKey: "counterparty",
           headerClassName: "whitespace-normal break-words",
           cellClassName: "whitespace-normal break-words",
         },
       },
       {
-        header: "うごき",
+        header: t("labelCategory"),
         cell: ({ row }) => {
           const tx = row.original;
           if (tx.type === "expense") {
-            return `だした: ${tx.categoryName ?? ""}`;
+            return `${t("labelExpense")}: ${tx.categoryName ?? ""}`;
           }
           if (tx.type === "income") {
-            return `いれた: ${tx.categoryName ?? ""}`;
+            return `${t("labelIncome")}: ${tx.categoryName ?? ""}`;
           }
           if (fixedAssetName && tx.toAssetName === fixedAssetName) {
-            return `いれた: ←${tx.fromAssetName ?? ""} から`;
+            return `${t("labelIncome")}: ${t("transferFromOption", {
+              assetName: tx.fromAssetName ?? "",
+            })}`;
           }
-          return `だした: →${tx.toAssetName ?? ""} へ`;
+          return `${t("labelExpense")}: ${t("transferToOption", {
+            assetName: tx.toAssetName ?? "",
+          })}`;
         },
         meta: {
-          label: "うごき",
+          label: t("labelCategory"),
+          colKey: "category",
           headerClassName: "whitespace-normal break-words",
           cellClassName: "whitespace-normal break-words",
         },
       },
       {
-        header: "メモ",
+        header: t("labelMemo"),
         cell: ({ row }) => {
           const tx = row.original;
           if (tx.type === "transfer") {
             if (tx.memo) {
               return tx.memo;
             }
-            return tx.fee ? `てすうりょう ${formatJPYPlain(tx.fee)}` : "";
+            return tx.fee
+              ? `${t("labelTransferFee")} ${formatJPYPlain(tx.fee)}`
+              : "";
           }
           return tx.memo ?? "";
         },
         meta: {
-          label: "メモ",
+          label: t("labelMemo"),
+          colKey: "memo",
           headerClassName: "whitespace-normal break-words",
           cellClassName: "whitespace-normal break-words",
         },
       },
       {
-        header: "きんがく",
+        header: t("labelAmount"),
         accessorKey: "amount",
         cell: ({ row }) => formatJPYPlain(row.original.amount),
         meta: {
-          label: "きんがく",
+          label: t("labelAmount"),
+          colKey: "amount",
           headerClassName: "whitespace-nowrap",
           cellClassName: "whitespace-nowrap text-right",
         },
       },
       {
-        header: "のこり",
+        header: t("labelBalance"),
         cell: ({ row }) => {
           if (!balancesById) {
             return "-";
@@ -833,13 +864,14 @@ export const LedgerTable = ({
           return formatJPYPlain(value);
         },
         meta: {
-          label: "のこり",
+          label: t("labelBalance"),
+          colKey: "balance",
           headerClassName: "whitespace-nowrap",
           cellClassName: "whitespace-nowrap text-right",
         },
       },
     ],
-    [balancesById, fixedAssetName]
+    [balancesById, fixedAssetName, t]
   );
 
   const sorted = useMemo(() => {
@@ -917,7 +949,7 @@ export const LedgerTable = ({
 
   const handleDropAt = async (targetDateKey: string, insertIndex: number) => {
     if (!token) {
-      toast.error("ログインしてね");
+      toast.error(t("toastLoginRequired"));
       return;
     }
     if (!draggingId || !dragInfo) {
@@ -1139,7 +1171,7 @@ export const LedgerTable = ({
           <tbody className="ledger-grid">
           {!isDesc ? (
             <tr className="border-t bg-secondary/10 ledger-row ledger-row--opening">
-              <td className="p-3">
+              <td className="p-3" data-label={t("labelDate")} data-col="date">
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground opacity-0" aria-hidden>
                     ≡
@@ -1154,9 +1186,10 @@ export const LedgerTable = ({
               />
               <td
                 className="p-3 text-right"
-                data-label="のこり"
+                data-label={t("labelBalance")}
+                data-col="balance"
               >
-                <span className="ledger-opening-label">のこり</span>
+                <span className="ledger-opening-label">{t("labelBalance")}</span>
                 <span className="ledger-opening-value">{openingBalanceText}</span>
               </td>
             </tr>
@@ -1194,17 +1227,17 @@ export const LedgerTable = ({
                 : "";
             const cellMap = new Map<string, ReturnType<typeof flexRender>>();
             row.getVisibleCells().forEach((cell) => {
-              const label =
-                (cell.column.columnDef.meta as ColumnMeta | undefined)?.label ?? "";
-              cellMap.set(label, flexRender(cell.column.columnDef.cell, cell.getContext()));
+              const colKey =
+                (cell.column.columnDef.meta as ColumnMeta | undefined)?.colKey ?? "";
+              cellMap.set(colKey, flexRender(cell.column.columnDef.cell, cell.getContext()));
             });
-            const dateValue = cellMap.get("ひづけ") ?? "-";
-            const assetValue = cellMap.get("いれもの") ?? "-";
-            const counterpartyValue = cellMap.get("あいて") ?? "-";
-            const actionValue = cellMap.get("うごき") ?? "-";
-            const memoValue = cellMap.get("メモ") ?? "";
-            const amountValue = cellMap.get("きんがく") ?? "-";
-            const balanceValue = cellMap.get("のこり") ?? "-";
+            const dateValue = cellMap.get("date") ?? "-";
+            const assetValue = cellMap.get("asset") ?? "-";
+            const counterpartyValue = cellMap.get("counterparty") ?? "-";
+            const actionValue = cellMap.get("category") ?? "-";
+            const memoValue = cellMap.get("memo") ?? "";
+            const amountValue = cellMap.get("amount") ?? "-";
+            const balanceValue = cellMap.get("balance") ?? "-";
 
             if (isMobile) {
               return (
@@ -1240,7 +1273,7 @@ export const LedgerTable = ({
                             }
                             onDragEnd={handleDragEnd}
                             onClick={(event) => event.stopPropagation()}
-                            aria-label="ならびかえ"
+                            aria-label={t("actionReorder")}
                           >
                             ≡
                           </span>
@@ -1249,31 +1282,31 @@ export const LedgerTable = ({
                           </span>
                         </div>
                         <div className="ledger-mobile-item">
-                          <span className="ledger-mobile-label">あいて</span>
+                          <span className="ledger-mobile-label">{t("labelCounterparty")}</span>
                           <span className="ledger-mobile-value">{counterpartyValue}</span>
                         </div>
                         <div className="ledger-mobile-item">
-                          <span className="ledger-mobile-label">メモ</span>
+                          <span className="ledger-mobile-label">{t("labelMemo")}</span>
                           <span className="ledger-mobile-value">{memoValue}</span>
                         </div>
                       </div>
                       <div className="ledger-mobile-col">
                         <div className="ledger-mobile-item">
-                          <span className="ledger-mobile-label">いれもの</span>
+                          <span className="ledger-mobile-label">{t("labelAsset")}</span>
                           <span className="ledger-mobile-value">{assetValue}</span>
                         </div>
                         <div className="ledger-mobile-item">
-                          <span className="ledger-mobile-label">うごき</span>
+                          <span className="ledger-mobile-label">{t("labelCategory")}</span>
                           <span className="ledger-mobile-value">{actionValue}</span>
                         </div>
                         <div className="ledger-mobile-item">
-                          <span className="ledger-mobile-label">きんがく</span>
+                          <span className="ledger-mobile-label">{t("labelAmount")}</span>
                           <span className="ledger-mobile-value ledger-mobile-value--right ledger-mobile-value--nowrap">
                             {amountValue}
                           </span>
                         </div>
                         <div className="ledger-mobile-item">
-                          <span className="ledger-mobile-label">のこり</span>
+                          <span className="ledger-mobile-label">{t("labelBalance")}</span>
                           <span className="ledger-mobile-value ledger-mobile-value--right ledger-mobile-value--nowrap">
                             {balanceValue}
                           </span>
@@ -1308,12 +1341,11 @@ export const LedgerTable = ({
                 onDragEnd={handleDragEnd}
               >
                 {row.getVisibleCells().map((cell) => {
-                  const label =
-                    (cell.column.columnDef.meta as ColumnMeta | undefined)
-                      ?.label ?? "";
-                  const isDateCell = cell.column.id === "occurredAt";
-                  const isAmountCell =
-                    cell.column.id === "amount" || label === "きんがく";
+                  const meta = cell.column.columnDef.meta as ColumnMeta | undefined;
+                  const label = meta?.label ?? "";
+                  const colKey = meta?.colKey ?? "";
+                  const isDateCell = colKey === "date";
+                  const isAmountCell = colKey === "amount";
                   const balanceValue = balancesById?.[row.original.id];
                   const balanceText =
                     balanceValue === undefined || balanceValue === null
@@ -1327,6 +1359,7 @@ export const LedgerTable = ({
                           ?.cellClassName ?? ""
                       }`}
                       data-label={label}
+                      data-col={colKey}
                     >
                       {isDateCell ? (
                         <div className="flex items-center gap-2">
@@ -1337,7 +1370,7 @@ export const LedgerTable = ({
                             }
                             onDragEnd={handleDragEnd}
                             onClick={(event) => event.stopPropagation()}
-                            aria-label="ならびかえ"
+                            aria-label={t("actionReorder")}
                           >
                             ≡
                           </span>
@@ -1375,7 +1408,7 @@ export const LedgerTable = ({
           {!isDesc ? entryRowNode : null}
           {isDesc ? (
             <tr className="border-t bg-secondary/10 ledger-row ledger-row--opening">
-              <td className="p-3">
+              <td className="p-3" data-label={t("labelDate")} data-col="date">
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground opacity-0" aria-hidden>
                     ≡
@@ -1390,9 +1423,10 @@ export const LedgerTable = ({
               />
               <td
                 className="p-3 text-right"
-                data-label="のこり"
+                data-label={t("labelBalance")}
+                data-col="balance"
               >
-                <span className="ledger-opening-label">のこり</span>
+                <span className="ledger-opening-label">{t("labelBalance")}</span>
                 <span className="ledger-opening-value">{openingBalanceText}</span>
               </td>
             </tr>

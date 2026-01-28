@@ -6,8 +6,10 @@ import { useAssets, useMonthlySummary, useTransactions } from "@/lib/query";
 import { formatJPY } from "@/lib/money";
 import { formatDate, formatDateSlash } from "@/lib/date";
 import { endOfMonth } from "date-fns";
+import { useText } from "@/lib/text";
 
 export const DashboardPage = () => {
+  const { t } = useText();
   const { data: assets = [] } = useAssets();
   const now = new Date();
   const { data: summary } = useMonthlySummary(now.getFullYear(), now.getMonth() + 1);
@@ -31,7 +33,7 @@ export const DashboardPage = () => {
 
   return (
     <div className="flex min-h-0 flex-col">
-      <Topbar title="まとめ" subtitle="いまのようすを みよう" dense />
+      <Topbar title={t("dashboardTitle")} subtitle={t("dashboardSubtitle")} dense />
 
       <div className="flex-1 min-h-0 overflow-y-auto pt-3 pb-4 md:pt-4 md:pb-6">
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -41,14 +43,14 @@ export const DashboardPage = () => {
               className="block h-full transition hover:-translate-y-1 hover:shadow-elevated focus:outline-none"
             >
               <CardHeader>
-                <CardTitle className="text-base">ぜんぶ</CardTitle>
+                <CardTitle className="text-base">{t("dashboardAllLabel")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-semibold text-sky-700">
                   {formatJPY(totalBalance)}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  はじめののこり {formatJPY(totalInitial)}
+                  {t("dashboardInitialBalance", { amount: formatJPY(totalInitial) })}
                 </p>
               </CardContent>
             </Link>
@@ -67,7 +69,9 @@ export const DashboardPage = () => {
                     {formatJPY(asset.currentBalance)}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    はじめののこり {formatJPY(asset.initialBalance)}
+                    {t("dashboardInitialBalance", {
+                      amount: formatJPY(asset.initialBalance),
+                    })}
                   </p>
                 </CardContent>
               </Link>
@@ -78,7 +82,7 @@ export const DashboardPage = () => {
         <section className="mt-8 grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">こんげつ いれた</CardTitle>
+              <CardTitle className="text-base">{t("dashboardMonthIncome")}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-semibold text-emerald-600">
@@ -88,7 +92,7 @@ export const DashboardPage = () => {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">こんげつ だした</CardTitle>
+              <CardTitle className="text-base">{t("dashboardMonthExpense")}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-semibold text-rose-600">
@@ -98,7 +102,7 @@ export const DashboardPage = () => {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">のこり</CardTitle>
+              <CardTitle className="text-base">{t("dashboardMonthBalance")}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-semibold">
@@ -111,13 +115,13 @@ export const DashboardPage = () => {
         <section className="mt-8">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">さいきんの きろく</CardTitle>
+              <CardTitle className="text-base">{t("dashboardRecentTitle")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {recent.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
-                    まだ きろくが ありません
+                    {t("dashboardRecentEmpty")}
                   </p>
                 ) : (
                   recent.map((tx) => (

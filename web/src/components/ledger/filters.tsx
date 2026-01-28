@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { formatDate, startOfCurrentMonth, startOfPrevMonth } from "@/lib/date";
 import { endOfMonth } from "date-fns";
+import { useText } from "@/lib/text";
 export type LedgerFiltersState = {
   from: string;
   to: string;
@@ -17,14 +18,7 @@ export type LedgerFiltersState = {
   order: "desc" | "asc";
 };
 
-const presets = [
-  { value: "this-month", label: "こんげつ" },
-  { value: "last-month", label: "せんげつ" },
-  { value: "last-30", label: "30にち" },
-  { value: "custom", label: "そのた" },
-] as const;
-
-type PresetValue = (typeof presets)[number]["value"];
+type PresetValue = "this-month" | "last-month" | "last-30" | "custom";
 
 export const Filters = ({
   filters,
@@ -33,6 +27,13 @@ export const Filters = ({
   filters: LedgerFiltersState;
   setFilters: Dispatch<SetStateAction<LedgerFiltersState>>;
 }) => {
+  const { t } = useText();
+  const presets = [
+    { value: "this-month", label: t("filterPresetThisMonth") },
+    { value: "last-month", label: t("filterPresetLastMonth") },
+    { value: "last-30", label: t("filterPresetLast30") },
+    { value: "custom", label: t("filterPresetCustom") },
+  ] as const;
   const [preset, setPreset] = useState<PresetValue>("this-month");
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -83,7 +84,7 @@ export const Filters = ({
         <div className="flex flex-nowrap max-[530px]:flex-wrap items-center gap-1">
           <Select value={preset} onValueChange={(value) => setPreset(value as PresetValue)}>
             <SelectTrigger className="!w-auto min-w-[84px] flex-shrink-0">
-              <SelectValue placeholder="きかん" />
+              <SelectValue placeholder={t("filterPeriodPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
               {presets.map((item) => (
@@ -102,7 +103,9 @@ export const Filters = ({
             }}
             className="flex-1 min-w-[100px] max-[530px]:min-w-[140px]"
           />
-          <span className="text-sm text-muted-foreground flex-shrink-0">～</span>
+          <span className="text-sm text-muted-foreground flex-shrink-0">
+            {t("filterRangeSeparator")}
+          </span>
           <Input
             type="date"
             value={filters.to}
@@ -115,7 +118,7 @@ export const Filters = ({
         </div>
         <div className="flex flex-nowrap max-[400px]:flex-wrap items-center gap-2">
           <Input
-            placeholder="さがす（あいて/メモ）"
+            placeholder={t("filterSearchPlaceholder")}
             value={filters.search}
             onChange={(event) => setFilters({ ...filters, search: event.target.value })}
             className="flex-1 min-w-[180px] w-full max-[400px]:min-w-0"
@@ -127,11 +130,11 @@ export const Filters = ({
             }
           >
             <SelectTrigger className="w-28">
-              <SelectValue placeholder="ならび" />
+              <SelectValue placeholder={t("filterOrderPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="desc">あたらしい</SelectItem>
-              <SelectItem value="asc">ふるい</SelectItem>
+              <SelectItem value="desc">{t("filterOrderNew")}</SelectItem>
+              <SelectItem value="asc">{t("filterOrderOld")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -140,7 +143,7 @@ export const Filters = ({
         <div className="flex items-center gap-2">
           <Select value={preset} onValueChange={(value) => setPreset(value as PresetValue)}>
             <SelectTrigger className="w-24">
-              <SelectValue placeholder="きかん" />
+              <SelectValue placeholder={t("filterPeriodPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
               {presets.map((item) => (
@@ -159,7 +162,9 @@ export const Filters = ({
             }}
             className="w-32 md:w-36"
           />
-          <span className="text-sm text-muted-foreground">～</span>
+          <span className="text-sm text-muted-foreground">
+            {t("filterRangeSeparator")}
+          </span>
           <Input
             type="date"
             value={filters.to}
@@ -172,7 +177,7 @@ export const Filters = ({
         </div>
         <div className="flex items-center gap-2">
           <Input
-            placeholder="さがす（あいて/メモ）"
+            placeholder={t("filterSearchPlaceholder")}
             value={filters.search}
             onChange={(event) => setFilters({ ...filters, search: event.target.value })}
             className="min-w-[220px] w-[320px]"
@@ -184,11 +189,11 @@ export const Filters = ({
             }
           >
             <SelectTrigger className="w-28">
-              <SelectValue placeholder="ならび" />
+              <SelectValue placeholder={t("filterOrderPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="desc">あたらしい</SelectItem>
-              <SelectItem value="asc">ふるい</SelectItem>
+              <SelectItem value="desc">{t("filterOrderNew")}</SelectItem>
+              <SelectItem value="asc">{t("filterOrderOld")}</SelectItem>
             </SelectContent>
           </Select>
         </div>

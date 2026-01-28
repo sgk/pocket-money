@@ -3,8 +3,10 @@ import { Outlet } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { UserMenu } from "@/components/layout/user-menu";
+import { useText } from "@/lib/text";
 
 export const AppLayout = () => {
+  const { t } = useText();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -30,12 +32,12 @@ export const AppLayout = () => {
             type="button"
             className="rounded-md p-1 text-muted-foreground hover:bg-secondary min-[1200px]:invisible"
             onClick={toggleSidebar}
-            aria-label={sidebarOpen ? "メニューをとじる" : "メニューをひらく"}
+            aria-label={sidebarOpen ? t("menuClose") : t("menuOpen")}
             ref={menuButtonRef}
           >
             {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
-          <div className="font-display text-lg leading-none">おこづかいノート</div>
+          <div className="font-display text-lg leading-none">{t("appTitle")}</div>
           <UserMenu
             compact
             isOpen={userMenuOpen}
@@ -74,7 +76,7 @@ export const AppLayout = () => {
             sidebarOpen ? "opacity-100" : "opacity-0"
           }`}
           onClick={closeSidebar}
-          aria-label="メニューをとじる"
+          aria-label={t("menuClose")}
           tabIndex={sidebarOpen ? 0 : -1}
         />
         <Sidebar

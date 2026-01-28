@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "@/lib/api";
+import { useText } from "@/lib/text";
 
 declare global {
   interface Window {
@@ -21,6 +22,7 @@ declare global {
 }
 
 export const LoginPage = () => {
+  const { t } = useText();
   const { token, setToken } = useAuth();
   const navigate = useNavigate();
   const googleButtonRef = useRef<HTMLDivElement>(null);
@@ -38,12 +40,12 @@ export const LoginPage = () => {
         navigate("/", { replace: true });
       } catch (err) {
         console.error(err);
-        setError("ログインに失敗しました。もう一度試してください。");
+        setError(t("loginError"));
       } finally {
         setIsSubmitting(false);
       }
     },
-    [navigate, setToken]
+    [navigate, setToken, t]
   );
 
   useEffect(() => {
@@ -116,21 +118,21 @@ export const LoginPage = () => {
     <div className="page-shell flex h-full items-center justify-center overflow-auto p-6">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="font-display text-2xl">ログイン</CardTitle>
+          <CardTitle className="font-display text-2xl">{t("loginTitle")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
             <p className="text-sm text-muted-foreground">
-              Googleでログインしよう。
+              {t("loginSubtitle")}
             </p>
             <div className="mt-4" ref={googleButtonRef} />
           </div>
           {isSubmitting ? (
-            <p className="text-xs text-muted-foreground">ログイン処理中...</p>
+            <p className="text-xs text-muted-foreground">{t("loginProcessing")}</p>
           ) : null}
           {!clientId ? (
             <p className="text-xs text-destructive">
-              GoogleのIDが未設定です
+              {t("loginMissingGoogleId")}
             </p>
           ) : null}
           {error ? (

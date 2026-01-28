@@ -1,11 +1,7 @@
-import { Link, NavLink } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { Home, List, Settings, Wallet } from "lucide-react";
 import { useAssets } from "@/lib/query";
-
-const navItems = [
-  { to: "/", label: "まとめ", icon: Home },
-  { to: "/ledger", label: "ぜんぶ", icon: List },
-];
+import { useText } from "@/lib/text";
 
 type SidebarProps = {
   onNavigate?: () => void;
@@ -13,10 +9,15 @@ type SidebarProps = {
 };
 
 export const Sidebar = ({ onNavigate, className = "" }: SidebarProps) => {
+  const { t } = useText();
   const { data: assets = [] } = useAssets();
   const activeAssets = assets
     .filter((asset) => asset.isActive)
     .sort((a, b) => a.sortOrder - b.sortOrder);
+  const navItems = [
+    { to: "/", label: t("navSummary"), icon: Home },
+    { to: "/ledger", label: t("navAll"), icon: List },
+  ];
 
   return (
     <aside
@@ -45,7 +46,7 @@ export const Sidebar = ({ onNavigate, className = "" }: SidebarProps) => {
         })}
         {activeAssets.length === 0 ? (
           <div className="rounded-md bg-secondary px-3 py-2 text-xs text-muted-foreground">
-            いれものがないよ
+            {t("navNoAssets")}
           </div>
         ) : (
           activeAssets.map((asset) => (
@@ -79,7 +80,7 @@ export const Sidebar = ({ onNavigate, className = "" }: SidebarProps) => {
           }
         >
           <Settings className="h-4 w-4" />
-          <span className="whitespace-nowrap">いれもの設定</span>
+          <span className="whitespace-nowrap">{t("navAssetsSettings")}</span>
         </NavLink>
         <NavLink
           to="/settings/categories"
@@ -93,7 +94,21 @@ export const Sidebar = ({ onNavigate, className = "" }: SidebarProps) => {
           }
         >
           <Settings className="h-4 w-4" />
-          <span className="whitespace-nowrap">うごき設定</span>
+          <span className="whitespace-nowrap">{t("navCategoriesSettings")}</span>
+        </NavLink>
+        <NavLink
+          to="/settings/personal"
+          onClick={onNavigate}
+          className={({ isActive }) =>
+            `flex w-full items-center justify-start gap-2 rounded-md px-3 py-2 text-sm transition ${
+              isActive
+                ? "bg-primary text-primary-foreground"
+                : "text-foreground hover:bg-secondary"
+            }`
+          }
+        >
+          <Settings className="h-4 w-4" />
+          <span className="whitespace-nowrap">{t("navPersonalSettings")}</span>
         </NavLink>
         <NavLink
           to="/settings/data"
@@ -107,7 +122,7 @@ export const Sidebar = ({ onNavigate, className = "" }: SidebarProps) => {
           }
         >
           <Settings className="h-4 w-4" />
-          <span className="whitespace-nowrap">データ管理</span>
+          <span className="whitespace-nowrap">{t("navDataSettings")}</span>
         </NavLink>
       </nav>
     </aside>

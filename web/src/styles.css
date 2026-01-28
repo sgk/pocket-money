@@ -384,44 +384,44 @@ h1, h2, h3, .font-display {
     text-align: left;
   }
 
-  .ledger-table td[data-label="ひづけ"] {
+  .ledger-table td[data-col="date"] {
     grid-column: 1 / 2;
     grid-row: 1;
     justify-content: flex-end;
     text-align: right;
   }
 
-  .ledger-table td[data-label="いれもの"] {
+  .ledger-table td[data-col="asset"] {
     grid-column: 2 / 3;
     grid-row: 1;
   }
 
-  .ledger-table td[data-label="あいて"] {
+  .ledger-table td[data-col="counterparty"] {
     grid-column: 1 / 2;
     grid-row: 2;
   }
 
-  .ledger-table td[data-label="メモ"] {
+  .ledger-table td[data-col="memo"] {
     grid-column: 1 / 2;
     grid-row: 3;
   }
 
-  .ledger-table td[data-label="うごき"] {
+  .ledger-table td[data-col="category"] {
     grid-column: 2 / 3;
     grid-row: 2;
   }
 
-  .ledger-table tr.ledger-row td:not([data-label="ひづけ"]):not([data-label="きんがく"]):not([data-label="のこり"]) {
+  .ledger-table tr.ledger-row td:not([data-col="date"]):not([data-col="amount"]):not([data-col="balance"]) {
     white-space: normal;
     overflow-wrap: anywhere;
   }
 
-  .ledger-table td[data-label="きんがく"] {
+  .ledger-table td[data-col="amount"] {
     grid-column: 2 / 3;
     grid-row: 3;
   }
 
-  .ledger-table td[data-label="のこり"] {
+  .ledger-table td[data-col="balance"] {
     grid-column: 2 / 3;
     grid-row: 4;
   }
@@ -447,22 +447,22 @@ h1, h2, h3, .font-display {
     margin-bottom: 0;
   }
 
-  .ledger-table tr.ledger-row td[data-label="ひづけ"] > span:last-child {
+  .ledger-table tr.ledger-row td[data-col="date"] > span:last-child {
     margin-left: auto;
     text-align: right;
   }
 
-  .ledger-table tr.ledger-row td[data-label="ひづけ"] > div {
+  .ledger-table tr.ledger-row td[data-col="date"] > div {
     width: 100%;
     justify-content: flex-end;
   }
 
-  .ledger-table tr.ledger-row--opening td[data-label="ひづけ"] > div {
+  .ledger-table tr.ledger-row--opening td[data-col="date"] > div {
     width: 100%;
     justify-content: flex-end;
   }
 
-  .ledger-table tr.ledger-row--opening td[data-label="のこり"] {
+  .ledger-table tr.ledger-row--opening td[data-col="balance"] {
     justify-content: flex-end;
     text-align: right;
   }
@@ -546,7 +546,7 @@ h1, h2, h3, .font-display {
     display: block;
   }
 
-  .ledger-table tr.ledger-row--opening td[data-label="ひづけ"] {
+  .ledger-table tr.ledger-row--opening td[data-col="date"] {
     grid-row: 1;
     grid-column: 1 / 2;
   }
@@ -561,7 +561,7 @@ h1, h2, h3, .font-display {
     padding: 1px 0;
   }
 
-  .ledger-table tr.ledger-row--opening td[data-label="のこり"] {
+  .ledger-table tr.ledger-row--opening td[data-col="balance"] {
     grid-row: 1;
     grid-column: 2 / 3;
     justify-content: flex-end;
@@ -576,17 +576,17 @@ h1, h2, h3, .font-display {
     margin-left: auto;
   }
 
-  .ledger-table tr.ledger-row--edit td[data-label="きんがく"] {
+  .ledger-table tr.ledger-row--edit td[data-col="amount"] {
     display: flex;
     align-items: center;
     gap: 6px;
   }
 
-  .ledger-table tr.ledger-row--edit td[data-label="きんがく"] .ledger-action-cell {
+  .ledger-table tr.ledger-row--edit td[data-col="amount"] .ledger-action-cell {
     margin-left: auto;
   }
 
-  .ledger-table tr.ledger-row td[data-label="きんがく"] .ledger-amount-block {
+  .ledger-table tr.ledger-row td[data-col="amount"] .ledger-amount-block {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
@@ -600,7 +600,7 @@ h1, h2, h3, .font-display {
     gap: 2px;
   }
 
-  .ledger-table tr.ledger-row--opening td[data-label="のこり"] {
+  .ledger-table tr.ledger-row--opening td[data-col="balance"] {
     display: flex;
     justify-content: flex-end;
   }
@@ -627,23 +627,23 @@ h1, h2, h3, .font-display {
     display: none !important;
   }
 
-  .ledger-table td[data-label="ひづけ"]::before {
+  .ledger-table td[data-col="date"]::before {
     content: attr(data-label);
     display: block;
   }
 
-  .ledger-table tr.ledger-row td[data-label="ひづけ"]::before {
+  .ledger-table tr.ledger-row td[data-col="date"]::before {
     content: "";
     display: none;
   }
 
-  .ledger-table tr.ledger-row--opening td[data-label="ひづけ"]::before,
-  .ledger-table tr.ledger-row--opening td[data-label="のこり"]::before {
+  .ledger-table tr.ledger-row--opening td[data-col="date"]::before,
+  .ledger-table tr.ledger-row--opening td[data-col="balance"]::before {
     content: attr(data-label);
     display: block;
   }
 
-  .ledger-table tr.ledger-row--edit td[data-label="ひづけ"]::before {
+  .ledger-table tr.ledger-row--edit td[data-col="date"]::before {
     content: attr(data-label);
     display: block;
   }
@@ -654,8 +654,8 @@ h1, h2, h3, .font-display {
     display: none !important;
   }
 
-  .ledger-table tr.ledger-row--new td[data-label="ひづけ"]::before,
-  .ledger-table tr.ledger-row--edit td[data-label="ひづけ"]::before {
+  .ledger-table tr.ledger-row--new td[data-col="date"]::before,
+  .ledger-table tr.ledger-row--edit td[data-col="date"]::before {
     content: "" !important;
     display: none !important;
   }
@@ -664,7 +664,7 @@ h1, h2, h3, .font-display {
     display: none !important;
   }
 
-  .ledger-table tr.ledger-row--edit td[data-label="ひづけ"] {
+  .ledger-table tr.ledger-row--edit td[data-col="date"] {
     justify-content: flex-start;
     text-align: left;
   }
@@ -680,7 +680,7 @@ h1, h2, h3, .font-display {
 
 
 
-  .ledger-table td[data-label=""]::before {
+  .ledger-table td[data-col="action"]::before {
     content: "";
     display: none;
   }

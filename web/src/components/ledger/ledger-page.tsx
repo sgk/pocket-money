@@ -6,8 +6,10 @@ import { endOfMonth } from "date-fns";
 import { computeEndingBalance, computeRunningBalances } from "@/lib/balance";
 import { formatJPY } from "@/lib/money";
 import { useAssets, useCategories, useMonthlySummary, useTransactions } from "@/lib/query";
+import { useText } from "@/lib/text";
 
 export const LedgerPage = () => {
+  const { t } = useText();
   const { data: assets = [] } = useAssets();
   const { data: categories = [] } = useCategories();
   const [filters, setFilters] = useState<LedgerFiltersState>({
@@ -65,22 +67,22 @@ export const LedgerPage = () => {
 
   const summaryContent = (
     <div className="flex flex-nowrap items-center gap-2 text-xs sm:text-sm">
-      <span className="shrink-0 text-muted-foreground">まとめ</span>
+      <span className="shrink-0 text-muted-foreground">{t("summaryLabel")}</span>
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <div className="flex min-w-0 flex-1 items-center justify-between rounded-md bg-muted/40 px-2 py-1.5">
-          <span className="text-muted-foreground">いれた</span>
+          <span className="text-muted-foreground">{t("summaryIncome")}</span>
           <span className="font-semibold text-emerald-600 whitespace-nowrap">
             {formatJPY(summary?.incomeTotal ?? 0)}
           </span>
         </div>
         <div className="flex min-w-0 flex-1 items-center justify-between rounded-md bg-muted/40 px-2 py-1.5">
-          <span className="text-muted-foreground">だした</span>
+          <span className="text-muted-foreground">{t("summaryExpense")}</span>
           <span className="font-semibold text-rose-600 whitespace-nowrap">
             {formatJPY(summary?.expenseTotal ?? 0)}
           </span>
         </div>
         <div className="flex min-w-0 flex-1 items-center justify-between rounded-md bg-muted/40 px-2 py-1.5">
-          <span className="text-muted-foreground">のこり</span>
+          <span className="text-muted-foreground">{t("summaryBalance")}</span>
           <span className="font-semibold whitespace-nowrap">
             {formatJPY(endingBalance)}
           </span>
@@ -91,8 +93,8 @@ export const LedgerPage = () => {
 
   return (
     <LedgerLayout
-      title="いれもの（ぜんぶ）"
-      subtitle="ぜんぶまとめて みよう"
+      title={t("ledgerTitleAll")}
+      subtitle={t("ledgerSubtitleAll")}
       filters={filters}
       setFilters={setFilters}
       transactions={filtered}
@@ -106,4 +108,3 @@ export const LedgerPage = () => {
     />
   );
 };
-

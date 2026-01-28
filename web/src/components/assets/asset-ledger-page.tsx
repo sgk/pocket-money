@@ -7,8 +7,10 @@ import { endOfMonth } from "date-fns";
 import { computeEndingBalance, computeRunningBalances } from "@/lib/balance";
 import { formatJPY } from "@/lib/money";
 import { useAssets, useCategories, useTransactions } from "@/lib/query";
+import { useText } from "@/lib/text";
 
 export const AssetLedgerPage = () => {
+  const { t } = useText();
   const { assetId } = useParams();
   const { data: assets = [] } = useAssets();
   const { data: categories = [] } = useCategories();
@@ -107,22 +109,22 @@ export const AssetLedgerPage = () => {
 
   const summaryContent = (
     <div className="flex flex-nowrap items-center gap-2 text-xs sm:text-sm">
-      <span className="shrink-0 text-muted-foreground">まとめ</span>
+      <span className="shrink-0 text-muted-foreground">{t("summaryLabel")}</span>
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <div className="flex min-w-0 flex-1 items-center justify-between rounded-md bg-muted/40 px-2 py-1.5">
-          <span className="text-muted-foreground">いれた</span>
+          <span className="text-muted-foreground">{t("summaryIncome")}</span>
           <span className="font-semibold text-emerald-600 whitespace-nowrap">
             {formatJPY(assetSummary.incomeTotal)}
           </span>
         </div>
         <div className="flex min-w-0 flex-1 items-center justify-between rounded-md bg-muted/40 px-2 py-1.5">
-          <span className="text-muted-foreground">だした</span>
+          <span className="text-muted-foreground">{t("summaryExpense")}</span>
           <span className="font-semibold text-rose-600 whitespace-nowrap">
             {formatJPY(assetSummary.expenseTotal)}
           </span>
         </div>
         <div className="flex min-w-0 flex-1 items-center justify-between rounded-md bg-muted/40 px-2 py-1.5">
-          <span className="text-muted-foreground">のこり</span>
+          <span className="text-muted-foreground">{t("summaryBalance")}</span>
           <span className="font-semibold whitespace-nowrap">
             {formatJPY(endingBalance)}
           </span>
@@ -133,8 +135,10 @@ export const AssetLedgerPage = () => {
 
   return (
     <LedgerLayout
-      title={asset?.name ? `いれもの（${asset.name}）` : "いれもの"}
-      subtitle={asset ? `のこり ${formatJPY(asset.currentBalance)}` : undefined}
+      title={t("assetLedgerTitle", { assetName: asset?.name })}
+      subtitle={
+        asset ? t("assetLedgerSubtitle", { balance: formatJPY(asset.currentBalance) }) : undefined
+      }
       filters={filters}
       setFilters={setFilters}
       transactions={filtered}

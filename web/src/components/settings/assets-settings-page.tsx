@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
 import { formatJPY } from "@/lib/money";
 import type { Asset } from "@/lib/types";
+import { useText } from "@/lib/text";
 
 const AssetRow = ({
   asset,
@@ -53,6 +54,7 @@ const AssetRow = ({
     onDragStart: (event: React.DragEvent<HTMLDivElement>) => void;
   };
 }) => {
+  const { t } = useText();
   const inactive = !asset.isActive;
   const [form, setForm] = useState({
     name: asset.name,
@@ -110,7 +112,7 @@ const AssetRow = ({
         ...form,
         name: asset.name,
       });
-      toast.error("なまえを いれてね");
+      toast.error(t("toastNameRequired"));
       return false;
     }
     if (!isDirty) {
@@ -120,7 +122,7 @@ const AssetRow = ({
     const initialValue = form.initialBalance.trim();
     const parsedInitial = initialValue === "" ? 0 : Number(initialValue);
     if (Number.isNaN(parsedInitial)) {
-      toast.error("のこりを いれてね");
+      toast.error(t("toastInitialBalanceRequired"));
       return false;
     }
     await onSave(asset.id, {
@@ -197,14 +199,14 @@ const AssetRow = ({
       <div
         className="w-4 cursor-grab text-muted-foreground"
         {...dragHandleProps}
-        aria-label="ドラッグ"
+        aria-label={t("assetsSettingsDragAria")}
       >
         ≡
       </div>
       {isEditing ? (
         <>
           <Input
-            placeholder="なまえ"
+            placeholder={t("assetsSettingsName")}
             value={form.name}
             onChange={(event) => handleChange({ name: event.target.value })}
             onKeyDown={(event) => {
@@ -220,7 +222,7 @@ const AssetRow = ({
             className="h-8 w-full min-w-0"
           />
           <Input
-            placeholder="しゅるい"
+            placeholder={t("assetsSettingsType")}
             value={form.type}
             onChange={(event) => handleChange({ type: event.target.value })}
             onKeyDown={(event) => {
@@ -236,7 +238,7 @@ const AssetRow = ({
             className="h-8 w-full min-w-0"
           />
           <Input
-            placeholder="メモ"
+            placeholder={t("assetsSettingsMemo")}
             value={form.note}
             onChange={(event) => handleChange({ note: event.target.value })}
             onKeyDown={(event) => {
@@ -253,7 +255,7 @@ const AssetRow = ({
           />
           <Input
             type="number"
-            placeholder="はじめのおかね"
+            placeholder={t("assetsSettingsInitialBalance")}
             value={form.initialBalance}
             onChange={(event) => handleChange({ initialBalance: event.target.value })}
             onKeyDown={(event) => {
@@ -273,10 +275,10 @@ const AssetRow = ({
         <>
           <div className="truncate text-sm font-medium">{form.name}</div>
           <div className="truncate text-xs text-muted-foreground">
-            {form.type ? form.type : "（しゅるいなし）"}
+            {form.type ? form.type : t("assetsSettingsNoType")}
           </div>
           <div className="truncate text-xs text-muted-foreground">
-            {form.note ? form.note : "（メモなし）"}
+            {form.note ? form.note : t("assetsSettingsNoMemo")}
           </div>
           <div className="text-right text-sm tabular-nums">
             {formatJPY(Number(form.initialBalance || 0))}
@@ -310,7 +312,7 @@ const AssetRow = ({
                 event.stopPropagation();
                 void handleSave().then((ok) => ok && onRequestClose());
               }}
-              aria-label="ほぞん"
+              aria-label={t("assetsSettingsSaveAria")}
               disabled={isSaveDisabled}
             >
               <Check className="h-4 w-4 text-emerald-600" />
@@ -324,7 +326,7 @@ const AssetRow = ({
                 event.stopPropagation();
                 handleCancel();
               }}
-              aria-label="キャンセル"
+              aria-label={t("assetsSettingsCancelAria")}
             >
               <X className="h-4 w-4 text-muted-foreground" />
             </Button>
@@ -337,7 +339,7 @@ const AssetRow = ({
                 event.stopPropagation();
                 onDelete(asset.id);
               }}
-              aria-label={`${asset.name} を けす`}
+              aria-label={t("assetsSettingsDeleteAria", { name: asset.name })}
             >
               <Trash2 className="h-4 w-4 text-rose-600" />
             </Button>
@@ -370,14 +372,14 @@ const AssetRow = ({
         <div
           className="cursor-grab text-muted-foreground p-1"
           {...dragHandleProps}
-          aria-label="ドラッグ"
+          aria-label={t("assetsSettingsDragAria")}
         >
           ≡
         </div>
         <div className="flex-1">
           {isEditing ? (
             <Input
-              placeholder="なまえ"
+              placeholder={t("assetsSettingsName")}
               value={form.name}
               onChange={(event) => handleChange({ name: event.target.value })}
               onKeyDown={(event) => {
@@ -401,7 +403,7 @@ const AssetRow = ({
       {isEditing ? (
         <div className="flex gap-2">
           <Input
-            placeholder="しゅるい"
+            placeholder={t("assetsSettingsType")}
             value={form.type}
             onChange={(event) => handleChange({ type: event.target.value })}
             onKeyDown={(event) => {
@@ -417,7 +419,7 @@ const AssetRow = ({
             className="h-8 flex-1 min-w-0 text-xs"
           />
           <Input
-            placeholder="メモ"
+            placeholder={t("assetsSettingsMemo")}
             value={form.note}
             onChange={(event) => handleChange({ note: event.target.value })}
             onKeyDown={(event) => {
@@ -438,7 +440,9 @@ const AssetRow = ({
       <div className="flex flex-col gap-2 pt-1">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground whitespace-nowrap">はじめのおかね</span>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {t("assetsSettingsInitialBalance")}
+            </span>
             {isEditing ? (
               <Input
                 type="number"
@@ -463,7 +467,9 @@ const AssetRow = ({
             )}
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground whitespace-nowrap">いまののこり</span>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {t("assetsSettingsCurrentBalance")}
+            </span>
             <Link
               to={`/assets/${asset.id}/ledger`}
               className="font-bold text-sky-700 underline-offset-4 hover:underline whitespace-nowrap"
@@ -484,7 +490,7 @@ const AssetRow = ({
                       onToggleActive(asset.id, next);
                     }}
                     className="translate-y-px"
-                    aria-label="ゆうこう"
+                    aria-label={t("assetsSettingsActive")}
                   />
                 </label>
                 <div className="flex items-center gap-1">
@@ -497,7 +503,7 @@ const AssetRow = ({
                     event.stopPropagation();
                 void handleSave().then((ok) => ok && onRequestClose());
                   }}
-                  aria-label="ほぞん"
+                  aria-label={t("assetsSettingsSaveAria")}
                   disabled={isSaveDisabled}
                 >
                   <Check className="h-4 w-4 text-emerald-600" />
@@ -511,7 +517,7 @@ const AssetRow = ({
                     event.stopPropagation();
                     handleCancel();
                   }}
-                  aria-label="キャンセル"
+                  aria-label={t("assetsSettingsCancelAria")}
                 >
                   <X className="h-4 w-4 text-muted-foreground" />
                 </Button>
@@ -524,7 +530,7 @@ const AssetRow = ({
                     event.stopPropagation();
                     onDelete(asset.id);
                   }}
-                  aria-label={`${asset.name} を けす`}
+                  aria-label={t("assetsSettingsDeleteAria", { name: asset.name })}
                 >
                   <Trash2 className="h-4 w-4 text-rose-600" />
                 </Button>
@@ -546,6 +552,7 @@ const AssetRow = ({
 };
 
 export const AssetsSettingsPage = () => {
+  const { t } = useText();
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const { data: assets = [] } = useAssets();
@@ -687,11 +694,11 @@ export const AssetsSettingsPage = () => {
 
   const handleCreate = async () => {
     if (!token) {
-      toast.error("ログインしてね");
+      toast.error(t("toastLoginRequired"));
       return;
     }
     if (!newAsset.name.trim()) {
-      toast.error("なまえを いれてね");
+      toast.error(t("toastNameRequired"));
       return;
     }
     try {
@@ -706,7 +713,7 @@ export const AssetsSettingsPage = () => {
           sortOrder: nextSortOrder,
         });
       });
-      toast.success("いれものを たしたよ");
+      toast.success(t("toastAssetAdded"));
       setNewAsset({ name: "", type: "", initialBalance: "0", note: "" });
       queryClient.invalidateQueries({ queryKey: ["assets"] });
     } catch (error) {
@@ -725,11 +732,11 @@ export const AssetsSettingsPage = () => {
     }
   ) => {
     if (!token) {
-      toast.error("ログインしてね");
+      toast.error(t("toastLoginRequired"));
       return;
     }
     if (!payload.name.trim()) {
-      toast.error("なまえを いれてね");
+      toast.error(t("toastNameRequired"));
       return;
     }
     try {
@@ -742,7 +749,7 @@ export const AssetsSettingsPage = () => {
           isActive: payload.isActive,
         });
       });
-      toast.success("いれものを なおしたよ");
+      toast.success(t("toastAssetUpdated"));
       queryClient.invalidateQueries({ queryKey: ["assets"] });
     } catch (error) {
       toast.error((error as Error).message);
@@ -751,7 +758,7 @@ export const AssetsSettingsPage = () => {
 
   const handleToggleActive = async (id: string, value: boolean) => {
     if (!token) {
-      toast.error("ログインしてね");
+      toast.error(t("toastLoginRequired"));
       return;
     }
     try {
@@ -767,10 +774,10 @@ export const AssetsSettingsPage = () => {
 
   const handleDeleteAsset = async (id: string) => {
     if (!token) {
-      toast.error("ログインしてね");
+      toast.error(t("toastLoginRequired"));
       return;
     }
-    const ok = window.confirm("この いれものを けす？");
+    const ok = window.confirm(t("confirmDeleteAsset"));
     if (!ok) {
       return;
     }
@@ -778,7 +785,7 @@ export const AssetsSettingsPage = () => {
       await runSaving(async () => {
         await api.deleteAsset(token, id);
       });
-      toast.success("いれものを けしたよ");
+      toast.success(t("toastAssetDeleted"));
       queryClient.invalidateQueries({ queryKey: ["assets"] });
       if (editingAssetId === id) {
         setEditingAssetId(null);
@@ -790,7 +797,7 @@ export const AssetsSettingsPage = () => {
 
   const handleReorder = async (list: Asset[]) => {
     if (!token) {
-      toast.error("ログインしてね");
+      toast.error(t("toastLoginRequired"));
       return;
     }
     try {
@@ -825,8 +832,8 @@ export const AssetsSettingsPage = () => {
     <div className="relative flex min-h-0 flex-col">
       <Topbar
         ref={topbarRef}
-        title="いれもの設定"
-        subtitle="いれものを ふやす / なおす"
+        title={t("assetsSettingsTitle")}
+        subtitle={t("assetsSettingsSubtitle")}
         dense
       />
 
@@ -836,31 +843,35 @@ export const AssetsSettingsPage = () => {
       >
         <div className="shrink-0">
         <div className="pb-1 md:pb-0 pt-2">
-          <div className="text-base font-semibold leading-none">あたらしい いれもの</div>
+          <div className="text-base font-semibold leading-none">
+            {t("assetsSettingsNewTitle")}
+          </div>
         </div>
         <div className="grid gap-2 pb-2 md:flex md:items-center">
           <div className="flex gap-2 md:contents">
              <Input
-                placeholder="なまえ"
+                placeholder={t("assetsSettingsName")}
                 value={newAsset.name}
                 onChange={(event) => setNewAsset({ ...newAsset, name: event.target.value })}
                 className="flex-[3] md:flex-[3]"
               />
               <Input
-                placeholder="しゅるい"
+                placeholder={t("assetsSettingsType")}
                 value={newAsset.type}
                 onChange={(event) => setNewAsset({ ...newAsset, type: event.target.value })}
                 className="flex-[2] md:flex-[2]"
               />
           </div>
           <Input
-            placeholder="メモ"
+            placeholder={t("assetsSettingsMemo")}
             value={newAsset.note}
             onChange={(event) => setNewAsset({ ...newAsset, note: event.target.value })}
             className="md:flex-[3]"
           />
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground whitespace-nowrap">さいしょのおかね</span>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {t("assetsSettingsInitialBalanceAlt")}
+            </span>
             <Input
               type="number"
               placeholder="0"
@@ -871,7 +882,7 @@ export const AssetsSettingsPage = () => {
               className="w-24 text-right"
             />
             <Button onClick={handleCreate} className="w-auto" disabled={!canCreate || isSaving}>
-              ついか
+              {t("assetsSettingsAdd")}
             </Button>
           </div>
         </div>
@@ -887,18 +898,18 @@ export const AssetsSettingsPage = () => {
             onDragOver={(event) => handleDragOverSlot(event, 0)}
             onDrop={(event) => handleDropOnSlot(event, 0)}
           >
-            まだ いれものが ないよ
+            {t("assetsSettingsEmpty")}
           </div>
         ) : (
           <div className="grid gap-1.5">
             <div className="hidden md:grid grid-cols-[16px_minmax(200px,2fr)_minmax(120px,1fr)_minmax(180px,2fr)_104px_48px_112px] items-center gap-2 px-3 text-xs text-muted-foreground">
               <span />
-              <span>なまえ</span>
-              <span>しゅるい</span>
-              <span>メモ</span>
-              <span>はじめのおかね</span>
+              <span>{t("assetsSettingsName")}</span>
+              <span>{t("assetsSettingsType")}</span>
+              <span>{t("assetsSettingsMemo")}</span>
+              <span>{t("assetsSettingsInitialBalance")}</span>
               <span />
-              <span className="text-right">いまののこり</span>
+              <span className="text-right">{t("assetsSettingsCurrentBalance")}</span>
             </div>
             {orderedAssets.map((asset, index) => (
               <div key={asset.id} className="grid gap-1.5">

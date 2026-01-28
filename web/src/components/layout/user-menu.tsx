@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { User } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useBootstrap } from "@/lib/query";
+import { useText } from "@/lib/text";
 
 type UserMenuProps = {
   compact?: boolean;
@@ -11,6 +12,7 @@ type UserMenuProps = {
 };
 
 export const UserMenu = ({ compact = false, isOpen, onOpenChange }: UserMenuProps) => {
+  const { t } = useText();
   const { logout } = useAuth();
   const { data } = useBootstrap();
   const navigate = useNavigate();
@@ -23,7 +25,7 @@ export const UserMenu = ({ compact = false, isOpen, onOpenChange }: UserMenuProp
 
   const email = data?.profile?.email?.trim();
   const displayName = data?.profile?.displayName?.trim();
-  const label = email || "メールなし";
+  const label = email || t("noEmail");
   const menuLabel = displayName || label;
   const photoUrl = data?.profile?.photoUrl;
 
@@ -77,7 +79,7 @@ export const UserMenu = ({ compact = false, isOpen, onOpenChange }: UserMenuProp
         {photoUrl && !imageError ? (
           <img
             src={photoUrl}
-            alt="ユーザー"
+            alt={t("userAvatarAlt")}
             className={`${compact ? "h-8 w-8" : "h-9 w-9"} rounded-full object-cover`}
             onError={() => setImageError(true)}
           />
@@ -100,7 +102,7 @@ export const UserMenu = ({ compact = false, isOpen, onOpenChange }: UserMenuProp
             className="w-full rounded-md px-3 py-2 text-left text-rose-600 hover:bg-rose-50"
             onClick={handleLogout}
           >
-            ログアウト
+            {t("logout")}
           </button>
         </div>
       ) : null}
