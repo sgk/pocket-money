@@ -6,6 +6,7 @@ from google.cloud import firestore as fs
 from app.core import firestore
 from app.core.errors import AppError
 from app.models.assets import AssetCreate, AssetUpdate
+from app.services import transactions_service
 
 
 def _now() -> datetime:
@@ -96,6 +97,7 @@ def update_asset(uid: str, asset_id: str, payload: AssetUpdate) -> dict:
         now = _now()
         updates = {k: v for k, v in payload.dict().items() if v is not None}
         data = snap.to_dict()
+        old_name = data.get("name")
 
         user_ref = firestore.user_doc(uid)
         user_snap = user_ref.get(transaction=transaction)
@@ -118,9 +120,15 @@ def update_asset(uid: str, asset_id: str, payload: AssetUpdate) -> dict:
 
         data.update(updates)
         data["id"] = asset_id
-        return data
+        return {"asset": data, "oldName": old_name}
 
-    return firestore.run_in_transaction(_work)
+    result = firestore.run_in_transaction(_work)
+    asset = result["asset"]
+    old_name = result.get("oldName")
+    new_name = asset.get("name")
+    if old_name and new_name and old_name != new_name:
+        transactions_service.rename_asset_in_transactions(uid, old_name, new_name)
+    return asset
 
 
 def deactivate_asset(uid: str, asset_id: str) -> dict:

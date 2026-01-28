@@ -10,9 +10,9 @@ from app.models.transactions import ExpenseCreate, IncomeCreate, TransferCreate,
 
 
 FIELDS_BY_TYPE = {
-    "expense": {"assetId", "categoryName", "merchant"},
-    "income": {"assetId", "categoryName", "source"},
-    "transfer": {"fromAssetId", "toAssetId", "fee", "feeCategoryId", "counterparty"},
+    "expense": {"assetName", "categoryName", "merchant"},
+    "income": {"assetName", "categoryName", "source"},
+    "transfer": {"fromAssetName", "toAssetName", "fee", "feeCategoryName", "counterparty"},
 }
 
 
@@ -81,6 +81,74 @@ def _touch_transactions_updated_at(
     transaction.set(user_ref, {"transactionsUpdatedAt": now}, merge=True)
 
 
+def _build_asset_name_index(uid: str) -> Dict[str, fs.DocumentReference]:
+    refs: Dict[str, fs.DocumentReference] = {}
+    for doc in firestore.assets_collection(uid).stream():
+        data = doc.to_dict()
+        name = data.get("name")
+        if not name:
+            continue
+        if name not in refs:
+            refs[name] = doc.reference
+    return refs
+
+
+def _build_asset_name_by_id(uid: str) -> Dict[str, str]:
+    mapping: Dict[str, str] = {}
+    for doc in firestore.assets_collection(uid).stream():
+        data = doc.to_dict()
+        name = data.get("name")
+        if not name:
+            continue
+        mapping[doc.id] = name
+    return mapping
+
+
+def _build_category_name_by_id(uid: str) -> Dict[str, str]:
+    mapping: Dict[str, str] = {}
+    for doc in firestore.categories_collection(uid).stream():
+        data = doc.to_dict()
+        name = data.get("name")
+        if not name:
+            continue
+        mapping[doc.id] = name
+    return mapping
+
+
+def _normalize_tx_names(
+    tx: dict,
+    asset_name_by_id: Dict[str, str],
+    category_name_by_id: Dict[str, str],
+) -> dict:
+    asset_id = tx.get("assetId")
+    if not tx.get("assetName") and asset_id:
+        tx["assetName"] = asset_name_by_id.get(asset_id, asset_id)
+    from_asset_id = tx.get("fromAssetId")
+    if not tx.get("fromAssetName") and from_asset_id:
+        tx["fromAssetName"] = asset_name_by_id.get(from_asset_id, from_asset_id)
+    to_asset_id = tx.get("toAssetId")
+    if not tx.get("toAssetName") and to_asset_id:
+        tx["toAssetName"] = asset_name_by_id.get(to_asset_id, to_asset_id)
+    category_id = tx.get("categoryId")
+    if not tx.get("categoryName") and category_id:
+        tx["categoryName"] = category_name_by_id.get(category_id, category_id)
+    fee_category_id = tx.get("feeCategoryId")
+    if not tx.get("feeCategoryName") and fee_category_id:
+        tx["feeCategoryName"] = category_name_by_id.get(
+            fee_category_id, fee_category_id
+        )
+    return tx
+
+
+def _normalize_balance_keys(
+    balances: Dict[str, int], asset_name_by_id: Dict[str, str]
+) -> Dict[str, int]:
+    normalized: Dict[str, int] = {}
+    for key, value in balances.items():
+        name = asset_name_by_id.get(key, key)
+        normalized[name] = normalized.get(name, 0) + int(value)
+    return normalized
+
 def get_transactions_last_modified(uid: str) -> datetime:
     user_ref = firestore.user_doc(uid)
     snap = user_ref.get()
@@ -99,30 +167,41 @@ def _seed_balances(uid: str, as_of: datetime) -> Dict[str, int]:
     balances: Dict[str, int] = {}
     for doc in firestore.assets_collection(uid).stream():
         data = doc.to_dict()
+        name = data.get("name")
+        if not name:
+            continue
         created_at = data.get("createdAt")
         include = True
         if created_at:
             include = _to_utc(created_at) <= as_of
-        balances[doc.id] = int(data.get("initialBalance", 0)) if include else 0
+        balances[name] = int(data.get("initialBalance", 0)) if include else 0
     return balances
 
 
-def _apply_tx_effect(balances: Dict[str, int], tx: dict):
-    effect = tx_effect(tx)
-    for asset_id, delta in effect.items():
-        balances[asset_id] = balances.get(asset_id, 0) + int(delta)
+def _apply_tx_effect(
+    balances: Dict[str, int],
+    tx: dict,
+    asset_name_by_id: Dict[str, str],
+    category_name_by_id: Dict[str, str],
+):
+    normalized = _normalize_tx_names(dict(tx), asset_name_by_id, category_name_by_id)
+    effect = tx_effect(normalized)
+    for asset_name, delta in effect.items():
+        balances[asset_name] = balances.get(asset_name, 0) + int(delta)
 
 
 def _compute_balances_until(uid: str, end_dt: datetime) -> Dict[str, int]:
     end_dt = _to_utc(end_dt)
     balances = _seed_balances(uid, end_dt)
+    asset_name_by_id = _build_asset_name_by_id(uid)
+    category_name_by_id = _build_category_name_by_id(uid)
     query = (
         firestore.transactions_collection(uid)
         .where(filter=FieldFilter("occurredAt", "<", end_dt))
         .order_by("occurredAt")
     )
     for doc in query.stream():
-        _apply_tx_effect(balances, doc.to_dict())
+        _apply_tx_effect(balances, doc.to_dict(), asset_name_by_id, category_name_by_id)
     return balances
 
 
@@ -131,6 +210,8 @@ def _apply_transactions_between(
 ) -> Dict[str, int]:
     start_dt = _to_utc(start_dt)
     end_dt = _to_utc(end_dt)
+    asset_name_by_id = _build_asset_name_by_id(uid)
+    category_name_by_id = _build_category_name_by_id(uid)
     query = (
         firestore.transactions_collection(uid)
         .where(filter=FieldFilter("occurredAt", ">=", start_dt))
@@ -138,7 +219,7 @@ def _apply_transactions_between(
         .order_by("occurredAt")
     )
     for doc in query.stream():
-        _apply_tx_effect(balances, doc.to_dict())
+        _apply_tx_effect(balances, doc.to_dict(), asset_name_by_id, category_name_by_id)
     return balances
 
 
@@ -185,9 +266,12 @@ def _ensure_snapshots(uid: str, target_month: datetime):
     if not start_month:
         return
 
+    asset_name_by_id = _build_asset_name_by_id(uid)
     prev_snapshot = _get_snapshot(uid, _prev_month(start_month))
     if prev_snapshot:
-        balances = {k: int(v) for k, v in prev_snapshot.get("byAsset", {}).items()}
+        balances = _normalize_balance_keys(
+            prev_snapshot.get("byAsset", {}), asset_name_by_id
+        )
     else:
         balances = _compute_balances_until(uid, start_month)
 
@@ -222,44 +306,20 @@ def _validate_tx_payload(tx: dict):
     _validate_common(tx)
     tx_type = tx.get("type")
     if tx_type == "expense":
-        _require(tx.get("assetId"), "assetId is required")
+        _require(tx.get("assetName"), "assetName is required")
         if not tx.get("categoryName"):
             raise AppError(400, "categoryName is required")
     elif tx_type == "income":
-        _require(tx.get("assetId"), "assetId is required")
+        _require(tx.get("assetName"), "assetName is required")
         if not tx.get("categoryName"):
             raise AppError(400, "categoryName is required")
     elif tx_type == "transfer":
-        _require(tx.get("fromAssetId"), "fromAssetId is required")
-        _require(tx.get("toAssetId"), "toAssetId is required")
-        if tx.get("fromAssetId") == tx.get("toAssetId"):
-            raise AppError(400, "fromAssetId and toAssetId must be different")
+        _require(tx.get("fromAssetName"), "fromAssetName is required")
+        _require(tx.get("toAssetName"), "toAssetName is required")
+        if tx.get("fromAssetName") == tx.get("toAssetName"):
+            raise AppError(400, "fromAssetName and toAssetName must be different")
     else:
         raise AppError(400, "Invalid transaction type")
-
-
-def _get_asset(transaction: fs.Transaction, uid: str, asset_id: str) -> dict:
-    ref = firestore.asset_doc(uid, asset_id)
-    snap = ref.get(transaction=transaction)
-    if not snap.exists:
-        raise AppError(400, "Asset not found")
-    data = snap.to_dict()
-    if not data.get("isActive", True):
-        raise AppError(400, "Asset is inactive")
-    data["id"] = asset_id
-    return data
-
-
-def _get_category(transaction: fs.Transaction, uid: str, category_id: str) -> dict:
-    ref = firestore.category_doc(uid, category_id)
-    snap = ref.get(transaction=transaction)
-    if not snap.exists:
-        raise AppError(400, "Category not found")
-    data = snap.to_dict()
-    if not data.get("isActive", True):
-        raise AppError(400, "Category is inactive")
-    data["id"] = category_id
-    return data
 
 
 def tx_effect(tx: dict) -> Dict[str, int]:
@@ -267,11 +327,21 @@ def tx_effect(tx: dict) -> Dict[str, int]:
     amount = int(tx.get("amount", 0))
     fee = int(tx.get("fee", 0) or 0)
     if tx_type == "expense":
-        return {tx["assetId"]: -amount}
+        asset_name = tx.get("assetName")
+        if not asset_name:
+            return {}
+        return {asset_name: -amount}
     if tx_type == "income":
-        return {tx["assetId"]: amount}
+        asset_name = tx.get("assetName")
+        if not asset_name:
+            return {}
+        return {asset_name: amount}
     if tx_type == "transfer":
-        return {tx["fromAssetId"]: -(amount + fee), tx["toAssetId"]: amount}
+        from_asset = tx.get("fromAssetName")
+        to_asset = tx.get("toAssetName")
+        if not from_asset or not to_asset:
+            return {}
+        return {from_asset: -(amount + fee), to_asset: amount}
     raise AppError(400, "Invalid transaction type")
 
 
@@ -285,49 +355,26 @@ def compute_balance_deltas(old_tx: Optional[dict], new_tx: Optional[dict]) -> Di
 
 
 def _apply_balance_deltas(
-    transaction: fs.Transaction, uid: str, deltas: Dict[str, int], now: datetime
+    transaction: fs.Transaction,
+    asset_refs: Dict[str, fs.DocumentReference],
+    deltas: Dict[str, int],
+    now: datetime,
 ):
-    asset_ids = [asset_id for asset_id, delta in deltas.items() if delta != 0]
-    if not asset_ids:
-        return
-    asset_refs = {asset_id: firestore.asset_doc(uid, asset_id) for asset_id in asset_ids}
-    snaps = list(transaction.get_all(asset_refs.values()))
-    data_by_id = {}
-    for snap in snaps:
-        if not snap.exists:
-            raise AppError(400, "Asset not found")
-        data = snap.to_dict()
-        if not data.get("isActive", True):
-            raise AppError(400, "Asset is inactive")
-        data_by_id[snap.id] = data
-
-    for asset_id, delta in deltas.items():
+    for asset_name, delta in deltas.items():
         if delta == 0:
             continue
-        data = data_by_id.get(asset_id)
-        if not data:
-            raise AppError(400, "Asset not found")
-        current = int(data.get("currentBalance", 0))
-        new_balance = current + delta
+        ref = asset_refs.get(asset_name)
+        if not ref:
+            continue
         transaction.update(
-            asset_refs[asset_id],
-            {"currentBalance": new_balance, "updatedAt": now},
+            ref,
+            {"currentBalance": fs.Increment(delta), "updatedAt": now},
         )
 
 
-def _validate_refs_for_tx(transaction: fs.Transaction, uid: str, tx: dict):
-    tx_type = tx.get("type")
-    if tx_type in {"expense", "income"}:
-        _get_asset(transaction, uid, tx["assetId"])
-    elif tx_type == "transfer":
-        _get_asset(transaction, uid, tx["fromAssetId"])
-        _get_asset(transaction, uid, tx["toAssetId"])
-        fee_category = tx.get("feeCategoryId")
-        if fee_category:
-            _get_category(transaction, uid, fee_category)
-
-
 def create_expense(uid: str, payload: ExpenseCreate) -> dict:
+    asset_refs = _build_asset_name_index(uid)
+
     def _work(transaction: fs.Transaction):
         now = _now()
         user_ref = firestore.user_doc(uid)
@@ -341,9 +388,8 @@ def create_expense(uid: str, payload: ExpenseCreate) -> dict:
         data["updatedAt"] = now
         data["createdBy"] = uid
         _validate_tx_payload(data)
-        _validate_refs_for_tx(transaction, uid, data)
         deltas = compute_balance_deltas(None, data)
-        _apply_balance_deltas(transaction, uid, deltas, now)
+        _apply_balance_deltas(transaction, asset_refs, deltas, now)
         _queue_balance_dirty(
             transaction, user_ref, existing_dirty, _month_start(data["occurredAt"])
         )
@@ -357,6 +403,8 @@ def create_expense(uid: str, payload: ExpenseCreate) -> dict:
 
 
 def create_income(uid: str, payload: IncomeCreate) -> dict:
+    asset_refs = _build_asset_name_index(uid)
+
     def _work(transaction: fs.Transaction):
         now = _now()
         user_ref = firestore.user_doc(uid)
@@ -370,9 +418,8 @@ def create_income(uid: str, payload: IncomeCreate) -> dict:
         data["updatedAt"] = now
         data["createdBy"] = uid
         _validate_tx_payload(data)
-        _validate_refs_for_tx(transaction, uid, data)
         deltas = compute_balance_deltas(None, data)
-        _apply_balance_deltas(transaction, uid, deltas, now)
+        _apply_balance_deltas(transaction, asset_refs, deltas, now)
         _queue_balance_dirty(
             transaction, user_ref, existing_dirty, _month_start(data["occurredAt"])
         )
@@ -386,6 +433,8 @@ def create_income(uid: str, payload: IncomeCreate) -> dict:
 
 
 def create_transfer(uid: str, payload: TransferCreate) -> dict:
+    asset_refs = _build_asset_name_index(uid)
+
     def _work(transaction: fs.Transaction):
         now = _now()
         user_ref = firestore.user_doc(uid)
@@ -399,9 +448,8 @@ def create_transfer(uid: str, payload: TransferCreate) -> dict:
         data["updatedAt"] = now
         data["createdBy"] = uid
         _validate_tx_payload(data)
-        _validate_refs_for_tx(transaction, uid, data)
         deltas = compute_balance_deltas(None, data)
-        _apply_balance_deltas(transaction, uid, deltas, now)
+        _apply_balance_deltas(transaction, asset_refs, deltas, now)
         _queue_balance_dirty(
             transaction, user_ref, existing_dirty, _month_start(data["occurredAt"])
         )
@@ -415,14 +463,17 @@ def create_transfer(uid: str, payload: TransferCreate) -> dict:
 
 
 def update_transaction(uid: str, tx_id: str, payload: TransactionUpdate) -> dict:
+    asset_refs = _build_asset_name_index(uid)
+    asset_name_by_id = _build_asset_name_by_id(uid)
+    category_name_by_id = _build_category_name_by_id(uid)
     patch = payload.dict(exclude_unset=True)
     balance_fields = {
         "occurredAt",
         "amount",
         "type",
-        "assetId",
-        "fromAssetId",
-        "toAssetId",
+        "assetName",
+        "fromAssetName",
+        "toAssetName",
         "fee",
     }
 
@@ -433,6 +484,7 @@ def update_transaction(uid: str, tx_id: str, payload: TransactionUpdate) -> dict
         if not snap.exists:
             raise AppError(404, "Transaction not found")
         old_tx = snap.to_dict()
+        old_tx = _normalize_tx_names(old_tx, asset_name_by_id, category_name_by_id)
         user_ref = firestore.user_doc(uid)
         user_snap = user_ref.get(transaction=transaction)
         existing_dirty = user_snap.to_dict().get("balanceDirtyFrom") if user_snap.exists else None
@@ -449,10 +501,9 @@ def update_transaction(uid: str, tx_id: str, payload: TransactionUpdate) -> dict
 
         new_tx["updatedAt"] = now
         _validate_tx_payload(new_tx)
-        _validate_refs_for_tx(transaction, uid, new_tx)
 
         deltas = compute_balance_deltas(old_tx, new_tx)
-        _apply_balance_deltas(transaction, uid, deltas, now)
+        _apply_balance_deltas(transaction, asset_refs, deltas, now)
 
         if any(field in patch for field in balance_fields):
             old_month = _month_start(_to_utc(old_tx["occurredAt"]))
@@ -485,6 +536,10 @@ def update_transaction(uid: str, tx_id: str, payload: TransactionUpdate) -> dict
 
 
 def delete_transaction(uid: str, tx_id: str) -> dict:
+    asset_refs = _build_asset_name_index(uid)
+    asset_name_by_id = _build_asset_name_by_id(uid)
+    category_name_by_id = _build_category_name_by_id(uid)
+
     def _work(transaction: fs.Transaction):
         now = _now()
         tx_ref = firestore.transaction_doc(uid, tx_id)
@@ -492,11 +547,12 @@ def delete_transaction(uid: str, tx_id: str) -> dict:
         if not snap.exists:
             raise AppError(404, "Transaction not found")
         old_tx = snap.to_dict()
+        old_tx = _normalize_tx_names(old_tx, asset_name_by_id, category_name_by_id)
         user_ref = firestore.user_doc(uid)
         user_snap = user_ref.get(transaction=transaction)
         existing_dirty = user_snap.to_dict().get("balanceDirtyFrom") if user_snap.exists else None
         deltas = compute_balance_deltas(old_tx, None)
-        _apply_balance_deltas(transaction, uid, deltas, now)
+        _apply_balance_deltas(transaction, asset_refs, deltas, now)
         _queue_balance_dirty(
             transaction, user_ref, existing_dirty, _month_start(old_tx["occurredAt"])
         )
@@ -513,7 +569,7 @@ def list_transactions(
     from_dt: Optional[datetime],
     to_dt: Optional[datetime],
     tx_type: Optional[str],
-    asset_id: Optional[str],
+    asset_name: Optional[str],
     category_name: Optional[str],
     limit: int,
     cursor: Optional[str],
@@ -536,37 +592,61 @@ def list_transactions(
 
     query = query.limit(limit)
 
+    asset_name_by_id = _build_asset_name_by_id(uid)
+    category_name_by_id = _build_category_name_by_id(uid)
+    now = _now()
     items = []
     for doc in query.stream():
         data = doc.to_dict()
         data["id"] = doc.id
-        if "categoryName" not in data and data.get("categoryId"):
+        updates: Dict[str, object] = {}
+        if not data.get("assetName") and data.get("assetId"):
+            asset_id = data.get("assetId")
+            asset_value = asset_name_by_id.get(asset_id, asset_id)
+            data["assetName"] = asset_value
+            updates["assetName"] = asset_value
+            updates["assetId"] = fs.DELETE_FIELD
+        if not data.get("fromAssetName") and data.get("fromAssetId"):
+            from_asset_id = data.get("fromAssetId")
+            from_value = asset_name_by_id.get(from_asset_id, from_asset_id)
+            data["fromAssetName"] = from_value
+            updates["fromAssetName"] = from_value
+            updates["fromAssetId"] = fs.DELETE_FIELD
+        if not data.get("toAssetName") and data.get("toAssetId"):
+            to_asset_id = data.get("toAssetId")
+            to_value = asset_name_by_id.get(to_asset_id, to_asset_id)
+            data["toAssetName"] = to_value
+            updates["toAssetName"] = to_value
+            updates["toAssetId"] = fs.DELETE_FIELD
+        if not data.get("categoryName") and data.get("categoryId"):
             cat_id = data.get("categoryId")
-            cat_snap = firestore.category_doc(uid, cat_id).get()
-            if cat_snap.exists:
-                cat_data = cat_snap.to_dict()
-                cat_name = cat_data.get("name")
-                if cat_name:
-                    data["categoryName"] = cat_name
-                    doc.reference.update(
-                        {
-                            "categoryName": cat_name,
-                            "categoryId": fs.DELETE_FIELD,
-                            "updatedAt": _now(),
-                        }
-                    )
-                    data.pop("categoryId", None)
+            cat_value = category_name_by_id.get(cat_id, cat_id)
+            data["categoryName"] = cat_value
+            updates["categoryName"] = cat_value
+            updates["categoryId"] = fs.DELETE_FIELD
+        if not data.get("feeCategoryName") and data.get("feeCategoryId"):
+            fee_id = data.get("feeCategoryId")
+            fee_value = category_name_by_id.get(fee_id, fee_id)
+            data["feeCategoryName"] = fee_value
+            updates["feeCategoryName"] = fee_value
+            updates["feeCategoryId"] = fs.DELETE_FIELD
+        if updates:
+            updates["updatedAt"] = now
+            doc.reference.update(updates)
         items.append(data)
 
-    if asset_id or category_name:
+    if asset_name or category_name:
         filtered = []
         for item in items:
-            if asset_id:
+            if asset_name:
                 if item.get("type") == "transfer":
-                    if asset_id not in {item.get("fromAssetId"), item.get("toAssetId")}:
+                    if asset_name not in {
+                        item.get("fromAssetName"),
+                        item.get("toAssetName"),
+                    }:
                         continue
                 else:
-                    if item.get("assetId") != asset_id:
+                    if item.get("assetName") != asset_name:
                         continue
             if category_name and item.get("categoryName") != category_name:
                 continue
@@ -583,7 +663,9 @@ def list_transactions(
         _ensure_snapshots(uid, prev_month)
         snapshot = _get_snapshot(uid, prev_month)
         balances = (
-            {k: int(v) for k, v in snapshot.get("byAsset", {}).items()}
+            _normalize_balance_keys(
+                snapshot.get("byAsset", {}), asset_name_by_id
+            )
             if snapshot
             else _compute_balances_until(uid, month_start)
         )
@@ -594,13 +676,72 @@ def list_transactions(
     return result
 
 
+def _bulk_update_transactions_field(
+    uid: str, field: str, old_value: str, new_value: str, now: datetime
+) -> int:
+    query = firestore.transactions_collection(uid).where(
+        filter=FieldFilter(field, "==", old_value)
+    )
+    client = firestore.get_client()
+    batch = client.batch()
+    count = 0
+    updated = 0
+    for doc in query.stream():
+        batch.update(doc.reference, {field: new_value, "updatedAt": now})
+        count += 1
+        updated += 1
+        if count >= 400:
+            batch.commit()
+            batch = client.batch()
+            count = 0
+    if count > 0:
+        batch.commit()
+    return updated
+
+
+def rename_asset_in_transactions(uid: str, old_name: str, new_name: str) -> int:
+    if not old_name or not new_name or old_name == new_name:
+        return 0
+    now = _now()
+    updated = 0
+    updated += _bulk_update_transactions_field(uid, "assetName", old_name, new_name, now)
+    updated += _bulk_update_transactions_field(uid, "fromAssetName", old_name, new_name, now)
+    updated += _bulk_update_transactions_field(uid, "toAssetName", old_name, new_name, now)
+    if updated:
+        firestore.user_doc(uid).set({"transactionsUpdatedAt": now}, merge=True)
+    return updated
+
+
+def rename_category_in_transactions(uid: str, old_name: str, new_name: str) -> int:
+    if not old_name or not new_name or old_name == new_name:
+        return 0
+    now = _now()
+    updated = 0
+    updated += _bulk_update_transactions_field(uid, "categoryName", old_name, new_name, now)
+    updated += _bulk_update_transactions_field(uid, "feeCategoryName", old_name, new_name, now)
+    if updated:
+        firestore.user_doc(uid).set({"transactionsUpdatedAt": now}, merge=True)
+    return updated
+
+
 def export_transactions(uid: str) -> List[dict]:
+    asset_name_by_id = _build_asset_name_by_id(uid)
+    category_name_by_id = _build_category_name_by_id(uid)
     query = firestore.transactions_collection(uid)
     docs = query.stream()
     results = []
     for doc in docs:
         data = doc.to_dict()
+        data = _normalize_tx_names(data, asset_name_by_id, category_name_by_id)
         data["id"] = doc.id
+        for key in (
+            "assetId",
+            "fromAssetId",
+            "toAssetId",
+            "categoryId",
+            "feeCategoryId",
+        ):
+            data.pop(key, None)
         # Convert datetimes to isoformat for JSON serialization
         if isinstance(data.get("occurredAt"), datetime):
             data["occurredAt"] = data["occurredAt"].isoformat()
@@ -622,12 +763,6 @@ def import_transactions(uid: str, transactions: List[dict]):
     for doc in docs:
         existing_ids.add(doc.id)
 
-    # 1b. Fetch existing Asset IDs to ensure we don't update missing assets
-    existing_asset_ids = set()
-    asset_docs = firestore.assets_collection(uid).select([]).stream()
-    for asset_doc in asset_docs:
-        existing_asset_ids.add(asset_doc.id)
-
     new_txs = []
     for tx in transactions:
         tx_id = tx.get("id")
@@ -637,6 +772,21 @@ def import_transactions(uid: str, transactions: List[dict]):
     if not new_txs:
         return
 
+    asset_name_by_id = _build_asset_name_by_id(uid)
+    category_name_by_id = _build_category_name_by_id(uid)
+    asset_refs = _build_asset_name_index(uid)
+
+    category_refs: Dict[tuple, fs.DocumentReference] = {}
+    for doc in firestore.categories_collection(uid).stream():
+        data = doc.to_dict()
+        name = data.get("name")
+        kind = data.get("kind")
+        if name and kind:
+            category_refs[(name, kind)] = doc.reference
+
+    needed_assets: set[str] = set()
+    needed_categories: set[tuple] = set()
+
     # 2. Calculate balance deltas
     total_deltas: Dict[str, int] = {}
     min_occurred_at = None
@@ -644,18 +794,42 @@ def import_transactions(uid: str, transactions: List[dict]):
     for tx in new_txs:
         # Normalize date
         if isinstance(tx.get("occurredAt"), str):
-             try:
-                dt = datetime.fromisoformat(tx["occurredAt"].replace('Z', '+00:00'))
+            try:
+                dt = datetime.fromisoformat(tx["occurredAt"].replace("Z", "+00:00"))
                 if dt.tzinfo is None:
                     dt = dt.replace(tzinfo=timezone.utc)
                 tx["occurredAt"] = dt
-             except ValueError:
+            except ValueError:
                 continue
 
         if "amount" in tx:
             tx["amount"] = int(tx["amount"])
 
-        effect = tx_effect(tx)
+        normalized = _normalize_tx_names(tx, asset_name_by_id, category_name_by_id)
+
+        asset_name = normalized.get("assetName")
+        if asset_name:
+            needed_assets.add(asset_name)
+        from_asset = normalized.get("fromAssetName")
+        if from_asset:
+            needed_assets.add(from_asset)
+        to_asset = normalized.get("toAssetName")
+        if to_asset:
+            needed_assets.add(to_asset)
+
+        if normalized.get("type") == "expense":
+            category_name = normalized.get("categoryName")
+            if category_name:
+                needed_categories.add((category_name, "expense"))
+        if normalized.get("type") == "income":
+            category_name = normalized.get("categoryName")
+            if category_name:
+                needed_categories.add((category_name, "income"))
+        fee_category = normalized.get("feeCategoryName")
+        if fee_category:
+            needed_categories.add((fee_category, "expense"))
+
+        effect = tx_effect(normalized)
         for asset_id, delta in effect.items():
             total_deltas[asset_id] = total_deltas.get(asset_id, 0) + delta
 
@@ -668,17 +842,80 @@ def import_transactions(uid: str, transactions: List[dict]):
     count = 0
     now = _now()
 
+    # Create missing assets
+    for name in needed_assets:
+        if name in asset_refs:
+            continue
+        doc_ref = firestore.assets_collection(uid).document()
+        data = {
+            "name": name,
+            "type": None,
+            "currency": "JPY",
+            "isActive": True,
+            "initialBalance": 0,
+            "currentBalance": 0,
+            "note": None,
+            "sortOrder": 0,
+            "createdAt": now,
+            "updatedAt": now,
+        }
+        batch.set(doc_ref, data)
+        asset_refs[name] = doc_ref
+        count += 1
+        if count >= 400:
+            batch.commit()
+            batch = client.batch()
+            count = 0
+
+    # Create missing categories
+    for name, kind in needed_categories:
+        if (name, kind) in category_refs:
+            continue
+        doc_ref = firestore.categories_collection(uid).document()
+        data = {
+            "name": name,
+            "isActive": True,
+            "sortOrder": 0,
+            "kind": kind,
+            "createdAt": now,
+            "updatedAt": now,
+        }
+        batch.set(doc_ref, data)
+        category_refs[(name, kind)] = doc_ref
+        count += 1
+        if count >= 400:
+            batch.commit()
+            batch = client.batch()
+            count = 0
+
+    if count > 0:
+        batch.commit()
+        batch = client.batch()
+        count = 0
+
     # Write Transactions
     for tx in new_txs:
         tx_id = tx.get("id")
-        data = tx.copy()
+        data = _normalize_tx_names(tx.copy(), asset_name_by_id, category_name_by_id)
         if "id" in data:
             del data["id"]
+        if "assetId" in data:
+            del data["assetId"]
+        if "fromAssetId" in data:
+            del data["fromAssetId"]
+        if "toAssetId" in data:
+            del data["toAssetId"]
+        if "categoryId" in data:
+            del data["categoryId"]
+        if "feeCategoryId" in data:
+            del data["feeCategoryId"]
 
         if isinstance(data.get("createdAt"), str):
-             try:
-                data["createdAt"] = datetime.fromisoformat(data["createdAt"].replace('Z', '+00:00'))
-             except:
+            try:
+                data["createdAt"] = datetime.fromisoformat(
+                    data["createdAt"].replace("Z", "+00:00")
+                )
+            except ValueError:
                 data["createdAt"] = now
         else:
             data["createdAt"] = now
@@ -687,7 +924,7 @@ def import_transactions(uid: str, transactions: List[dict]):
         data["createdBy"] = uid
 
         if data.get("dayOrder") is None:
-             data["dayOrder"] = _default_day_order(now)
+            data["dayOrder"] = _default_day_order(now)
 
         doc_ref = firestore.transactions_collection(uid).document(tx_id)
         batch.set(doc_ref, data)
@@ -699,13 +936,12 @@ def import_transactions(uid: str, transactions: List[dict]):
             count = 0
 
     # Write Asset Updates (currentBalance)
-    for asset_id, delta in total_deltas.items():
+    for asset_name, delta in total_deltas.items():
         if delta == 0:
             continue
-        if asset_id not in existing_asset_ids:
+        asset_ref = asset_refs.get(asset_name)
+        if not asset_ref:
             continue
-
-        asset_ref = firestore.asset_doc(uid, asset_id)
         batch.update(asset_ref, {"currentBalance": fs.Increment(delta), "updatedAt": now})
         count += 1
         if count >= 400:

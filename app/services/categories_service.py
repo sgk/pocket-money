@@ -4,6 +4,7 @@ from typing import List
 from app.core import firestore
 from app.core.errors import AppError
 from app.models.categories import CategoryCreate, CategoryUpdate
+from app.services import transactions_service
 
 
 def _now() -> datetime:
@@ -43,11 +44,15 @@ def update_category(uid: str, category_id: str, payload: CategoryUpdate) -> dict
         raise AppError(404, "Category not found")
     now = _now()
     updates = {k: v for k, v in payload.dict().items() if v is not None}
+    old_name = snap.to_dict().get("name")
     updates["updatedAt"] = now
     doc_ref.update(updates)
     data = snap.to_dict()
     data.update(updates)
     data["id"] = category_id
+    new_name = data.get("name")
+    if old_name and new_name and old_name != new_name:
+        transactions_service.rename_category_in_transactions(uid, old_name, new_name)
     return data
 
 

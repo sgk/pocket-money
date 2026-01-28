@@ -13,6 +13,7 @@ export const AssetLedgerPage = () => {
   const { data: assets = [] } = useAssets();
   const { data: categories = [] } = useCategories();
   const asset = assets.find((item) => item.id === assetId);
+  const assetName = asset?.name;
 
   const [filters, setFilters] = useState<LedgerFiltersState>({
     from: formatDate(startOfCurrentMonth()),
@@ -25,34 +26,34 @@ export const AssetLedgerPage = () => {
     from: filters.from,
     to: filters.to,
     type: filters.type,
-    assetId,
+    assetName,
     includeOpeningBalances: true,
   });
   const transactions = data?.items ?? [];
   const openingBalances = data?.openingBalances ?? {};
 
   const balancesById = useMemo(() => {
-    if (!assetId) {
+    if (!assetName) {
       return {};
     }
     return computeRunningBalances(transactions, openingBalances, {
       type: "asset",
-      assetId,
+      assetName,
     });
-  }, [transactions, openingBalances, assetId]);
+  }, [transactions, openingBalances, assetName]);
 
   const endingBalance = useMemo(() => {
-    if (!assetId) {
+    if (!assetName) {
       return 0;
     }
     return computeEndingBalance(transactions, openingBalances, {
       type: "asset",
-      assetId,
+      assetName,
     });
-  }, [transactions, openingBalances, assetId]);
+  }, [transactions, openingBalances, assetName]);
 
   const filtered = useMemo(() => {
-    if (!assetId) {
+    if (!assetName) {
       return [];
     }
     const keyword = filters.search.trim().toLowerCase();
@@ -61,8 +62,8 @@ export const AssetLedgerPage = () => {
     return transactions.filter((tx) => {
       const belongs =
         tx.type === "transfer"
-          ? tx.fromAssetId === assetId || tx.toAssetId === assetId
-          : tx.assetId === assetId;
+          ? tx.fromAssetName === assetName || tx.toAssetName === assetName
+          : tx.assetName === assetName;
       if (!belongs) {
         return false;
       }
@@ -85,7 +86,7 @@ export const AssetLedgerPage = () => {
       }
       return target.filter(Boolean).some((value) => value!.toLowerCase().includes(keyword));
     });
-  }, [transactions, filters.search, filters.from, filters.to, assetId]);
+  }, [transactions, filters.search, filters.from, filters.to, assetName]);
 
   const assetSummary = useMemo(() => {
     return filtered.reduce(
@@ -139,7 +140,7 @@ export const AssetLedgerPage = () => {
       transactions={filtered}
       assets={assets}
       categories={categories}
-      fixedAssetId={assetId}
+      fixedAssetName={assetName}
       balancesById={balancesById}
       openingBalances={openingBalances}
       openingDate={filters.from}

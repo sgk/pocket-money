@@ -52,7 +52,7 @@ type TransactionsParams = {
   from?: string;
   to?: string;
   type?: string;
-  assetId?: string;
+  assetName?: string;
   categoryName?: string;
   limit?: number;
   cursor?: string;
@@ -72,7 +72,7 @@ const transactionsCacheKey = (token: string, params: TransactionsParams): string
     from: params.from ?? "",
     to: params.to ?? "",
     type: params.type ?? "",
-    assetId: params.assetId ?? "",
+    assetName: params.assetName ?? "",
     categoryName: params.categoryName ?? "",
     limit: params.limit ?? 200,
     cursor: params.cursor ?? "",

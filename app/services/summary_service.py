@@ -4,7 +4,12 @@ from typing import Dict
 from google.cloud.firestore_v1.base_query import FieldFilter
 
 from app.core import firestore
-from app.services.transactions_service import tx_effect
+from app.services.transactions_service import (
+    _build_asset_name_by_id,
+    _build_category_name_by_id,
+    _normalize_tx_names,
+    tx_effect,
+)
 
 
 def get_month_summary(uid: str, year: int, month: int) -> dict:
@@ -26,8 +31,12 @@ def get_month_summary(uid: str, year: int, month: int) -> dict:
     by_category: Dict[str, Dict[str, int]] = {}
     by_asset: Dict[str, int] = {}
 
+    asset_name_by_id = _build_asset_name_by_id(uid)
+    category_name_by_id = _build_category_name_by_id(uid)
+
     for doc in query.stream():
         tx = doc.to_dict()
+        tx = _normalize_tx_names(tx, asset_name_by_id, category_name_by_id)
         tx_type = tx.get("type")
         amount = int(tx.get("amount", 0))
 
@@ -47,8 +56,8 @@ def get_month_summary(uid: str, year: int, month: int) -> dict:
             transfer_total += amount
 
         effect = tx_effect(tx)
-        for asset_id, delta in effect.items():
-            by_asset[asset_id] = by_asset.get(asset_id, 0) + delta
+        for asset_name, delta in effect.items():
+            by_asset[asset_name] = by_asset.get(asset_name, 0) + delta
 
     net = income_total - expense_total
     return {

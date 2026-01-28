@@ -33,13 +33,13 @@ const EditableRow = ({
   transaction,
   assets,
   categories,
-  fixedAssetId,
+  fixedAssetName,
   onCancel,
 }: {
   transaction: Transaction;
   assets: Asset[];
   categories: Category[];
-  fixedAssetId?: string;
+  fixedAssetName?: string;
   onCancel: () => void;
 }) => {
   const { token } = useAuth();
@@ -50,29 +50,29 @@ const EditableRow = ({
     occurredAt: string;
     amount: string;
     memo: string;
-    assetId?: string;
+    assetName?: string;
     categoryName?: string;
     merchant?: string;
     source?: string;
     counterparty?: string;
-    fromAssetId?: string;
-    toAssetId?: string;
+    fromAssetName?: string;
+    toAssetName?: string;
     transferDirection?: "out" | "in";
   }>({
     type: transaction.type,
     occurredAt: transaction.occurredAt.slice(0, 10),
     amount: String(transaction.amount),
     memo: transaction.memo ?? "",
-    assetId: transaction.type === "transfer" ? undefined : transaction.assetId,
+    assetName: transaction.type === "transfer" ? undefined : transaction.assetName,
     categoryName: transaction.type === "transfer" ? undefined : transaction.categoryName,
     merchant: transaction.type === "expense" ? transaction.merchant ?? "" : undefined,
     source: transaction.type === "income" ? transaction.source ?? "" : undefined,
     counterparty: transaction.type === "transfer" ? transaction.counterparty ?? "" : undefined,
-    fromAssetId: transaction.type === "transfer" ? transaction.fromAssetId : undefined,
-    toAssetId: transaction.type === "transfer" ? transaction.toAssetId : undefined,
+    fromAssetName: transaction.type === "transfer" ? transaction.fromAssetName : undefined,
+    toAssetName: transaction.type === "transfer" ? transaction.toAssetName : undefined,
     transferDirection:
       transaction.type === "transfer"
-        ? fixedAssetId && transaction.toAssetId === fixedAssetId
+        ? fixedAssetName && transaction.toAssetName === fixedAssetName
           ? "in"
           : "out"
         : undefined,
@@ -119,6 +119,32 @@ const EditableRow = ({
         : ""
       : "";
 
+  const selectableAssets = useMemo(() => {
+    const existing = new Set(assets.map((asset) => asset.name));
+    const extraAssets: Asset[] = [];
+    const addIfMissing = (name?: string) => {
+      if (!name || existing.has(name)) {
+        return;
+      }
+      existing.add(name);
+      extraAssets.push({
+        id: `missing-${name}`,
+        name,
+        type: undefined,
+        currency: "JPY",
+        isActive: true,
+        initialBalance: 0,
+        currentBalance: 0,
+        note: undefined,
+        sortOrder: 0,
+      });
+    };
+    addIfMissing(form.assetName);
+    addIfMissing(form.fromAssetName);
+    addIfMissing(form.toAssetName);
+    return [...extraAssets, ...assets];
+  }, [assets, form.assetName, form.fromAssetName, form.toAssetName]);
+
   const handleSave = async () => {
     if (!token) {
       toast.error("ログインしてね");
@@ -129,7 +155,7 @@ const EditableRow = ({
       return;
     }
     if (form.type === "expense" || form.type === "income") {
-      if (!form.assetId) {
+      if (!form.assetName) {
         toast.error("いれものを えらんでね");
         return;
       }
@@ -139,11 +165,11 @@ const EditableRow = ({
       }
     }
     if (form.type === "transfer") {
-      if (!form.fromAssetId || !form.toAssetId) {
+      if (!form.fromAssetName || !form.toAssetName) {
         toast.error("うつす いれものを えらんでね");
         return;
       }
-      if (form.fromAssetId === form.toAssetId) {
+      if (form.fromAssetName === form.toAssetName) {
         toast.error("おなじ いれものには うつせないよ");
         return;
       }
@@ -159,7 +185,7 @@ const EditableRow = ({
         payload = {
           ...payload,
           type: "expense",
-          assetId: form.assetId,
+          assetName: form.assetName,
           categoryName: form.categoryName,
           merchant: form.merchant || undefined,
         };
@@ -168,7 +194,7 @@ const EditableRow = ({
         payload = {
           ...payload,
           type: "income",
-          assetId: form.assetId,
+          assetName: form.assetName,
           categoryName: form.categoryName,
           source: form.source || undefined,
         };
@@ -177,8 +203,8 @@ const EditableRow = ({
         payload = {
           ...payload,
           type: "transfer",
-          fromAssetId: form.fromAssetId,
-          toAssetId: form.toAssetId,
+          fromAssetName: form.fromAssetName,
+          toAssetName: form.toAssetName,
           counterparty: form.counterparty || undefined,
         };
       }
@@ -238,26 +264,26 @@ const EditableRow = ({
   }, [onCancel]);
 
   const disableAsset =
-    Boolean(fixedAssetId) &&
+    Boolean(fixedAssetName) &&
     form.type !== "transfer" &&
-    form.assetId === fixedAssetId;
-  const disableTransferAsset = Boolean(fixedAssetId) && form.type === "transfer";
+    form.assetName === fixedAssetName;
+  const disableTransferAsset = Boolean(fixedAssetName) && form.type === "transfer";
 
   const transferDirection = form.transferDirection ?? "out";
   const placeholderValue = "__placeholder__";
   const assetPlaceholderValue = "__asset_placeholder__";
-  const transferBaseAssetId = fixedAssetId
-    ? fixedAssetId
+  const transferBaseAssetName = fixedAssetName
+    ? fixedAssetName
     : transferDirection === "out"
-      ? form.fromAssetId
-      : form.toAssetId;
+      ? form.fromAssetName
+      : form.toAssetName;
   const transferValue =
     transferDirection === "out"
-      ? form.toAssetId
-        ? `transfer-out::${form.toAssetId}`
+      ? form.toAssetName
+        ? `transfer-out::${form.toAssetName}`
         : ""
-      : form.fromAssetId
-        ? `transfer-in::${form.fromAssetId}`
+      : form.fromAssetName
+        ? `transfer-in::${form.fromAssetName}`
         : "";
 
   return (
@@ -275,21 +301,21 @@ const EditableRow = ({
       <td className="p-2" data-label="いれもの">
         {form.type === "transfer" ? (
           <Select
-            value={fixedAssetId ?? (transferDirection === "out"
-              ? form.fromAssetId ?? ""
-              : form.toAssetId ?? "")}
+            value={fixedAssetName ?? (transferDirection === "out"
+              ? form.fromAssetName ?? ""
+              : form.toAssetName ?? "")}
             onValueChange={(value) => {
               if (value === assetPlaceholderValue) {
                 if (transferDirection === "out") {
-                  setForm({ ...form, fromAssetId: "" });
+                  setForm({ ...form, fromAssetName: "" });
                 } else {
-                  setForm({ ...form, toAssetId: "" });
+                  setForm({ ...form, toAssetName: "" });
                 }
                 return;
               }
               transferDirection === "out"
-                ? setForm({ ...form, fromAssetId: value })
-                : setForm({ ...form, toAssetId: value });
+                ? setForm({ ...form, fromAssetName: value })
+                : setForm({ ...form, toAssetName: value });
             }}
             disabled={disableTransferAsset}
           >
@@ -303,8 +329,8 @@ const EditableRow = ({
               >
                 いれもの
               </SelectItem>
-              {assets.map((asset) => (
-                <SelectItem key={asset.id} value={asset.id}>
+              {selectableAssets.map((asset) => (
+                <SelectItem key={asset.id} value={asset.name}>
                   {asset.name}
                 </SelectItem>
               ))}
@@ -312,13 +338,13 @@ const EditableRow = ({
           </Select>
         ) : (
           <Select
-            value={form.assetId ?? ""}
+            value={form.assetName ?? ""}
             onValueChange={(value) => {
               if (value === assetPlaceholderValue) {
-                setForm({ ...form, assetId: "" });
+                setForm({ ...form, assetName: "" });
                 return;
               }
-              setForm({ ...form, assetId: value });
+              setForm({ ...form, assetName: value });
             }}
             disabled={disableAsset}
           >
@@ -332,8 +358,8 @@ const EditableRow = ({
               >
                 いれもの
               </SelectItem>
-              {assets.map((asset) => (
-                <SelectItem key={asset.id} value={asset.id}>
+              {selectableAssets.map((asset) => (
+                <SelectItem key={asset.id} value={asset.name}>
                   {asset.name}
                 </SelectItem>
               ))}
@@ -372,35 +398,35 @@ const EditableRow = ({
             value={transferValue}
             onValueChange={(value) => {
               if (value === placeholderValue) {
-                const baseAssetId = fixedAssetId ?? form.assetId ?? "";
+                const baseAssetName = fixedAssetName ?? form.assetName ?? "";
                 setForm({
                   ...form,
                   type: "expense",
-                  assetId: baseAssetId,
+                  assetName: baseAssetName,
                   categoryName: "",
                   transferDirection: "out",
-                  fromAssetId: undefined,
-                  toAssetId: undefined,
+                  fromAssetName: undefined,
+                  toAssetName: undefined,
                 });
                 return;
               }
               const [type, ...rest] = value.split("::");
               const id = rest.join("::");
-              const baseAssetId = transferBaseAssetId ?? "";
+              const baseAssetName = transferBaseAssetName ?? "";
               if (type === "transfer-out") {
                 setForm({
                   ...form,
                   transferDirection: "out",
-                  fromAssetId: baseAssetId,
-                  toAssetId: id ?? "",
+                  fromAssetName: baseAssetName,
+                  toAssetName: id ?? "",
                 });
               }
               if (type === "transfer-in") {
                 setForm({
                   ...form,
                   transferDirection: "in",
-                  fromAssetId: id ?? "",
-                  toAssetId: baseAssetId,
+                  fromAssetName: id ?? "",
+                  toAssetName: baseAssetName,
                 });
               }
             }}
@@ -413,23 +439,23 @@ const EditableRow = ({
                 うごき
               </SelectItem>
               <div className="px-2 pt-2 text-xs text-muted-foreground">だした</div>
-              {assets
-                .filter((asset) => asset.id !== transferBaseAssetId)
+              {selectableAssets
+                .filter((asset) => asset.name !== transferBaseAssetName)
                 .map((asset) => (
                   <SelectItem
                     key={`transfer-out:${asset.id}`}
-                    value={`transfer-out::${asset.id}`}
+                    value={`transfer-out::${asset.name}`}
                   >
                     →{asset.name} へ
                   </SelectItem>
                 ))}
               <div className="px-2 pt-2 text-xs text-muted-foreground">いれた</div>
-              {assets
-                .filter((asset) => asset.id !== transferBaseAssetId)
+              {selectableAssets
+                .filter((asset) => asset.name !== transferBaseAssetName)
                 .map((asset) => (
                   <SelectItem
                     key={`transfer-in:${asset.id}`}
-                    value={`transfer-in::${asset.id}`}
+                    value={`transfer-in::${asset.name}`}
                   >
                     ←{asset.name} から
                   </SelectItem>
@@ -610,7 +636,7 @@ export const LedgerTable = ({
   transactions,
   assets,
   categories,
-  fixedAssetId,
+  fixedAssetName,
   balancesById,
   openingBalances,
   openingDate,
@@ -623,7 +649,7 @@ export const LedgerTable = ({
   transactions: Transaction[];
   assets: Asset[];
   categories: Category[];
-  fixedAssetId?: string;
+  fixedAssetName?: string;
   balancesById?: Record<string, number>;
   openingBalances?: Record<string, number>;
   openingDate?: string;
@@ -643,21 +669,15 @@ export const LedgerTable = ({
   );
   const isMobile = useMediaQuery("(max-width: 900px)");
 
-  const assetMap = useMemo(
-    () => new Map(assets.map((asset) => [asset.id, asset.name])),
-    [assets]
-  );
-  const assetName = (assetId: string) => assetMap.get(assetId) ?? "";
-
   const openingBalanceValue = useMemo(() => {
     if (!openingBalances) {
       return null;
     }
-    if (fixedAssetId) {
-      return openingBalances[fixedAssetId] ?? 0;
+    if (fixedAssetName) {
+      return openingBalances[fixedAssetName] ?? 0;
     }
     return Object.values(openingBalances).reduce((sum, value) => sum + value, 0);
-  }, [openingBalances, fixedAssetId]);
+  }, [openingBalances, fixedAssetName]);
 
   const openingBalanceText =
     openingBalanceValue === null ? "-" : formatJPYPlain(openingBalanceValue);
@@ -714,12 +734,12 @@ export const LedgerTable = ({
         cell: ({ row }) => {
           const tx = row.original;
           if (tx.type === "transfer") {
-            if (fixedAssetId && tx.toAssetId === fixedAssetId) {
-              return assetName(tx.toAssetId);
+            if (fixedAssetName && tx.toAssetName === fixedAssetName) {
+              return tx.toAssetName ?? "";
             }
-            return assetName(tx.fromAssetId);
+            return tx.fromAssetName ?? "";
           }
-          return assetName(tx.assetId);
+          return tx.assetName ?? "";
         },
         meta: {
           label: "いれもの",
@@ -755,10 +775,10 @@ export const LedgerTable = ({
           if (tx.type === "income") {
             return `いれた: ${tx.categoryName ?? ""}`;
           }
-          if (fixedAssetId && tx.toAssetId === fixedAssetId) {
-            return `いれた: ←${assetName(tx.fromAssetId)} から`;
+          if (fixedAssetName && tx.toAssetName === fixedAssetName) {
+            return `いれた: ←${tx.fromAssetName ?? ""} から`;
           }
-          return `だした: →${assetName(tx.toAssetId)} へ`;
+          return `だした: →${tx.toAssetName ?? ""} へ`;
         },
         meta: {
           label: "うごき",
@@ -813,7 +833,7 @@ export const LedgerTable = ({
         },
       },
     ],
-    [assetMap, balancesById, fixedAssetId]
+    [balancesById, fixedAssetName]
   );
 
   const sorted = useMemo(() => {
@@ -1155,7 +1175,7 @@ export const LedgerTable = ({
                   transaction={row.original}
                   assets={assets}
                   categories={categories}
-                  fixedAssetId={fixedAssetId}
+                  fixedAssetName={fixedAssetName}
                   onCancel={() => setEditingId(null)}
                 />
               );

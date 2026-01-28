@@ -18,10 +18,6 @@ export const DashboardPage = () => {
   });
   const transactions = data.items;
 
-  const assetMap = useMemo(
-    () => new Map(assets.map((asset) => [asset.id, asset.name])),
-    [assets]
-  );
   const totalBalance = useMemo(
     () => assets.reduce((sum, asset) => sum + asset.currentBalance, 0),
     [assets]
@@ -132,10 +128,8 @@ export const DashboardPage = () => {
                       <div>
                         <p className="text-sm font-medium">
                           {tx.type === "transfer"
-                            ? `${assetMap.get(tx.fromAssetId) ?? ""} → ${
-                                assetMap.get(tx.toAssetId) ?? ""
-                              }`
-                            : assetMap.get(tx.assetId) ?? ""}
+                            ? `${tx.fromAssetName ?? ""} → ${tx.toAssetName ?? ""}`
+                            : tx.assetName ?? ""}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {tx.type === "expense"

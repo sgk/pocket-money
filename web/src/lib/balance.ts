@@ -3,7 +3,7 @@ import { toDateKey } from "@/lib/date";
 
 type BalanceMode =
   | { type: "all" }
-  | { type: "asset"; assetId: string };
+  | { type: "asset"; assetName: string };
 
 const sortAsc = (transactions: Transaction[]) => {
   const withIndex = transactions.map((tx, index) => ({ tx, index }));
@@ -33,7 +33,7 @@ export const computeRunningBalances = (
   if (mode.type === "all") {
     running = Object.values(openingBalances).reduce((sum, value) => sum + value, 0);
   } else {
-    running = openingBalances[mode.assetId] ?? 0;
+    running = openingBalances[mode.assetName] ?? 0;
   }
 
   const ordered = sortAsc(transactions);
@@ -50,24 +50,24 @@ export const computeRunningBalances = (
       return;
     }
 
-    const assetId = mode.assetId;
-    if (tx.type === "expense" && tx.assetId === assetId) {
+    const assetName = mode.assetName;
+    if (tx.type === "expense" && tx.assetName === assetName) {
       running -= tx.amount;
       balancesById[tx.id] = running;
       return;
     }
-    if (tx.type === "income" && tx.assetId === assetId) {
+    if (tx.type === "income" && tx.assetName === assetName) {
       running += tx.amount;
       balancesById[tx.id] = running;
       return;
     }
     if (tx.type === "transfer") {
-      if (tx.fromAssetId === assetId) {
+      if (tx.fromAssetName === assetName) {
         running -= tx.amount + (tx.fee ?? 0);
         balancesById[tx.id] = running;
         return;
       }
-      if (tx.toAssetId === assetId) {
+      if (tx.toAssetName === assetName) {
         running += tx.amount;
         balancesById[tx.id] = running;
         return;
@@ -87,7 +87,7 @@ export const computeEndingBalance = (
   if (mode.type === "all") {
     running = Object.values(openingBalances).reduce((sum, value) => sum + value, 0);
   } else {
-    running = openingBalances[mode.assetId] ?? 0;
+    running = openingBalances[mode.assetName] ?? 0;
   }
 
   const ordered = sortAsc(transactions);
@@ -103,21 +103,21 @@ export const computeEndingBalance = (
       return;
     }
 
-    const assetId = mode.assetId;
-    if (tx.type === "expense" && tx.assetId === assetId) {
+    const assetName = mode.assetName;
+    if (tx.type === "expense" && tx.assetName === assetName) {
       running -= tx.amount;
       return;
     }
-    if (tx.type === "income" && tx.assetId === assetId) {
+    if (tx.type === "income" && tx.assetName === assetName) {
       running += tx.amount;
       return;
     }
     if (tx.type === "transfer") {
-      if (tx.fromAssetId === assetId) {
+      if (tx.fromAssetName === assetName) {
         running -= tx.amount + (tx.fee ?? 0);
         return;
       }
-      if (tx.toAssetId === assetId) {
+      if (tx.toAssetName === assetName) {
         running += tx.amount;
         return;
       }

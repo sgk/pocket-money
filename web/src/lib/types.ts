@@ -41,23 +41,24 @@ export type TxBase = {
 
 export type TxExpense = TxBase & {
   type: "expense";
-  assetId: string;
+  assetName: string;
   categoryName: string;
   merchant?: string;
 };
 
 export type TxIncome = TxBase & {
   type: "income";
-  assetId: string;
+  assetName: string;
   categoryName: string;
   source?: string;
 };
 
 export type TxTransfer = TxBase & {
   type: "transfer";
-  fromAssetId: string;
-  toAssetId: string;
+  fromAssetName: string;
+  toAssetName: string;
   fee: number;
+  feeCategoryName?: string;
   counterparty?: string;
 };
 

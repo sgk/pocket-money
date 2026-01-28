@@ -22,47 +22,47 @@ const emptyEntry = () => ({
   transferDirection: "out" as "out" | "in",
   amount: "",
   fee: "0",
-  assetId: storage.getLastAssetId() ?? "",
+  assetName: storage.getLastAssetName() ?? "",
   categoryName: "",
   merchant: "",
   source: "",
   counterparty: "",
   memo: "",
-  fromAssetId: storage.getLastAssetId() ?? "",
-  toAssetId: "",
+  fromAssetName: storage.getLastAssetName() ?? "",
+  toAssetName: "",
 });
 
 export const NewEntryRow = ({
   assets,
   categories,
-  fixedAssetId,
+  fixedAssetName,
   disabled,
 }: {
   assets: Asset[];
   categories: Category[];
-  fixedAssetId?: string;
+  fixedAssetName?: string;
   disabled?: boolean;
 }) => {
   const isDisabled = Boolean(disabled);
-  const buildInitialEntry = (assetId?: string) => {
+  const buildInitialEntry = (assetName?: string) => {
     const base = emptyEntry();
-    if (assetId) {
+    if (assetName) {
       return {
         ...base,
-        assetId,
-        fromAssetId: assetId,
+        assetName,
+        fromAssetName: assetName,
       };
     }
     return {
       ...base,
-      assetId: "",
-      fromAssetId: "",
-      toAssetId: "",
+      assetName: "",
+      fromAssetName: "",
+      toAssetName: "",
     };
   };
   const { token } = useAuth();
   const invalidate = useInvalidateLedger();
-  const [entry, setEntry] = useState(() => buildInitialEntry(fixedAssetId));
+  const [entry, setEntry] = useState(() => buildInitialEntry(fixedAssetName));
   const [isSaving, setIsSaving] = useState(false);
   const dateRef = useRef<HTMLInputElement>(null);
 
@@ -91,23 +91,23 @@ export const NewEntryRow = ({
   const categoryValue =
     entry.type === "transfer"
       ? entry.transferDirection === "out"
-        ? entry.toAssetId
-          ? `transfer-out::${entry.toAssetId}`
+        ? entry.toAssetName
+          ? `transfer-out::${entry.toAssetName}`
           : ""
-        : entry.fromAssetId
-          ? `transfer-in::${entry.fromAssetId}`
+        : entry.fromAssetName
+          ? `transfer-in::${entry.fromAssetName}`
           : ""
       : entry.categoryName
         ? `${entry.type}::${entry.categoryName}`
         : "";
 
-  const transferBaseAssetId = fixedAssetId
-    ? fixedAssetId
+  const transferBaseAssetName = fixedAssetName
+    ? fixedAssetName
     : entry.type === "transfer"
       ? entry.transferDirection === "out"
-        ? entry.fromAssetId
-        : entry.toAssetId
-      : entry.assetId;
+        ? entry.fromAssetName
+        : entry.toAssetName
+      : entry.assetName;
 
   useEffect(() => {
     if (isDisabled) {
@@ -140,11 +140,11 @@ export const NewEntryRow = ({
   }, [isDisabled]);
 
   useEffect(() => {
-    setEntry(buildInitialEntry(fixedAssetId));
-  }, [fixedAssetId]);
+    setEntry(buildInitialEntry(fixedAssetName));
+  }, [fixedAssetName]);
 
   const resetEntry = () => {
-    setEntry(buildInitialEntry(fixedAssetId));
+    setEntry(buildInitialEntry(fixedAssetName));
   };
 
   const validateEntry = () => {
@@ -154,7 +154,7 @@ export const NewEntryRow = ({
       return false;
     }
     if (entry.type === "expense" || entry.type === "income") {
-      if (!entry.assetId) {
+      if (!entry.assetName) {
         toast.error("いれものを えらんでね");
         return false;
       }
@@ -164,11 +164,11 @@ export const NewEntryRow = ({
       }
     }
     if (entry.type === "transfer") {
-      if (!entry.fromAssetId || !entry.toAssetId) {
+      if (!entry.fromAssetName || !entry.toAssetName) {
         toast.error("うつす いれものを えらんでね");
         return false;
       }
-      if (entry.fromAssetId === entry.toAssetId) {
+      if (entry.fromAssetName === entry.toAssetName) {
         toast.error("おなじ いれものには うつせないよ");
         return false;
       }
@@ -195,35 +195,35 @@ export const NewEntryRow = ({
       if (entry.type === "expense") {
         const payload = {
           ...payloadBase,
-          assetId: entry.assetId,
+          assetName: entry.assetName,
           categoryName: entry.categoryName,
           merchant: entry.merchant || undefined,
         };
         created = await api.createExpense(token, payload);
-        storage.setLastAssetId(entry.assetId);
+        storage.setLastAssetName(entry.assetName);
         storage.setLastCategoryName(entry.categoryName);
       }
       if (entry.type === "income") {
         const payload = {
           ...payloadBase,
-          assetId: entry.assetId,
+          assetName: entry.assetName,
           categoryName: entry.categoryName,
           source: entry.source || undefined,
         };
         created = await api.createIncome(token, payload);
-        storage.setLastAssetId(entry.assetId);
+        storage.setLastAssetName(entry.assetName);
         storage.setLastCategoryName(entry.categoryName);
       }
       if (entry.type === "transfer") {
         const payload = {
           ...payloadBase,
-          fromAssetId: entry.fromAssetId,
-          toAssetId: entry.toAssetId,
+          fromAssetName: entry.fromAssetName,
+          toAssetName: entry.toAssetName,
           fee: Number(entry.fee || 0),
           counterparty: entry.counterparty || undefined,
         };
         created = await api.createTransfer(token, payload);
-        storage.setLastAssetId(entry.fromAssetId);
+        storage.setLastAssetName(entry.fromAssetName);
       }
       if (created) {
         toast.success("きろくを たしたよ");
@@ -269,27 +269,27 @@ export const NewEntryRow = ({
         {entry.type === "transfer" ? (
           <div>
             <Select
-              value={fixedAssetId ?? (entry.transferDirection === "out"
-                ? entry.fromAssetId
-                : entry.toAssetId)}
+              value={fixedAssetName ?? (entry.transferDirection === "out"
+                ? entry.fromAssetName
+                : entry.toAssetName)}
               onValueChange={(value) => {
                 if (value === assetPlaceholderValue) {
                   if (entry.transferDirection === "out") {
-                    setEntry({ ...entry, fromAssetId: "" });
+                    setEntry({ ...entry, fromAssetName: "" });
                   } else {
-                    setEntry({ ...entry, toAssetId: "" });
+                    setEntry({ ...entry, toAssetName: "" });
                   }
                   return;
                 }
                 if (entry.transferDirection === "out") {
-                  setEntry({ ...entry, fromAssetId: value });
+                  setEntry({ ...entry, fromAssetName: value });
                 } else {
-                  setEntry({ ...entry, toAssetId: value });
+                  setEntry({ ...entry, toAssetName: value });
                 }
               }}
-              disabled={Boolean(fixedAssetId) || isDisabled}
+              disabled={Boolean(fixedAssetName) || isDisabled}
             >
-              <SelectTrigger className={(fixedAssetId ?? (entry.transferDirection === "out" ? entry.fromAssetId : entry.toAssetId)) === "" || (fixedAssetId ?? (entry.transferDirection === "out" ? entry.fromAssetId : entry.toAssetId)) === assetPlaceholderValue ? "text-muted-foreground/40" : ""}>
+              <SelectTrigger className={(fixedAssetName ?? (entry.transferDirection === "out" ? entry.fromAssetName : entry.toAssetName)) === "" || (fixedAssetName ?? (entry.transferDirection === "out" ? entry.fromAssetName : entry.toAssetName)) === assetPlaceholderValue ? "text-muted-foreground/40" : ""}>
                 <SelectValue placeholder="いれもの" />
               </SelectTrigger>
               <SelectContent>
@@ -300,7 +300,7 @@ export const NewEntryRow = ({
                   いれもの
                 </SelectItem>
                 {assetOptions.map((asset) => (
-                  <SelectItem key={asset.id} value={asset.id}>
+                  <SelectItem key={asset.id} value={asset.name}>
                     {asset.name}
                   </SelectItem>
                 ))}
@@ -309,17 +309,17 @@ export const NewEntryRow = ({
           </div>
         ) : (
           <Select
-            value={entry.assetId}
+            value={entry.assetName}
             onValueChange={(value) => {
               if (value === assetPlaceholderValue) {
-                setEntry({ ...entry, assetId: "" });
+                setEntry({ ...entry, assetName: "" });
                 return;
               }
-              setEntry({ ...entry, assetId: value });
+              setEntry({ ...entry, assetName: value });
             }}
-            disabled={Boolean(fixedAssetId) || isDisabled}
+            disabled={Boolean(fixedAssetName) || isDisabled}
           >
-            <SelectTrigger className={(fixedAssetId ?? entry.assetId) === "" || (fixedAssetId ?? entry.assetId) === assetPlaceholderValue ? "text-muted-foreground/40" : ""}>
+            <SelectTrigger className={(fixedAssetName ?? entry.assetName) === "" || (fixedAssetName ?? entry.assetName) === assetPlaceholderValue ? "text-muted-foreground/40" : ""}>
               <SelectValue placeholder="いれもの" />
             </SelectTrigger>
             <SelectContent>
@@ -330,7 +330,7 @@ export const NewEntryRow = ({
                 いれもの
               </SelectItem>
               {assetOptions.map((asset) => (
-                <SelectItem key={asset.id} value={asset.id}>
+                <SelectItem key={asset.id} value={asset.name}>
                   {asset.name}
                 </SelectItem>
               ))}
@@ -372,19 +372,19 @@ export const NewEntryRow = ({
           onValueChange={(value) => {
             if (value === placeholderValue) {
               if (entry.type === "transfer") {
-                const baseAssetId =
-                  fixedAssetId ??
-                  entry.assetId ??
-                  entry.fromAssetId ??
-                  entry.toAssetId ??
+                const baseAssetName =
+                  fixedAssetName ??
+                  entry.assetName ??
+                  entry.fromAssetName ??
+                  entry.toAssetName ??
                   "";
                 setEntry({
                   ...entry,
                   type: "expense",
                   categoryName: "",
                   transferDirection: "out",
-                  fromAssetId: baseAssetId,
-                  toAssetId: "",
+                  fromAssetName: baseAssetName,
+                  toAssetName: "",
                 });
                 return;
               }
@@ -394,23 +394,23 @@ export const NewEntryRow = ({
             const [type, ...rest] = value.split("::");
             const id = rest.join("::");
             if (type === "transfer-out") {
-              const baseAssetId = transferBaseAssetId ?? "";
+              const baseAssetName = transferBaseAssetName ?? "";
               setEntry({
                 ...entry,
                 type: "transfer",
                 transferDirection: "out",
-                fromAssetId: baseAssetId,
-                toAssetId: id ?? "",
+                fromAssetName: baseAssetName,
+                toAssetName: id ?? "",
                 categoryName: "",
               });
             } else if (type === "transfer-in") {
-              const baseAssetId = transferBaseAssetId ?? "";
+              const baseAssetName = transferBaseAssetName ?? "";
               setEntry({
                 ...entry,
                 type: "transfer",
                 transferDirection: "in",
-                fromAssetId: id ?? "",
-                toAssetId: baseAssetId,
+                fromAssetName: id ?? "",
+                toAssetName: baseAssetName,
                 categoryName: "",
               });
             } else if (type === "expense" || type === "income") {
@@ -418,7 +418,7 @@ export const NewEntryRow = ({
                 ...entry,
                 type: type as TransactionType,
                 categoryName: id ?? "",
-                toAssetId: "",
+                toAssetName: "",
               });
             }
           }}
@@ -444,11 +444,11 @@ export const NewEntryRow = ({
               その他
             </SelectItem>
             {assetOptions
-              .filter((asset) => asset.id !== transferBaseAssetId)
+              .filter((asset) => asset.name !== transferBaseAssetName)
               .map((asset) => (
                 <SelectItem
                   key={`transfer-out:${asset.id}`}
-                  value={`transfer-out::${asset.id}`}
+                  value={`transfer-out::${asset.name}`}
                 >
                   →{asset.name} へ
                 </SelectItem>
@@ -466,11 +466,11 @@ export const NewEntryRow = ({
               その他
             </SelectItem>
             {assetOptions
-              .filter((asset) => asset.id !== transferBaseAssetId)
+              .filter((asset) => asset.name !== transferBaseAssetName)
               .map((asset) => (
                 <SelectItem
                   key={`transfer-in:${asset.id}`}
-                  value={`transfer-in::${asset.id}`}
+                  value={`transfer-in::${asset.name}`}
                 >
                   ←{asset.name} から
                 </SelectItem>
