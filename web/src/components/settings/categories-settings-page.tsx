@@ -396,7 +396,11 @@ const CategoryList = ({
 
   const handleDragOverSlot = (event: React.DragEvent<HTMLDivElement>, index: number) => {
     event.preventDefault();
-    if (draggingId && isNoopDrop(draggingId, index)) {
+    const payload = event.dataTransfer.getData("text/plain");
+    const [dragKindRaw, dragId] = payload.split(":");
+    const sameKind = dragKindRaw ? dragKindRaw === kind : Boolean(draggingId);
+    const effectiveDragId = dragId || draggingId || "";
+    if (sameKind && effectiveDragId && isNoopDrop(effectiveDragId, index)) {
       setIndicatorIndex(null);
       return;
     }
@@ -408,7 +412,11 @@ const CategoryList = ({
     const bounds = event.currentTarget.getBoundingClientRect();
     const before = event.clientY - bounds.top < bounds.height / 2;
     const insertIndex = before ? index : index + 1;
-    if (draggingId && isNoopDrop(draggingId, insertIndex)) {
+    const payload = event.dataTransfer.getData("text/plain");
+    const [dragKindRaw, dragId] = payload.split(":");
+    const sameKind = dragKindRaw ? dragKindRaw === kind : Boolean(draggingId);
+    const effectiveDragId = dragId || draggingId || "";
+    if (sameKind && effectiveDragId && isNoopDrop(effectiveDragId, insertIndex)) {
       setIndicatorIndex(null);
       return;
     }
@@ -614,7 +622,7 @@ export const CategoriesSettingsPage = () => {
           kind: newCategory.kind,
         });
       });
-      toast.success("つかいみちを たしたよ");
+      toast.success("うごきを たしたよ");
       setNewCategory({ name: "", kind: "expense" });
       queryClient.invalidateQueries({ queryKey: ["categories"] });
     } catch (error) {
@@ -663,7 +671,7 @@ export const CategoriesSettingsPage = () => {
       toast.error("ログインしてね");
       return;
     }
-    const ok = window.confirm("この つかいみちを けす？");
+    const ok = window.confirm("この うごきを けす？");
     if (!ok) {
       return;
     }
@@ -796,8 +804,8 @@ export const CategoriesSettingsPage = () => {
     <div className="relative flex min-h-0 flex-col">
       <Topbar
         ref={topbarRef}
-        title="つかいみち設定"
-        subtitle="つかいみちを ふやす / なおす"
+        title="うごき設定"
+        subtitle="うごきを ふやす / なおす"
         dense
       />
 
@@ -807,7 +815,7 @@ export const CategoriesSettingsPage = () => {
       >
         <div className="shrink-0">
         <div className="pb-1">
-          <div className="text-base font-semibold">あたらしい つかいみち</div>
+          <div className="text-base font-semibold">あたらしい うごき</div>
         </div>
         <div className="grid gap-3 grid-cols-[auto_1fr_auto] items-center">
           <div className="flex items-center">

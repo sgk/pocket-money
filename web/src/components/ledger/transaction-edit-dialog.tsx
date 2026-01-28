@@ -146,7 +146,7 @@ export const TransactionEditDialog = ({
         return;
       }
       if (!form.categoryName) {
-        toast.error("つかいみちを えらんでね");
+      toast.error("うごきを えらんでね");
         return;
       }
     }
@@ -257,7 +257,7 @@ export const TransactionEditDialog = ({
                 onValueChange={(value) => setForm({ ...form, categoryName: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="つかいみち" />
+                  <SelectValue placeholder="うごき" />
                 </SelectTrigger>
                 <SelectContent>
                   {categoryOptions.map((category) => (

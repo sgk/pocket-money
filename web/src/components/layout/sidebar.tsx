@@ -93,7 +93,7 @@ export const Sidebar = ({ onNavigate, className = "" }: SidebarProps) => {
           }
         >
           <Settings className="h-4 w-4" />
-          <span className="whitespace-nowrap">つかいみち設定</span>
+          <span className="whitespace-nowrap">うごき設定</span>
         </NavLink>
         <NavLink
           to="/settings/data"

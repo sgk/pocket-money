@@ -166,7 +166,7 @@ const EditableRow = ({
         return;
       }
       if (!form.categoryName) {
-        toast.error("つかいみちを えらんでね");
+        toast.error("うごきを えらんでね");
         return;
       }
     }

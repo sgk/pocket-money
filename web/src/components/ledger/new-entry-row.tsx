@@ -167,7 +167,7 @@ export const NewEntryRow = ({
         return false;
       }
       if (!entry.categoryName) {
-        toast.error("つかいみちを えらんでね");
+        toast.error("うごきを えらんでね");
         return false;
       }
     }
