@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Check, Trash2, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Link } from "react-router-dom";
@@ -20,6 +20,10 @@ const AssetRow = ({
   onDelete,
   onDragEnd,
   isDragging,
+  isEditing,
+  onRequestEdit,
+  onRequestClose,
+  dragRowProps,
   dragHandleProps,
 }: {
   asset: Asset;
@@ -32,11 +36,18 @@ const AssetRow = ({
       initialBalance: number;
       isActive: boolean;
     }
-  ) => void;
+  ) => Promise<void>;
   onToggleActive: (id: string, value: boolean) => void;
   onDelete: (id: string) => void;
   onDragEnd: () => void;
   isDragging: boolean;
+  isEditing: boolean;
+  onRequestEdit: () => void;
+  onRequestClose: () => void;
+  dragRowProps: {
+    draggable: boolean;
+    onDragStart: (event: React.DragEvent<HTMLDivElement>) => void;
+  };
   dragHandleProps: {
     draggable: boolean;
     onDragStart: (event: React.DragEvent<HTMLDivElement>) => void;
@@ -51,6 +62,7 @@ const AssetRow = ({
     isActive: asset.isActive,
   });
   const [isDirty, setIsDirty] = useState(false);
+  const rowRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setForm({
@@ -63,32 +75,62 @@ const AssetRow = ({
     setIsDirty(false);
   }, [asset]);
 
-  const handleSave = () => {
+  useEffect(() => {
+    if (isEditing) {
+      return;
+    }
+    setForm({
+      name: asset.name,
+      type: asset.type ?? "",
+      note: asset.note ?? "",
+      initialBalance: String(asset.initialBalance ?? 0),
+      isActive: asset.isActive,
+    });
+    setIsDirty(false);
+  }, [asset, isEditing]);
+
+  useEffect(() => {
+    if (!isEditing) {
+      return;
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") {
+        return;
+      }
+      event.preventDefault();
+      handleCancel();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isEditing]);
+
+  const handleSave = async () => {
     if (!form.name.trim()) {
       setForm({
         ...form,
         name: asset.name,
       });
       toast.error("なまえを いれてね");
-      return;
+      return false;
     }
     if (!isDirty) {
-      return;
+      return true;
     }
     setIsDirty(false);
     const initialValue = form.initialBalance.trim();
     const parsedInitial = initialValue === "" ? 0 : Number(initialValue);
     if (Number.isNaN(parsedInitial)) {
       toast.error("のこりを いれてね");
-      return;
+      return false;
     }
-    onSave(asset.id, {
+    await onSave(asset.id, {
       name: form.name.trim(),
       type: form.type.trim(),
       note: form.note.trim(),
       initialBalance: parsedInitial,
       isActive: form.isActive,
     });
+    return true;
   };
 
   const handleChange = (next: Partial<typeof form>) => {
@@ -96,11 +138,59 @@ const AssetRow = ({
     setIsDirty(true);
   };
 
+  const handleRowClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (isEditing) {
+      return;
+    }
+    const target = event.target as HTMLElement | null;
+    if (target && target.closest("input, textarea, select, button, a, label")) {
+      return;
+    }
+    onRequestEdit();
+  };
+
+  const handleRowBlur = () => {
+    window.setTimeout(async () => {
+      if (!rowRef.current) {
+        return;
+      }
+      if (rowRef.current.contains(document.activeElement)) {
+        return;
+      }
+      if (!isEditing) {
+        return;
+      }
+      if (isDirty) {
+        return;
+      }
+      onRequestClose();
+    }, 0);
+  };
+
+  const handleCancel = () => {
+    setForm({
+      name: asset.name,
+      type: asset.type ?? "",
+      note: asset.note ?? "",
+      initialBalance: String(asset.initialBalance ?? 0),
+      isActive: asset.isActive,
+    });
+    setIsDirty(false);
+    onRequestClose();
+  };
+
+  const rowOpacityClass = inactive ? (isEditing ? "opacity-50" : "opacity-30") : "";
+
   const DesktopRow = (
     <div
-      className={`hidden items-center gap-2 rounded-lg border bg-card/80 px-3 py-1.5 text-sm md:grid md:grid-cols-[16px_minmax(200px,2fr)_minmax(140px,1fr)_minmax(200px,2fr)_120px_112px_64px_32px] md:items-center ${
-        inactive ? "opacity-50" : ""
+      className={`hidden items-center gap-2 rounded-lg border bg-card/80 px-3 py-1.5 text-sm md:grid md:grid-cols-[16px_minmax(200px,2fr)_minmax(120px,1fr)_minmax(180px,2fr)_104px_48px_112px] md:items-center ${
+        rowOpacityClass
       } ${isDragging ? "opacity-40" : ""}`}
+      ref={rowRef}
+      onClick={handleRowClick}
+      onBlurCapture={handleRowBlur}
+      {...dragRowProps}
+      draggable={!isEditing && dragRowProps.draggable}
       onDragEnd={onDragEnd}
     >
       <div
@@ -110,87 +200,154 @@ const AssetRow = ({
       >
         ≡
       </div>
-      <Input
-        placeholder="なまえ"
-        value={form.name}
-        onChange={(event) => handleChange({ name: event.target.value })}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            event.preventDefault();
-            handleSave();
-          }
-        }}
-        onBlur={handleSave}
-        className="h-8 w-full min-w-0"
-      />
-      <Input
-        placeholder="しゅるい"
-        value={form.type}
-        onChange={(event) => handleChange({ type: event.target.value })}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            event.preventDefault();
-            handleSave();
-          }
-        }}
-        onBlur={handleSave}
-        className="h-8 w-full min-w-0"
-      />
-      <Input
-        placeholder="メモ"
-        value={form.note}
-        onChange={(event) => handleChange({ note: event.target.value })}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            event.preventDefault();
-            handleSave();
-          }
-        }}
-        onBlur={handleSave}
-        className="h-8 w-full min-w-0"
-      />
-      <Input
-        type="number"
-        placeholder="はじめのおかね"
-        value={form.initialBalance}
-        onChange={(event) => handleChange({ initialBalance: event.target.value })}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            event.preventDefault();
-            handleSave();
-          }
-        }}
-        onBlur={handleSave}
-        className="h-8 w-full min-w-0 text-right"
-      />
-      <Link
-        to={`/assets/${asset.id}/ledger`}
-        className="w-full text-right text-sm font-semibold text-sky-700 underline-offset-4 hover:underline"
-      >
-        {formatJPY(asset.currentBalance)}
-      </Link>
-      <label className="flex items-center justify-center">
-        <input
-          type="checkbox"
-          checked={form.isActive}
-          onChange={(event) => {
-            const next = event.target.checked;
-            setForm({ ...form, isActive: next });
-            onToggleActive(asset.id, next);
-          }}
-        />
-      </label>
-      <div className="flex items-center justify-center">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-rose-600 hover:text-rose-700"
-          onClick={() => onDelete(asset.id)}
-          aria-label={`${asset.name} を けす`}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+      {isEditing ? (
+        <>
+          <Input
+            placeholder="なまえ"
+            value={form.name}
+            onChange={(event) => handleChange({ name: event.target.value })}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                void handleSave().then((ok) => ok && onRequestClose());
+              }
+              if (event.key === "Escape") {
+                event.preventDefault();
+                handleCancel();
+              }
+            }}
+            className="h-8 w-full min-w-0"
+          />
+          <Input
+            placeholder="しゅるい"
+            value={form.type}
+            onChange={(event) => handleChange({ type: event.target.value })}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                void handleSave().then((ok) => ok && onRequestClose());
+              }
+              if (event.key === "Escape") {
+                event.preventDefault();
+                handleCancel();
+              }
+            }}
+            className="h-8 w-full min-w-0"
+          />
+          <Input
+            placeholder="メモ"
+            value={form.note}
+            onChange={(event) => handleChange({ note: event.target.value })}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                void handleSave().then((ok) => ok && onRequestClose());
+              }
+              if (event.key === "Escape") {
+                event.preventDefault();
+                handleCancel();
+              }
+            }}
+            className="h-8 w-full min-w-0"
+          />
+          <Input
+            type="number"
+            placeholder="はじめのおかね"
+            value={form.initialBalance}
+            onChange={(event) => handleChange({ initialBalance: event.target.value })}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                void handleSave().then((ok) => ok && onRequestClose());
+              }
+              if (event.key === "Escape") {
+                event.preventDefault();
+                handleCancel();
+              }
+            }}
+            className="h-8 w-full min-w-0 text-right"
+          />
+        </>
+      ) : (
+        <>
+          <div className="truncate text-sm font-medium">{form.name}</div>
+          <div className="truncate text-xs text-muted-foreground">
+            {form.type ? form.type : "（しゅるいなし）"}
+          </div>
+          <div className="truncate text-xs text-muted-foreground">
+            {form.note ? form.note : "（メモなし）"}
+          </div>
+          <div className="text-right text-sm tabular-nums">
+            {formatJPY(Number(form.initialBalance || 0))}
+          </div>
+        </>
+      )}
+      {isEditing ? (
+        <label className="flex items-center justify-center">
+          <input
+            type="checkbox"
+            checked={form.isActive}
+            onChange={(event) => {
+              const next = event.target.checked;
+              setForm({ ...form, isActive: next });
+              onToggleActive(asset.id, next);
+            }}
+          />
+        </label>
+      ) : (
+        <div />
+      )}
+      <div className="flex items-center justify-end">
+        {isEditing ? (
+          <div className="flex items-center justify-end gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={(event) => {
+                event.stopPropagation();
+                void handleSave().then((ok) => ok && onRequestClose());
+              }}
+              aria-label="ほぞん"
+            >
+              <Check className="h-4 w-4 text-emerald-600" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleCancel();
+              }}
+              aria-label="キャンセル"
+            >
+              <X className="h-4 w-4 text-muted-foreground" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={(event) => {
+                event.stopPropagation();
+                onDelete(asset.id);
+              }}
+              aria-label={`${asset.name} を けす`}
+            >
+              <Trash2 className="h-4 w-4 text-rose-600" />
+            </Button>
+          </div>
+        ) : (
+          <Link
+            to={`/assets/${asset.id}/ledger`}
+            className="text-sm underline underline-offset-4 text-[LinkText] visited:text-[VisitedText]"
+          >
+            {formatJPY(asset.currentBalance)}
+          </Link>
+        )}
       </div>
     </div>
   );
@@ -198,8 +355,13 @@ const AssetRow = ({
   const MobileRow = (
     <div
       className={`flex flex-col gap-3 rounded-lg border bg-card/80 p-3 text-sm md:hidden ${
-        inactive ? "opacity-50" : ""
+        rowOpacityClass
       } ${isDragging ? "opacity-40" : ""}`}
+      ref={rowRef}
+      onClick={handleRowClick}
+      onBlurCapture={handleRowBlur}
+      {...dragRowProps}
+      draggable={!isEditing && dragRowProps.draggable}
       onDragEnd={onDragEnd}
     >
       <div className="flex items-center gap-3">
@@ -211,44 +373,92 @@ const AssetRow = ({
           ≡
         </div>
         <div className="flex-1">
-          <Input
-            placeholder="なまえ"
-            value={form.name}
-            onChange={(event) => handleChange({ name: event.target.value })}
-            onBlur={handleSave}
-            className="h-9 font-medium"
-          />
+          {isEditing ? (
+            <Input
+              placeholder="なまえ"
+              value={form.name}
+              onChange={(event) => handleChange({ name: event.target.value })}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  void handleSave().then((ok) => ok && onRequestClose());
+                }
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  handleCancel();
+                }
+              }}
+              className="h-9 font-medium"
+            />
+          ) : (
+            <div className="text-sm font-semibold">{form.name}</div>
+          )}
         </div>
       </div>
       
-      <div className="flex gap-2">
-        <Input
-          placeholder="しゅるい"
-          value={form.type}
-          onChange={(event) => handleChange({ type: event.target.value })}
-          onBlur={handleSave}
-          className="h-8 flex-1 min-w-0 text-xs"
-        />
-        <Input
-          placeholder="メモ"
-          value={form.note}
-          onChange={(event) => handleChange({ note: event.target.value })}
-          onBlur={handleSave}
-          className="h-8 flex-1 min-w-0 text-xs"
-        />
-      </div>
+      {isEditing ? (
+        <div className="flex gap-2">
+          <Input
+            placeholder="しゅるい"
+            value={form.type}
+            onChange={(event) => handleChange({ type: event.target.value })}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                void handleSave().then((ok) => ok && onRequestClose());
+              }
+              if (event.key === "Escape") {
+                event.preventDefault();
+                handleCancel();
+              }
+            }}
+            className="h-8 flex-1 min-w-0 text-xs"
+          />
+          <Input
+            placeholder="メモ"
+            value={form.note}
+            onChange={(event) => handleChange({ note: event.target.value })}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                void handleSave().then((ok) => ok && onRequestClose());
+              }
+              if (event.key === "Escape") {
+                event.preventDefault();
+                handleCancel();
+              }
+            }}
+            className="h-8 flex-1 min-w-0 text-xs"
+          />
+        </div>
+      ) : null}
 
       <div className="flex flex-col gap-2 pt-1">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground whitespace-nowrap">はじめのおかね</span>
-            <Input
-              type="number"
-              value={form.initialBalance}
-              onChange={(event) => handleChange({ initialBalance: event.target.value })}
-              onBlur={handleSave}
-              className="h-8 w-24 text-right text-xs"
-            />
+            {isEditing ? (
+              <Input
+                type="number"
+                value={form.initialBalance}
+                onChange={(event) => handleChange({ initialBalance: event.target.value })}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    void handleSave().then((ok) => ok && onRequestClose());
+                  }
+                  if (event.key === "Escape") {
+                    event.preventDefault();
+                    handleCancel();
+                  }
+                }}
+                className="h-8 w-24 text-right text-xs"
+              />
+            ) : (
+              <span className="text-xs font-semibold tabular-nums">
+                {formatJPY(Number(form.initialBalance || 0))}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground whitespace-nowrap">いまののこり</span>
@@ -259,29 +469,65 @@ const AssetRow = ({
               {formatJPY(asset.currentBalance)}
             </Link>
           </div>
-          <div className="flex items-center gap-4 ml-auto sm:ml-0">
-             <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.isActive}
-                onChange={(event) => {
-                  const next = event.target.checked;
-                  setForm({ ...form, isActive: next });
-                  onToggleActive(asset.id, next);
-                }}
-                className="translate-y-px"
-              />
-              ゆうこう
-            </label>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-rose-600 hover:text-rose-700"
-              onClick={() => onDelete(asset.id)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+          <div className="flex items-center gap-3 ml-auto sm:ml-0">
+            {isEditing ? (
+              <>
+                <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.isActive}
+                    onChange={(event) => {
+                      const next = event.target.checked;
+                      setForm({ ...form, isActive: next });
+                      onToggleActive(asset.id, next);
+                    }}
+                    className="translate-y-px"
+                  />
+                  ゆうこう
+                </label>
+                <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                void handleSave().then((ok) => ok && onRequestClose());
+                  }}
+                  aria-label="ほぞん"
+                >
+                  <Check className="h-4 w-4 text-emerald-600" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleCancel();
+                  }}
+                  aria-label="キャンセル"
+                >
+                  <X className="h-4 w-4 text-muted-foreground" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onDelete(asset.id);
+                  }}
+                  aria-label={`${asset.name} を けす`}
+                >
+                  <Trash2 className="h-4 w-4 text-rose-600" />
+                </Button>
+                </div>
+              </>
+            ) : null}
           </div>
         </div>
       </div>
@@ -307,6 +553,7 @@ export const AssetsSettingsPage = () => {
     note: "",
   });
   const [order, setOrder] = useState<string[]>([]);
+  const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
   const [savingCount, setSavingCount] = useState(0);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [indicatorIndex, setIndicatorIndex] = useState<number | null>(null);
@@ -318,6 +565,15 @@ export const AssetsSettingsPage = () => {
       .map((asset) => asset.id);
     setOrder(ids);
   }, [assets]);
+
+  useEffect(() => {
+    if (!editingAssetId) {
+      return;
+    }
+    if (!assets.some((asset) => asset.id === editingAssetId)) {
+      setEditingAssetId(null);
+    }
+  }, [assets, editingAssetId]);
 
   const orderedAssets = useMemo(() => {
     const list = [...assets].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
@@ -339,6 +595,11 @@ export const AssetsSettingsPage = () => {
   };
 
   const handleDragStart = (event: React.DragEvent<HTMLDivElement>, id: string) => {
+    const target = event.target as HTMLElement | null;
+    if (target && target.closest("input, textarea, select, button, a")) {
+      event.preventDefault();
+      return;
+    }
     event.dataTransfer.setData("text/plain", id);
     event.dataTransfer.effectAllowed = "move";
     setDraggingId(id);
@@ -491,6 +752,9 @@ export const AssetsSettingsPage = () => {
       });
       toast.success("いれものを けしたよ");
       queryClient.invalidateQueries({ queryKey: ["assets"] });
+      if (editingAssetId === id) {
+        setEditingAssetId(null);
+      }
     } catch (error) {
       toast.error((error as Error).message);
     }
@@ -599,15 +863,14 @@ export const AssetsSettingsPage = () => {
           </div>
         ) : (
           <div className="grid gap-1.5">
-            <div className="hidden md:grid grid-cols-[16px_minmax(200px,2fr)_minmax(140px,1fr)_minmax(200px,2fr)_120px_112px_64px_32px] items-center gap-2 px-3 text-xs text-muted-foreground">
+            <div className="hidden md:grid grid-cols-[16px_minmax(200px,2fr)_minmax(120px,1fr)_minmax(180px,2fr)_104px_48px_112px] items-center gap-2 px-3 text-xs text-muted-foreground">
               <span />
               <span>なまえ</span>
               <span>しゅるい</span>
               <span>メモ</span>
               <span>はじめのおかね</span>
+              <span />
               <span className="text-right">いまののこり</span>
-              <span className="text-center">ゆうこう</span>
-              <span className="text-center">けす</span>
             </div>
             {orderedAssets.map((asset, index) => (
               <div key={asset.id} className="grid gap-1.5">
@@ -631,6 +894,13 @@ export const AssetsSettingsPage = () => {
                     onDelete={handleDeleteAsset}
                     onDragEnd={handleDragEnd}
                     isDragging={draggingId === asset.id}
+                    isEditing={editingAssetId === asset.id}
+                    onRequestEdit={() => setEditingAssetId(asset.id)}
+                    onRequestClose={() => setEditingAssetId(null)}
+                    dragRowProps={{
+                      draggable: true,
+                      onDragStart: (event) => handleDragStart(event, asset.id),
+                    }}
                     dragHandleProps={{
                       draggable: true,
                       onDragStart: (event) => handleDragStart(event, asset.id),

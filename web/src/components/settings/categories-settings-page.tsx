@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Check, Trash2, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useCategories } from "@/lib/query";
@@ -29,6 +29,10 @@ const CategoryRow = ({
   onDeleteCategory,
   onDragEnd,
   isDragging,
+  isEditing,
+  onRequestEdit,
+  onRequestClose,
+  dragRowProps,
   dragHandleProps,
 }: {
   category: Category;
@@ -38,6 +42,13 @@ const CategoryRow = ({
   onDeleteCategory: (id: string) => void;
   onDragEnd: () => void;
   isDragging: boolean;
+  isEditing: boolean;
+  onRequestEdit: () => void;
+  onRequestClose: () => void;
+  dragRowProps: {
+    draggable: boolean;
+    onDragStart: (event: React.DragEvent<HTMLDivElement>) => void;
+  };
   dragHandleProps: {
     draggable: boolean;
     onDragStart: (event: React.DragEvent<HTMLDivElement>) => void;
@@ -47,6 +58,7 @@ const CategoryRow = ({
   const [name, setName] = useState(category.name);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSubmittedName, setLastSubmittedName] = useState<string | null>(null);
+  const rowRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setName(category.name);
@@ -54,18 +66,41 @@ const CategoryRow = ({
     setLastSubmittedName(null);
   }, [category]);
 
+  useEffect(() => {
+    if (!isEditing) {
+      return;
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") {
+        return;
+      }
+      event.preventDefault();
+      handleCancel();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isEditing]);
+
+  useEffect(() => {
+    if (isEditing) {
+      return;
+    }
+    setName(category.name);
+    setLastSubmittedName(null);
+  }, [category, isEditing]);
+
   const handleSave = async () => {
     if (isSaving) {
-      return;
+      return false;
     }
     const trimmed = name.trim();
     if (trimmed === "") {
       setName(category.name);
       toast.error("なまえを いれてね");
-      return;
+      return false;
     }
     if (trimmed === category.name || trimmed === lastSubmittedName) {
-      return;
+      return true;
     }
     setIsSaving(true);
     setLastSubmittedName(trimmed);
@@ -74,15 +109,61 @@ const CategoryRow = ({
     if (!ok) {
       setLastSubmittedName(null);
       setName(category.name);
+      return false;
+    }
+    return true;
+  };
+
+  const handleRowClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (isEditing) {
       return;
     }
+    const target = event.target as HTMLElement | null;
+    if (target && target.closest("input, textarea, select, button, a, label")) {
+      return;
+    }
+    onRequestEdit();
   };
+
+  const handleRowBlur = () => {
+    window.setTimeout(async () => {
+      if (!rowRef.current) {
+        return;
+      }
+      if (rowRef.current.contains(document.activeElement)) {
+        return;
+      }
+      if (!isEditing) {
+        return;
+      }
+      if (isSaving || lastSubmittedName !== null) {
+        return;
+      }
+      if (name.trim() !== category.name) {
+        return;
+      }
+      onRequestClose();
+    }, 0);
+  };
+
+  const handleCancel = () => {
+    setName(category.name);
+    setLastSubmittedName(null);
+    onRequestClose();
+  };
+
+  const rowOpacityClass = inactive ? (isEditing ? "opacity-50" : "opacity-30") : "";
 
   return (
     <div
-      className={`grid grid-cols-[1fr_72px_40px] items-center gap-2 rounded-lg border px-3 py-0.5 text-sm ${
-        inactive ? "opacity-50" : ""
+      className={`grid grid-cols-[1fr_72px_112px] items-center gap-2 rounded-lg border px-3 py-0.5 text-sm ${
+        rowOpacityClass
       } ${isDragging ? "opacity-40" : ""}`}
+      ref={rowRef}
+      onClick={handleRowClick}
+      onBlurCapture={handleRowBlur}
+      {...dragRowProps}
+      draggable={!isEditing && dragRowProps.draggable}
       onDragEnd={onDragEnd}
     >
       <div className="flex items-center gap-2">
@@ -93,38 +174,82 @@ const CategoryRow = ({
         >
           ≡
         </div>
-        <Input
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          className="h-8"
-          onBlur={() => void handleSave()}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-              void handleSave();
-            }
-          }}
-        />
+        {isEditing ? (
+          <Input
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            className="h-8"
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                void handleSave().then((ok) => ok && onRequestClose());
+              }
+              if (event.key === "Escape") {
+                event.preventDefault();
+                handleCancel();
+              }
+            }}
+          />
+        ) : (
+          <span className="text-sm font-medium">{name}</span>
+        )}
       </div>
+      {isEditing ? (
+        <div className="flex items-center justify-center">
+          <input
+            type="checkbox"
+            checked={category.isActive}
+            onChange={(event) => onToggleActive(category.id, event.target.checked)}
+            aria-label={`${CATEGORY_KIND_LABEL[kind]} ${category.name}`}
+          />
+        </div>
+      ) : (
+        <div />
+      )}
       <div className="flex items-center justify-center">
-        <input
-          type="checkbox"
-          checked={category.isActive}
-          onChange={(event) => onToggleActive(category.id, event.target.checked)}
-          aria-label={`${CATEGORY_KIND_LABEL[kind]} ${category.name}`}
-        />
-      </div>
-      <div className="flex items-center justify-center">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-rose-600 hover:text-rose-700"
-          onClick={() => onDeleteCategory(category.id)}
-          aria-label={`${category.name} を けす`}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        {isEditing ? (
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={(event) => {
+                event.stopPropagation();
+                void handleSave().then((ok) => ok && onRequestClose());
+              }}
+              aria-label="ほぞん"
+            >
+              <Check className="h-4 w-4 text-emerald-600" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleCancel();
+              }}
+              aria-label="キャンセル"
+            >
+              <X className="h-4 w-4 text-muted-foreground" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={(event) => {
+                event.stopPropagation();
+                onDeleteCategory(category.id);
+              }}
+              aria-label={`${category.name} を けす`}
+            >
+              <Trash2 className="h-4 w-4 text-rose-600" />
+            </Button>
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -140,6 +265,8 @@ const CategoryList = ({
   onUpdateCategory,
   onDeleteCategory,
   onMoveAcross,
+  editingId,
+  onEditingChange,
 }: {
   kind: CategoryKind;
   categories: Category[];
@@ -155,6 +282,8 @@ const CategoryList = ({
     toKind: CategoryKind,
     insertIndex: number
   ) => Promise<void>;
+  editingId: string | null;
+  onEditingChange: (next: string | null) => void;
 }) => {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [indicatorIndex, setIndicatorIndex] = useState<number | null>(null);
@@ -175,6 +304,11 @@ const CategoryList = ({
   }, [categories, kind, order]);
 
   const handleDragStart = (event: React.DragEvent<HTMLDivElement>, id: string) => {
+    const target = event.target as HTMLElement | null;
+    if (target && target.closest("input, textarea, select, button, a")) {
+      event.preventDefault();
+      return;
+    }
     event.dataTransfer.setData("text/plain", `${kind}:${id}`);
     event.dataTransfer.effectAllowed = "move";
     setDraggingId(id);
@@ -247,10 +381,10 @@ const CategoryList = ({
 
   return (
     <div className="grid gap-0.5">
-      <div className="grid grid-cols-[1fr_72px_40px] items-center gap-2 px-3 text-base">
+      <div className="grid grid-cols-[1fr_72px_112px] items-center gap-2 px-3 text-base">
         <span>{CATEGORY_KIND_LABEL[kind]}</span>
-        <span className="text-center">ゆうこう</span>
-        <span className="text-center">けす</span>
+        <span />
+        <span />
       </div>
       {ordered.length === 0 ? (
         <div
@@ -287,6 +421,13 @@ const CategoryList = ({
                   onDeleteCategory={onDeleteCategory}
                   onDragEnd={handleDragEnd}
                   isDragging={draggingId === category.id}
+                  isEditing={editingId === category.id}
+                  onRequestEdit={() => onEditingChange(category.id)}
+                  onRequestClose={() => onEditingChange(null)}
+                  dragRowProps={{
+                    draggable: true,
+                    onDragStart: (event) => handleDragStart(event, category.id),
+                  }}
                   dragHandleProps={{
                     draggable: true,
                     onDragStart: (event) => handleDragStart(event, category.id),
@@ -320,6 +461,7 @@ export const CategoriesSettingsPage = () => {
   });
   const [expenseOrder, setExpenseOrder] = useState<string[]>([]);
   const [incomeOrder, setIncomeOrder] = useState<string[]>([]);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [savingCount, setSavingCount] = useState(0);
   const isSaving = savingCount > 0;
 
@@ -339,6 +481,15 @@ export const CategoriesSettingsPage = () => {
     setExpenseOrder(expenseIds);
     setIncomeOrder(incomeIds);
   }, [categories]);
+
+  useEffect(() => {
+    if (!editingCategoryId) {
+      return;
+    }
+    if (!categories.some((category) => category.id === editingCategoryId)) {
+      setEditingCategoryId(null);
+    }
+  }, [categories, editingCategoryId]);
 
   const runSaving = async (fn: () => Promise<void>) => {
     setSavingCount((count) => count + 1);
@@ -445,6 +596,9 @@ export const CategoriesSettingsPage = () => {
         await api.deleteCategory(token, id);
       });
       queryClient.invalidateQueries({ queryKey: ["categories"] });
+      if (editingCategoryId === id) {
+        setEditingCategoryId(null);
+      }
     } catch (error) {
       toast.error((error as Error).message);
     }
@@ -634,6 +788,8 @@ export const CategoriesSettingsPage = () => {
             onUpdateCategory={handleUpdateCategory}
             onDeleteCategory={handleDeleteCategory}
             onMoveAcross={handleMoveAcross}
+            editingId={editingCategoryId}
+            onEditingChange={setEditingCategoryId}
           />
           <CategoryList
             kind="income"
@@ -645,6 +801,8 @@ export const CategoriesSettingsPage = () => {
             onUpdateCategory={handleUpdateCategory}
             onDeleteCategory={handleDeleteCategory}
             onMoveAcross={handleMoveAcross}
+            editingId={editingCategoryId}
+            onEditingChange={setEditingCategoryId}
           />
         </div>
       </div>

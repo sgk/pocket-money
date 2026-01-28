@@ -997,9 +997,14 @@ export const LedgerTable = ({
   };
 
   const handleDragStart = (
-    event: React.DragEvent<HTMLSpanElement>,
+    event: React.DragEvent<HTMLElement>,
     txId: string
   ) => {
+    const target = event.target as HTMLElement | null;
+    if (target && target.closest("input, textarea, select, button, a")) {
+      event.preventDefault();
+      return;
+    }
     event.dataTransfer.setData("text/plain", txId);
     event.dataTransfer.effectAllowed = "move";
     setDraggingId(txId);
@@ -1186,12 +1191,17 @@ export const LedgerTable = ({
                     setSelectedId(row.original.id);
                     setEditingId(row.original.id);
                   }}
+                  draggable
+                  onDragStart={(event) =>
+                    handleDragStart(event, row.original.id)
+                  }
                   onDragOver={(event) =>
                     handleDragOverRow(event, dateKey, indexInGroup)
                   }
                   onDrop={(event) =>
                     handleDropOnRow(event, dateKey, indexInGroup)
                   }
+                  onDragEnd={handleDragEnd}
                 >
                   <td colSpan={table.getAllLeafColumns().length} className="p-0">
                     <div className="ledger-mobile-card">
@@ -1199,7 +1209,6 @@ export const LedgerTable = ({
                         <div className="ledger-mobile-item ledger-mobile-date">
                           <span
                             className="ledger-handle cursor-grab text-muted-foreground"
-                            draggable
                             onDragStart={(event) =>
                               handleDragStart(event, row.original.id)
                             }
@@ -1260,12 +1269,17 @@ export const LedgerTable = ({
                   setSelectedId(row.original.id);
                   setEditingId(row.original.id);
                 }}
+                draggable
+                onDragStart={(event) =>
+                  handleDragStart(event, row.original.id)
+                }
                 onDragOver={(event) =>
                   handleDragOverRow(event, dateKey, indexInGroup)
                 }
                 onDrop={(event) =>
                   handleDropOnRow(event, dateKey, indexInGroup)
                 }
+                onDragEnd={handleDragEnd}
               >
                 {row.getVisibleCells().map((cell) => {
                   const label =
@@ -1292,7 +1306,6 @@ export const LedgerTable = ({
                         <div className="flex items-center gap-2">
                           <span
                             className="ledger-handle cursor-grab text-muted-foreground"
-                            draggable
                             onDragStart={(event) =>
                               handleDragStart(event, row.original.id)
                             }
