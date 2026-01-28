@@ -29,6 +29,9 @@
   - 先にフロントをビルドしてから、FastAPIを起動します
   - アクセス先: `http://localhost:8000/`
 
+## UI仕様
+- 画面ごとの重要な仕様は `docs/UI_SPEC.md` にまとめています
+
 ### Cloud Runへデプロイ
 - `.env` に `CLOUD_RUN_SERVICE` と `CLOUD_RUN_REGION` を追加
 - `make deploy` を実行
