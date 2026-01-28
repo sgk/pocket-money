@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { useInvalidateLedger } from "@/lib/query";
 import { Topbar } from "@/components/layout/topbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -9,6 +10,7 @@ import { toast } from "@/components/ui/toast";
 
 export const DataSettingsPage = () => {
   const { token, logout } = useAuth();
+  const invalidate = useInvalidateLedger();
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isDeletingData, setIsDeletingData] = useState(false);
@@ -179,6 +181,7 @@ export const DataSettingsPage = () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await api.importTransactions(token, json as any);
       toast.success("インポートしました");
+      invalidate();
     } catch (e) {
       toast.error("インポートに失敗しました: " + (e instanceof Error ? e.message : "Unkown error"));
       console.error(e);
