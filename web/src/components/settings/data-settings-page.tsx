@@ -16,7 +16,9 @@ export const DataSettingsPage = () => {
   const [isDeletingData, setIsDeletingData] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isExportingCsv, setIsExportingCsv] = useState(false);
+  const [isDragActive, setIsDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragCounter = useRef(0);
 
   const jsonToCsv = (items: any[]) => {
     if (items.length === 0) return "";
@@ -150,10 +152,8 @@ export const DataSettingsPage = () => {
     }
   };
 
-  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportFile = async (file: File) => {
     if (!token) return;
-    const file = event.target.files?.[0];
-    if (!file) return;
 
     if (!window.confirm("これまでのデータに追加で読み込みます。IDが重複するデータはスキップされます。よろしいですか？")) {
         if (fileInputRef.current) fileInputRef.current.value = "";
@@ -189,6 +189,55 @@ export const DataSettingsPage = () => {
       setIsImporting(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  };
+
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    await handleImportFile(file);
+  };
+
+  const handleDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    if (!event.dataTransfer?.types?.includes("Files")) {
+      return;
+    }
+    dragCounter.current += 1;
+    setIsDragActive(true);
+  };
+
+  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    dragCounter.current -= 1;
+    if (dragCounter.current <= 0) {
+      dragCounter.current = 0;
+      setIsDragActive(false);
+    }
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    if (!event.dataTransfer?.types?.includes("Files")) {
+      return;
+    }
+    event.dataTransfer.dropEffect = "copy";
+    if (!isDragActive) {
+      setIsDragActive(true);
+    }
+  };
+
+  const handleDrop = async (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    dragCounter.current = 0;
+    setIsDragActive(false);
+    if (isImporting) {
+      return;
+    }
+    const file = event.dataTransfer?.files?.[0];
+    if (!file) {
+      return;
+    }
+    await handleImportFile(file);
   };
 
   const handleDeleteAll = async () => {
@@ -245,13 +294,20 @@ export const DataSettingsPage = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card
+            className={isDragActive ? "border-primary/60 ring-2 ring-primary/30 bg-primary/5" : undefined}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+          >
             <CardHeader>
               <CardTitle>インポート (JSON / CSV)</CardTitle>
               <CardDescription>
                 JSONまたはCSVファイルから取引データを読み込みます。
                 ファイル形式は拡張子で自動判別されます。
                 既存のデータと同じIDを持つ記録はスキップされ、重複を防ぎます。
+                ファイルはこのカードへドラッグ&ドロップでも読み込めます。
               </CardDescription>
             </CardHeader>
             <CardContent>
