@@ -124,6 +124,14 @@ export const grade1Texts = defineTexts({
   personalSettingsGradeDescription: text("学年にあわせて ことばが かわるよ"),
   personalSettingsGradeLabel: text("いまの学年"),
   personalSettingsGradeNote: text("4月1日をすぎて はじめて ひらいたときに ひとつ すすむよ"),
+  gradeOptionKinder: text("幼稚園以下"),
+  gradeOptionGrade1: text("小学校1年生"),
+  gradeOptionGrade2: text("小学校2年生"),
+  gradeOptionGrade3: text("小学校3年生"),
+  gradeOptionGrade4: text("小学校4年生"),
+  gradeOptionGrade5: text("小学校5年生"),
+  gradeOptionGrade6: text("小学校6年生"),
+  gradeOptionUpper: text("中学生以上"),
 
   // いれもの設定
   assetsSettingsTitle: text("いれもの設定"),

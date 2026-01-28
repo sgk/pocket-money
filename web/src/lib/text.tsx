@@ -35,6 +35,17 @@ const TEXTS: Record<Grade, TextDictionary> = {
   upper: upperTexts,
 };
 
+const GRADE_OPTION_LABEL_KEYS: Record<Grade, TextKey> = {
+  kinder: "gradeOptionKinder",
+  grade1: "gradeOptionGrade1",
+  grade2: "gradeOptionGrade2",
+  grade3: "gradeOptionGrade3",
+  grade4: "gradeOptionGrade4",
+  grade5: "gradeOptionGrade5",
+  grade6: "gradeOptionGrade6",
+  upper: "gradeOptionUpper",
+};
+
 type TextContextValue = {
   grade: Grade;
   setGrade: (grade: Grade) => void;
@@ -108,4 +119,10 @@ export const useText = () => {
   return ctx;
 };
 
-export const useGradeOptions = () => GRADE_OPTIONS;
+export const useGradeOptions = () => {
+  const { t } = useText();
+  return GRADE_OPTIONS.map((option) => ({
+    value: option.value,
+    label: t(GRADE_OPTION_LABEL_KEYS[option.value]),
+  }));
+};
