@@ -28,13 +28,4 @@ fi
 mkdir -p .gcloud
 export CLOUDSDK_CONFIG="$(pwd)/.gcloud"
 
-if [ -f ".env" ]; then
-  set -a
-  # shellcheck disable=SC1091
-  source .env
-  set +a
-else
-  echo ".env not found. Copy from .env.example and fill values." >&2
-fi
-
 eval "$_OLD_SHELL_OPTS"

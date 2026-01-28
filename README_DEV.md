@@ -28,6 +28,12 @@
 - `make run`
   - 先にフロントをビルドしてから、FastAPIを起動します
   - アクセス先: `http://localhost:8000/`
+  - `.env` は `make run` の中で読み込みます
+
+### シェルの準備
+- `source activate.sh`
+  - Python venv と GCP CLI の設定のみを行います
+  - `.env` は読み込みません
 
 ## UI仕様
 - 画面ごとの重要な仕様は `docs/UI_SPEC.md` にまとめています

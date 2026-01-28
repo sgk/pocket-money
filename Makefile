@@ -5,6 +5,8 @@ web-build:
 	npm --prefix web run build
 
 run: web-build
+	@if [ ! -f .env ]; then echo ".env ファイルが見つかりません"; exit 1; fi
+	@set -a; . ./.env; set +a; \
 	uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 deploy:
