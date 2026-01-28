@@ -15,13 +15,13 @@ import {
   type Grade,
 } from "@/lib/grade";
 import { kinderTexts } from "@/lib/texts/kinder";
-import { grade1Texts, type TextDictionary, type TextKey } from "@/lib/texts/grade1";
+import { grade1Texts } from "@/lib/texts/grade1";
 import { grade2Texts } from "@/lib/texts/grade2";
 import { grade3Texts } from "@/lib/texts/grade3";
 import { grade4Texts } from "@/lib/texts/grade4";
 import { grade5Texts } from "@/lib/texts/grade5";
 import { grade6Texts } from "@/lib/texts/grade6";
-import { upperTexts } from "@/lib/texts/upper";
+import { upperTexts, type TextDictionary, type TextKey } from "@/lib/texts/upper";
 import type { TextParams } from "@/lib/texts/helpers";
 
 const TEXTS: Record<Grade, TextDictionary> = {

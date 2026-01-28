@@ -1,7 +1,6 @@
 import { defineTexts, type TextEntry } from "./helpers";
-import { grade5Texts } from "./grade5";
-import type { TextKey } from "./grade1";
+import { upperTexts, type TextKey } from "./upper";
 
 export const grade6Texts = defineTexts<Record<TextKey, TextEntry>>({
-  ...grade5Texts,
+  ...upperTexts,
 });

@@ -1,6 +1,9 @@
 import { defineTexts, text, textWith, type TextEntry } from "./helpers";
+import { grade3Texts } from "./grade3";
+import type { TextKey } from "./upper";
 
-export const grade1Texts = defineTexts({
+export const grade1Texts = defineTexts<Record<TextKey, TextEntry>>({
+  ...grade3Texts,
   // 共通
   appTitle: text("おこづかいノート"),
   loading: text("じゅんびちゅう..."),
@@ -220,6 +223,3 @@ export const grade1Texts = defineTexts({
   toastDeleteAccountSuccess: text("退会しました"),
   toastDeleteAccountError: text("退会に失敗しました"),
 });
-
-export type TextKey = keyof typeof grade1Texts;
-export type TextDictionary = Record<TextKey, TextEntry>;
