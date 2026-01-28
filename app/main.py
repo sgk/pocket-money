@@ -22,14 +22,6 @@ from app.core.errors import (
 app = FastAPI(title="Pocket Money API", version="0.1.0")
 
 
-@app.middleware("http")
-async def add_coop_header(request, call_next):
-    response = await call_next(request)
-    # GIS ポップアップが postMessage できるように COOP を緩和する
-    response.headers.setdefault("Cross-Origin-Opener-Policy", "same-origin-allow-popups")
-    return response
-
-
 @app.get("/healthz")
 def healthz():
     return "ok"
