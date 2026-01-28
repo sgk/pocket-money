@@ -289,6 +289,7 @@ const CategoryList = ({
 }) => {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [indicatorIndex, setIndicatorIndex] = useState<number | null>(null);
+  const dragCounter = useRef(0);
 
   const ordered = useMemo(() => {
     const list = categories
@@ -316,6 +317,41 @@ const CategoryList = ({
     setDraggingId(id);
   };
 
+  const resetDragState = () => {
+    setDraggingId(null);
+    setIndicatorIndex(null);
+    dragCounter.current = 0;
+  };
+
+  useEffect(() => {
+    const handleDragEnd = () => resetDragState();
+    window.addEventListener("dragend", handleDragEnd);
+    window.addEventListener("drop", handleDragEnd);
+    return () => {
+      window.removeEventListener("dragend", handleDragEnd);
+      window.removeEventListener("drop", handleDragEnd);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") {
+        return;
+      }
+      resetDragState();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const isNoopDrop = (dragId: string, insertIndex: number) => {
+    const fromIndex = ordered.findIndex((item) => item.id === dragId);
+    if (fromIndex < 0) {
+      return false;
+    }
+    return insertIndex === fromIndex || insertIndex === fromIndex + 1;
+  };
+
   const handleDropAt = async (
     dragKind: CategoryKind,
     dragId: string,
@@ -324,6 +360,9 @@ const CategoryList = ({
   ) => {
     setIndicatorIndex(null);
     if (sameKind) {
+      if (isNoopDrop(dragId, insertIndex)) {
+        return;
+      }
       const next = [...ordered];
       const fromIndex = next.findIndex((item) => item.id === dragId);
       if (fromIndex < 0) {
@@ -352,6 +391,10 @@ const CategoryList = ({
 
   const handleDragOverSlot = (event: React.DragEvent<HTMLDivElement>, index: number) => {
     event.preventDefault();
+    if (draggingId && isNoopDrop(draggingId, index)) {
+      setIndicatorIndex(null);
+      return;
+    }
     setIndicatorIndex(index);
   };
 
@@ -359,7 +402,12 @@ const CategoryList = ({
     event.preventDefault();
     const bounds = event.currentTarget.getBoundingClientRect();
     const before = event.clientY - bounds.top < bounds.height / 2;
-    setIndicatorIndex(before ? index : index + 1);
+    const insertIndex = before ? index : index + 1;
+    if (draggingId && isNoopDrop(draggingId, insertIndex)) {
+      setIndicatorIndex(null);
+      return;
+    }
+    setIndicatorIndex(insertIndex);
   };
 
   const handleDropOnRow = async (event: React.DragEvent<HTMLDivElement>, index: number) => {
@@ -373,16 +421,36 @@ const CategoryList = ({
     const bounds = event.currentTarget.getBoundingClientRect();
     const before = event.clientY - bounds.top < bounds.height / 2;
     const insertIndex = before ? index : index + 1;
+    if (dragKind === kind && isNoopDrop(dragId, insertIndex)) {
+      setIndicatorIndex(null);
+      return;
+    }
     await handleDropAt(dragKind, dragId, insertIndex, dragKind === kind);
   };
 
   const handleDragEnd = () => {
-    setDraggingId(null);
-    setIndicatorIndex(null);
+    resetDragState();
+  };
+
+  const handleDragEnterList = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    dragCounter.current += 1;
+  };
+
+  const handleDragLeaveList = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    dragCounter.current -= 1;
+    if (dragCounter.current <= 0) {
+      resetDragState();
+    }
   };
 
   return (
-    <div className="grid gap-0.5">
+    <div
+      className="grid gap-0.5"
+      onDragEnter={handleDragEnterList}
+      onDragLeave={handleDragLeaveList}
+    >
       <div className="grid grid-cols-[1fr_72px_112px] items-center gap-2 px-3 text-base">
         <span>{CATEGORY_KIND_LABEL[kind]}</span>
         <span />

@@ -609,8 +609,19 @@ export const AssetsSettingsPage = () => {
     setDraggingId(id);
   };
 
+  const isNoopDrop = (dragId: string, insertIndex: number) => {
+    const fromIndex = orderedAssets.findIndex((item) => item.id === dragId);
+    if (fromIndex < 0) {
+      return false;
+    }
+    return insertIndex === fromIndex || insertIndex === fromIndex + 1;
+  };
+
   const handleDropAt = async (dragId: string, insertIndex: number) => {
     setIndicatorIndex(null);
+    if (isNoopDrop(dragId, insertIndex)) {
+      return;
+    }
     const next = [...orderedAssets];
     const fromIndex = next.findIndex((item) => item.id === dragId);
     if (fromIndex < 0) {
@@ -634,6 +645,10 @@ export const AssetsSettingsPage = () => {
 
   const handleDragOverSlot = (event: React.DragEvent<HTMLDivElement>, index: number) => {
     event.preventDefault();
+    if (draggingId && isNoopDrop(draggingId, index)) {
+      setIndicatorIndex(null);
+      return;
+    }
     setIndicatorIndex(index);
   };
 
@@ -641,7 +656,12 @@ export const AssetsSettingsPage = () => {
     event.preventDefault();
     const bounds = event.currentTarget.getBoundingClientRect();
     const before = event.clientY - bounds.top < bounds.height / 2;
-    setIndicatorIndex(before ? index : index + 1);
+    const insertIndex = before ? index : index + 1;
+    if (draggingId && isNoopDrop(draggingId, insertIndex)) {
+      setIndicatorIndex(null);
+      return;
+    }
+    setIndicatorIndex(insertIndex);
   };
 
   const handleDropOnRow = async (event: React.DragEvent<HTMLDivElement>, index: number) => {
@@ -653,6 +673,10 @@ export const AssetsSettingsPage = () => {
     const bounds = event.currentTarget.getBoundingClientRect();
     const before = event.clientY - bounds.top < bounds.height / 2;
     const insertIndex = before ? index : index + 1;
+    if (isNoopDrop(dragId, insertIndex)) {
+      setIndicatorIndex(null);
+      return;
+    }
     await handleDropAt(dragId, insertIndex);
   };
 
