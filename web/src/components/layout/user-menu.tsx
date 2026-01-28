@@ -6,16 +6,20 @@ import { useBootstrap } from "@/lib/query";
 
 type UserMenuProps = {
   compact?: boolean;
+  isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
 };
 
-export const UserMenu = ({ compact = false, onOpenChange }: UserMenuProps) => {
+export const UserMenu = ({ compact = false, isOpen, onOpenChange }: UserMenuProps) => {
   const { logout } = useAuth();
   const { data } = useBootstrap();
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const isControlled = isOpen !== undefined;
+  const open = isControlled ? isOpen : internalOpen;
 
   const email = data?.profile?.email?.trim();
   const displayName = data?.profile?.displayName?.trim();
@@ -28,8 +32,11 @@ export const UserMenu = ({ compact = false, onOpenChange }: UserMenuProps) => {
   }, [photoUrl]);
 
   useEffect(() => {
-    onOpenChange?.(open);
-  }, [open, onOpenChange]);
+    if (isControlled) {
+      return;
+    }
+    onOpenChange?.(internalOpen);
+  }, [internalOpen, isControlled, onOpenChange]);
 
   useEffect(() => {
     const handler = (event: MouseEvent) => {
@@ -37,12 +44,16 @@ export const UserMenu = ({ compact = false, onOpenChange }: UserMenuProps) => {
         return;
       }
       if (!menuRef.current.contains(event.target as Node)) {
-        setOpen(false);
+        if (isControlled) {
+          onOpenChange?.(false);
+        } else {
+          setInternalOpen(false);
+        }
       }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  }, [isControlled, onOpenChange]);
 
   const handleLogout = () => {
     logout();
@@ -54,7 +65,13 @@ export const UserMenu = ({ compact = false, onOpenChange }: UserMenuProps) => {
       <button
         type="button"
         className="rounded-full transition hover:bg-secondary/60"
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={() => {
+          if (isControlled) {
+            onOpenChange?.(!open);
+            return;
+          }
+          setInternalOpen((prev) => !prev);
+        }}
         aria-label={label}
       >
         {photoUrl && !imageError ? (

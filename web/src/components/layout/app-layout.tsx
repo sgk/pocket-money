@@ -6,8 +6,17 @@ import { UserMenu } from "@/components/layout/user-menu";
 
 export const AppLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
-  const toggleSidebar = () => setSidebarOpen((prev) => !prev);
+  const toggleSidebar = () => {
+    setSidebarOpen((prev) => {
+      const next = !prev;
+      if (next) {
+        setUserMenuOpen(false);
+      }
+      return next;
+    });
+  };
   const closeSidebar = () => {
     setSidebarOpen(false);
     menuButtonRef.current?.focus();
@@ -27,7 +36,16 @@ export const AppLayout = () => {
             {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
           <div className="font-display text-lg leading-none">おこづかいノート</div>
-          <UserMenu compact />
+          <UserMenu
+            compact
+            isOpen={userMenuOpen}
+            onOpenChange={(open) => {
+              setUserMenuOpen(open);
+              if (open) {
+                setSidebarOpen(false);
+              }
+            }}
+          />
         </header>
 
         <div className="flex h-full flex-1 min-h-0 min-[1200px]:flex-row">
