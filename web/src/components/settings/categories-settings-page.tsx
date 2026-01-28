@@ -323,6 +323,11 @@ const CategoryList = ({
     dragCounter.current = 0;
   };
 
+  const clearIndicator = () => {
+    setIndicatorIndex(null);
+    dragCounter.current = 0;
+  };
+
   useEffect(() => {
     const handleDragEnd = () => resetDragState();
     window.addEventListener("dragend", handleDragEnd);
@@ -441,7 +446,7 @@ const CategoryList = ({
     event.preventDefault();
     dragCounter.current -= 1;
     if (dragCounter.current <= 0) {
-      resetDragState();
+      clearIndicator();
     }
   };
 
