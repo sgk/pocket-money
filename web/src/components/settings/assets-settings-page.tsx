@@ -472,7 +472,7 @@ const AssetRow = ({
           <div className="flex items-center gap-3 ml-auto sm:ml-0">
             {isEditing ? (
               <>
-                <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                <label className="flex items-center text-xs text-muted-foreground cursor-pointer">
                   <input
                     type="checkbox"
                     checked={form.isActive}
@@ -482,8 +482,8 @@ const AssetRow = ({
                       onToggleActive(asset.id, next);
                     }}
                     className="translate-y-px"
+                    aria-label="ゆうこう"
                   />
-                  ゆうこう
                 </label>
                 <div className="flex items-center gap-1">
                   <Button
@@ -803,14 +803,14 @@ export const AssetsSettingsPage = () => {
       />
 
       <div
-        className="sticky z-20 -mx-4 border-b bg-card px-4 pb-2 pt-2 backdrop-blur md:-mx-6 md:px-6"
+        className="sticky z-20 -mx-4 border-b bg-card px-4 pb-1 pt-1 backdrop-blur md:-mx-6 md:px-6"
         style={{ top: topbarHeight }}
       >
-        <Card className="shrink-0">
-        <CardHeader className="pb-2 md:pb-0 pt-3 px-4 md:px-6">
-          <CardTitle className="text-base leading-none">あたらしい いれもの</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-2 px-4 pb-3 md:flex md:items-center">
+        <div className="shrink-0">
+        <div className="pb-1 md:pb-0 pt-2">
+          <div className="text-base font-semibold leading-none">あたらしい いれもの</div>
+        </div>
+        <div className="grid gap-2 pb-2 md:flex md:items-center">
           <div className="flex gap-2 md:contents">
              <Input
                 placeholder="なまえ"
@@ -846,11 +846,11 @@ export const AssetsSettingsPage = () => {
               ついか
             </Button>
           </div>
-        </CardContent>
-        </Card>
+        </div>
+        </div>
       </div>
 
-      <div className="flex-1 min-h-0 pt-4">
+      <div className="flex-1 min-h-0 pt-2">
         {orderedAssets.length === 0 ? (
           <div
             className={`rounded-lg border border-dashed p-4 text-sm text-muted-foreground ${

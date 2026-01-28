@@ -726,14 +726,14 @@ export const CategoriesSettingsPage = () => {
       />
 
       <div
-        className="sticky z-20 -mx-4 border-b bg-card px-4 pb-3 pt-3 backdrop-blur md:-mx-6 md:px-6"
+        className="sticky z-20 -mx-4 border-b bg-card px-4 pb-2 pt-2 backdrop-blur md:-mx-6 md:px-6"
         style={{ top: topbarHeight }}
       >
-        <Card className="shrink-0">
-        <CardHeader>
-          <CardTitle className="text-base">あたらしい つかいみち</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3 grid-cols-[auto_1fr_auto] items-center">
+        <div className="shrink-0">
+        <div className="pb-1">
+          <div className="text-base font-semibold">あたらしい つかいみち</div>
+        </div>
+        <div className="grid gap-3 grid-cols-[auto_1fr_auto] items-center">
           <div className="flex items-center">
             <div className="inline-flex overflow-hidden rounded-md border border-input">
               <Button
@@ -772,8 +772,8 @@ export const CategoriesSettingsPage = () => {
           <div className="flex justify-end">
             <Button onClick={handleCreate}>ついか</Button>
           </div>
-        </CardContent>
-        </Card>
+        </div>
+        </div>
       </div>
 
       <div className="flex-1 min-h-0 pt-4">
