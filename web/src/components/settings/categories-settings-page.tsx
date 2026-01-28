@@ -153,6 +153,7 @@ const CategoryRow = ({
   };
 
   const rowOpacityClass = inactive ? (isEditing ? "opacity-50" : "opacity-30") : "";
+  const isSaveDisabled = name.trim() === "";
 
   return (
     <div
@@ -219,6 +220,7 @@ const CategoryRow = ({
                 void handleSave().then((ok) => ok && onRequestClose());
               }}
               aria-label="ほぞん"
+              disabled={isSaveDisabled}
             >
               <Check className="h-4 w-4 text-emerald-600" />
             </Button>
@@ -464,6 +466,7 @@ export const CategoriesSettingsPage = () => {
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [savingCount, setSavingCount] = useState(0);
   const isSaving = savingCount > 0;
+  const canCreate = Boolean(newCategory.name.trim());
 
   useEffect(() => {
     const expenseIds = categories
@@ -770,7 +773,9 @@ export const CategoriesSettingsPage = () => {
             onChange={(event) => setNewCategory({ ...newCategory, name: event.target.value })}
           />
           <div className="flex justify-end">
-            <Button onClick={handleCreate}>ついか</Button>
+            <Button onClick={handleCreate} disabled={!canCreate || isSaving}>
+              ついか
+            </Button>
           </div>
         </div>
         </div>

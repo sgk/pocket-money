@@ -180,6 +180,7 @@ const AssetRow = ({
   };
 
   const rowOpacityClass = inactive ? (isEditing ? "opacity-50" : "opacity-30") : "";
+  const isSaveDisabled = !form.name.trim();
 
   const DesktopRow = (
     <div
@@ -310,6 +311,7 @@ const AssetRow = ({
                 void handleSave().then((ok) => ok && onRequestClose());
               }}
               aria-label="ほぞん"
+              disabled={isSaveDisabled}
             >
               <Check className="h-4 w-4 text-emerald-600" />
             </Button>
@@ -496,6 +498,7 @@ const AssetRow = ({
                 void handleSave().then((ok) => ok && onRequestClose());
                   }}
                   aria-label="ほぞん"
+                  disabled={isSaveDisabled}
                 >
                   <Check className="h-4 w-4 text-emerald-600" />
                 </Button>
@@ -558,6 +561,7 @@ export const AssetsSettingsPage = () => {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [indicatorIndex, setIndicatorIndex] = useState<number | null>(null);
   const isSaving = savingCount > 0;
+  const canCreate = Boolean(newAsset.name.trim());
 
   useEffect(() => {
     const ids = [...assets]
@@ -842,7 +846,7 @@ export const AssetsSettingsPage = () => {
               }
               className="w-24 text-right"
             />
-            <Button onClick={handleCreate} className="w-auto">
+            <Button onClick={handleCreate} className="w-auto" disabled={!canCreate || isSaving}>
               ついか
             </Button>
           </div>

@@ -119,6 +119,12 @@ const EditableRow = ({
         : ""
       : "";
 
+  const hasAmount = form.amount.trim() !== "" && !Number.isNaN(Number(form.amount));
+  const isSaveDisabled =
+    form.type === "transfer"
+      ? !form.fromAssetName?.trim() || !form.toAssetName?.trim() || !hasAmount
+      : !form.assetName?.trim() || !form.categoryName?.trim() || !hasAmount;
+
   const selectableAssets = useMemo(() => {
     const existing = new Set(assets.map((asset) => asset.name));
     const extraAssets: Asset[] = [];
@@ -534,7 +540,7 @@ const EditableRow = ({
               variant="ghost"
               size="icon"
               onClick={handleSave}
-              disabled={isSaving}
+              disabled={isSaving || isSaveDisabled}
               aria-label="ほぞん"
               className="h-7 w-7"
             >
@@ -575,7 +581,7 @@ const EditableRow = ({
             variant="ghost"
             size="icon"
             onClick={handleSave}
-            disabled={isSaving}
+            disabled={isSaving || isSaveDisabled}
             aria-label="ほぞん"
             className="h-7 w-7"
           >

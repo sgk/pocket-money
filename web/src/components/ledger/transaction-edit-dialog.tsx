@@ -125,6 +125,12 @@ export const TransactionEditDialog = ({
     return null;
   }
 
+  const hasAmount = form.amount.trim() !== "" && !Number.isNaN(Number(form.amount));
+  const isSaveDisabled =
+    transaction.type === "transfer"
+      ? !form.fromAssetName?.trim() || !form.toAssetName?.trim() || !hasAmount
+      : !form.assetName?.trim() || !form.categoryName?.trim() || !hasAmount;
+
   const handleSave = async () => {
     if (!token) {
       toast.error("ログインしてね");
@@ -330,7 +336,9 @@ export const TransactionEditDialog = ({
           <Button variant="destructive" onClick={handleDelete}>
             けす
           </Button>
-          <Button onClick={handleSave}>ほぞん</Button>
+          <Button onClick={handleSave} disabled={isSaveDisabled}>
+            ほぞん
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -109,6 +109,14 @@ export const NewEntryRow = ({
         : entry.toAssetName
       : entry.assetName;
 
+  const hasAmount = entry.amount.trim() !== "" && !Number.isNaN(Number(entry.amount));
+  const isEntryValid =
+    entry.type === "transfer"
+      ? Boolean(entry.fromAssetName?.trim()) &&
+        Boolean(entry.toAssetName?.trim()) &&
+        hasAmount
+      : Boolean(entry.assetName?.trim()) && Boolean(entry.categoryName?.trim()) && hasAmount;
+
   useEffect(() => {
     if (isDisabled) {
       return;
@@ -499,7 +507,7 @@ export const NewEntryRow = ({
           <Button
             type="button"
             onClick={handleSubmit}
-            disabled={isSaving || isDisabled}
+            disabled={isSaving || isDisabled || !isEntryValid}
             className="ledger-inline-action"
           >
             ついか
@@ -513,7 +521,7 @@ export const NewEntryRow = ({
         <Button
           type="button"
           onClick={handleSubmit}
-          disabled={isSaving || isDisabled}
+          disabled={isSaving || isDisabled || !isEntryValid}
         >
           ついか
         </Button>
