@@ -1356,6 +1356,8 @@ export const LedgerTable = ({
             const counterpartyValue = cellMap.get("counterparty") ?? "-";
             const actionValue = cellMap.get("category") ?? "-";
             const memoValue = cellMap.get("memo") ?? "";
+            const rawMemo = typeof row.original.memo === "string" ? row.original.memo : "";
+            const hasMemo = rawMemo.trim() !== "";
             const amountValue = cellMap.get("amount") ?? "-";
             const balanceValue = cellMap.get("balance") ?? "-";
 
@@ -1384,7 +1386,7 @@ export const LedgerTable = ({
                 >
                   <td colSpan={table.getAllLeafColumns().length} className="p-0">
                     <div className="ledger-mobile-card">
-                      <div className="ledger-mobile-col">
+                      <div className="ledger-mobile-row">
                         <div className="ledger-mobile-item ledger-mobile-date">
                           <span
                             className="ledger-handle cursor-grab text-muted-foreground"
@@ -1402,24 +1404,18 @@ export const LedgerTable = ({
                           </span>
                         </div>
                         <div className="ledger-mobile-item">
-                          <span className="ledger-mobile-label">{t("labelMemo")}</span>
-                          <span className="ledger-mobile-value">{memoValue}</span>
-                        </div>
-                      </div>
-                      <div className="ledger-mobile-col">
-                        <div className="ledger-mobile-item">
                           <span className="ledger-mobile-label">{t("labelAsset")}</span>
                           <span className="ledger-mobile-value">{assetValue}</span>
                         </div>
                         <div className="ledger-mobile-item">
-                          <span className="ledger-mobile-label">{t("labelCategory")}</span>
-                          <span className="ledger-mobile-value">{actionValue}</span>
-                        </div>
-                      </div>
-                      <div className="ledger-mobile-col">
-                        <div className="ledger-mobile-item">
                           <span className="ledger-mobile-label">{t("labelCounterparty")}</span>
                           <span className="ledger-mobile-value">{counterpartyValue}</span>
+                        </div>
+                      </div>
+                      <div className="ledger-mobile-row">
+                        <div className="ledger-mobile-item">
+                          <span className="ledger-mobile-label">{t("labelCategory")}</span>
+                          <span className="ledger-mobile-value">{actionValue}</span>
                         </div>
                         <div className="ledger-mobile-item">
                           <span className="ledger-mobile-label">{t("labelAmount")}</span>
@@ -1434,6 +1430,14 @@ export const LedgerTable = ({
                           </span>
                         </div>
                       </div>
+                      {hasMemo ? (
+                        <div className="ledger-mobile-row ledger-mobile-row--full">
+                          <div className="ledger-mobile-item ledger-mobile-item--full">
+                            <span className="ledger-mobile-label">{t("labelMemo")}</span>
+                            <span className="ledger-mobile-value">{memoValue}</span>
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   </td>
                 </tr>

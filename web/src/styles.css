@@ -280,8 +280,8 @@ h1, h2, h3, .font-display {
 
   .ledger-mobile-card {
     display: flex;
-    align-items: flex-start;
-    gap: 8px;
+    flex-direction: column;
+    gap: 4px;
     margin: 0;
     padding: 0.3rem 0;
     width: 100%;
@@ -321,6 +321,23 @@ h1, h2, h3, .font-display {
     align-items: center;
     gap: 3px;
     min-width: 0;
+  }
+
+  .ledger-mobile-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 8px;
+    row-gap: 4px;
+    align-items: start;
+    min-width: 0;
+  }
+
+  .ledger-mobile-row--full {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ledger-mobile-item--full {
+    grid-column: 1 / -1;
   }
 
   .ledger-mobile-label {
