@@ -25,10 +25,14 @@ export const grade3Texts = defineTexts<Record<TextKey, TextEntry>>({
   navSummary: text("まとめ"),
   navAll: text("ぜんぶ"),
   navNoAssets: text("いれものがないよ"),
+  navSettings: text("せってい"),
   navAssetsSettings: text("いれもの設定"),
   navCategoriesSettings: text("うごき設定"),
   navDataSettings: text("データ管理"),
   navPersonalSettings: text("個人設定"),
+  settingsTitle: text("せってい"),
+  settingsSubtitle: text("せっていを まとめてみる"),
+  settingsSectionBasic: text("きほんの せってい"),
 
   // まとめ画面
   dashboardTitle: text("まとめ"),

@@ -22,10 +22,14 @@ export const upperTexts = defineTexts({
   navSummary: text("概要"),
   navAll: text("取引一覧"),
   navNoAssets: text("いれものがないよ"),
+  navSettings: text("設定"),
   navAssetsSettings: text("資産設定"),
   navCategoriesSettings: text("カテゴリ設定"),
   navDataSettings: text("データ管理"),
   navPersonalSettings: text("個人設定"),
+  settingsTitle: text("設定"),
+  settingsSubtitle: text("設定をまとめて確認"),
+  settingsSectionBasic: text("基本設定"),
 
   // まとめ画面
   dashboardTitle: text("サマリー"),

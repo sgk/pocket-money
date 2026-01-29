@@ -17,7 +17,7 @@ export const PersonalSettingsPage = () => {
     <div className="flex min-h-0 flex-col">
       <Topbar title={t("personalSettingsTitle")} />
       <div className="flex-1 min-h-0 overflow-y-auto pt-4 pb-6">
-        <Card>
+        <Card id="grade">
           <CardHeader>
             <CardTitle className="text-base">{t("personalSettingsGradeTitle")}</CardTitle>
           </CardHeader>

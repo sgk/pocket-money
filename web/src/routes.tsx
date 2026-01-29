@@ -41,6 +41,11 @@ const DataSettingsPage = lazy(() =>
     default: module.DataSettingsPage,
   }))
 );
+const SettingsPage = lazy(() =>
+  import("@/components/settings/settings-page").then((module) => ({
+    default: module.SettingsPage,
+  }))
+);
 
 const withSuspense = (node: JSX.Element) => (
   <Suspense fallback={null}>{node}</Suspense>
@@ -54,6 +59,7 @@ export const RoutesConfig = () => (
       <Route path="ledger" element={withSuspense(<LedgerPage />)} />
       <Route path="assets" element={withSuspense(<AssetsPage />)} />
       <Route path="assets/:assetId/ledger" element={withSuspense(<AssetLedgerPage />)} />
+      <Route path="settings" element={withSuspense(<SettingsPage />)} />
       <Route path="settings/assets" element={withSuspense(<AssetsSettingsPage />)} />
       <Route path="settings/categories" element={withSuspense(<CategoriesSettingsPage />)} />
       <Route path="settings/personal" element={withSuspense(<PersonalSettingsPage />)} />

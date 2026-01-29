@@ -69,7 +69,7 @@ export const Sidebar = ({ onNavigate, className = "" }: SidebarProps) => {
         )}
         <div className="my-2 border-t" />
         <NavLink
-          to="/settings/assets"
+          to="/settings"
           onClick={onNavigate}
           className={({ isActive }) =>
             `flex w-full items-center justify-start gap-2 rounded-md px-3 py-2 text-sm transition ${
@@ -80,49 +80,7 @@ export const Sidebar = ({ onNavigate, className = "" }: SidebarProps) => {
           }
         >
           <Settings className="h-4 w-4" />
-          <span className="whitespace-nowrap">{t("navAssetsSettings")}</span>
-        </NavLink>
-        <NavLink
-          to="/settings/categories"
-          onClick={onNavigate}
-          className={({ isActive }) =>
-            `flex w-full items-center justify-start gap-2 rounded-md px-3 py-2 text-sm transition ${
-              isActive
-                ? "bg-primary text-primary-foreground"
-                : "text-foreground hover:bg-secondary"
-            }`
-          }
-        >
-          <Settings className="h-4 w-4" />
-          <span className="whitespace-nowrap">{t("navCategoriesSettings")}</span>
-        </NavLink>
-        <NavLink
-          to="/settings/personal"
-          onClick={onNavigate}
-          className={({ isActive }) =>
-            `flex w-full items-center justify-start gap-2 rounded-md px-3 py-2 text-sm transition ${
-              isActive
-                ? "bg-primary text-primary-foreground"
-                : "text-foreground hover:bg-secondary"
-            }`
-          }
-        >
-          <Settings className="h-4 w-4" />
-          <span className="whitespace-nowrap">{t("navPersonalSettings")}</span>
-        </NavLink>
-        <NavLink
-          to="/settings/data"
-          onClick={onNavigate}
-          className={({ isActive }) =>
-            `flex w-full items-center justify-start gap-2 rounded-md px-3 py-2 text-sm transition ${
-              isActive
-                ? "bg-primary text-primary-foreground"
-                : "text-foreground hover:bg-secondary"
-            }`
-          }
-        >
-          <Settings className="h-4 w-4" />
-          <span className="whitespace-nowrap">{t("navDataSettings")}</span>
+          <span className="whitespace-nowrap">{t("navSettings")}</span>
         </NavLink>
       </nav>
     </aside>
