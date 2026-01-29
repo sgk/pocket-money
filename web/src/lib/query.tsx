@@ -77,6 +77,7 @@ export const useInvalidateLedger = () => {
   return () => {
     api.clearTransactionsCache();
     queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    queryClient.refetchQueries({ queryKey: ["transactions"] });
     queryClient.invalidateQueries({ queryKey: ["summary"] });
     queryClient.invalidateQueries({ queryKey: ["assets"] });
   };

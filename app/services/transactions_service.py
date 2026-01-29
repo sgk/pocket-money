@@ -904,7 +904,8 @@ def list_transactions(
             raise AppError(400, "Invalid cursor")
         query = query.start_after(cursor_snap)
 
-    query = query.limit(limit)
+    if not asset_id and not category_id:
+        query = query.limit(limit)
 
     asset_name_by_id = _build_asset_name_by_id(uid)
     category_name_by_id = _build_category_name_by_id(uid)
@@ -972,22 +973,38 @@ def list_transactions(
         items.append(data)
 
     if asset_id or category_id:
+        target_asset_name = asset_name_by_id.get(asset_id) if asset_id else None
         filtered = []
         for item in items:
             if asset_id:
                 if item.get("type") == "transfer":
-                    if asset_id not in {
-                        item.get("fromAssetId"),
-                        item.get("toAssetId"),
-                    }:
+                    if (
+                        asset_id
+                        not in {
+                            item.get("fromAssetId"),
+                            item.get("toAssetId"),
+                        }
+                        and (
+                            not target_asset_name
+                            or target_asset_name
+                            not in {
+                                item.get("fromAssetName"),
+                                item.get("toAssetName"),
+                            }
+                        )
+                    ):
                         continue
                 else:
-                    if item.get("assetId") != asset_id:
+                    if item.get("assetId") != asset_id and (
+                        not target_asset_name or item.get("assetName") != target_asset_name
+                    ):
                         continue
             if category_id and item.get("categoryId") != category_id:
                 continue
             filtered.append(item)
         items = filtered
+        if limit and len(items) > limit:
+            items = items[:limit]
 
     next_cursor = items[-1]["id"] if items else None
     result = {"items": items, "nextCursor": next_cursor}
