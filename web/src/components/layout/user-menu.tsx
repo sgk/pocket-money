@@ -66,7 +66,9 @@ export const UserMenu = ({ compact = false, isOpen, onOpenChange }: UserMenuProp
     <div className="relative z-50" ref={menuRef}>
       <button
         type="button"
-        className="rounded-full transition hover:bg-secondary/60"
+        className={`inline-flex items-center justify-center rounded-full transition hover:bg-secondary/60 ${
+          compact ? "h-8 w-8 translate-y-[4px]" : "h-9 w-9"
+        }`}
         onClick={() => {
           if (isControlled) {
             onOpenChange?.(!open);
