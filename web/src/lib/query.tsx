@@ -36,8 +36,8 @@ type TransactionsFilters = {
   from?: string;
   to?: string;
   type?: TransactionType;
-  assetName?: string;
-  categoryName?: string;
+  assetId?: string;
+  categoryId?: string;
   limit?: number;
   includeOpeningBalances?: boolean;
 };
@@ -51,8 +51,8 @@ export const useTransactions = (filters: TransactionsFilters) => {
         from: filters.from,
         to: filters.to,
         type: filters.type,
-        assetName: filters.assetName,
-        categoryName: filters.categoryName,
+        assetId: filters.assetId,
+        categoryId: filters.categoryId,
         includeOpeningBalances: filters.includeOpeningBalances,
         limit: filters.limit ?? 200,
       }),

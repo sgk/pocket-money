@@ -126,8 +126,8 @@ def update_asset(uid: str, asset_id: str, payload: AssetUpdate) -> dict:
     asset = result["asset"]
     old_name = result.get("oldName")
     new_name = asset.get("name")
-    if old_name and new_name and old_name != new_name:
-        transactions_service.rename_asset_in_transactions(uid, old_name, new_name)
+    if new_name and (old_name or new_name):
+        transactions_service.rename_asset_in_transactions(uid, asset_id, old_name, new_name)
     return asset
 
 

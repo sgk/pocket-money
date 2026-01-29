@@ -16,6 +16,7 @@ export const AssetLedgerPage = () => {
   const { data: categories = [] } = useCategories();
   const asset = assets.find((item) => item.id === assetId);
   const assetName = asset?.name;
+  const resolvedAssetId = asset?.id;
 
   const [filters, setFilters] = useState<LedgerFiltersState>({
     from: formatDate(startOfCurrentMonth()),
@@ -28,7 +29,7 @@ export const AssetLedgerPage = () => {
     from: filters.from,
     to: filters.to,
     type: filters.type,
-    assetName,
+    assetId: resolvedAssetId,
     includeOpeningBalances: true,
   });
   const transactions = data?.items ?? [];
@@ -55,7 +56,7 @@ export const AssetLedgerPage = () => {
   }, [transactions, openingBalances, assetName]);
 
   const filtered = useMemo(() => {
-    if (!assetName) {
+    if (!resolvedAssetId || !assetName) {
       return [];
     }
     const keyword = filters.search.trim().toLowerCase();
@@ -64,8 +65,8 @@ export const AssetLedgerPage = () => {
     return transactions.filter((tx) => {
       const belongs =
         tx.type === "transfer"
-          ? tx.fromAssetName === assetName || tx.toAssetName === assetName
-          : tx.assetName === assetName;
+          ? tx.fromAssetId === resolvedAssetId || tx.toAssetId === resolvedAssetId
+          : tx.assetId === resolvedAssetId || tx.assetName === assetName;
       if (!belongs) {
         return false;
       }
@@ -88,7 +89,7 @@ export const AssetLedgerPage = () => {
       }
       return target.filter(Boolean).some((value) => value!.toLowerCase().includes(keyword));
     });
-  }, [transactions, filters.search, filters.from, filters.to, assetName]);
+  }, [transactions, filters.search, filters.from, filters.to, assetName, resolvedAssetId]);
 
   const assetSummary = useMemo(() => {
     return filtered.reduce(
@@ -144,6 +145,7 @@ export const AssetLedgerPage = () => {
       transactions={filtered}
       assets={assets}
       categories={categories}
+      fixedAssetId={resolvedAssetId}
       fixedAssetName={assetName}
       balancesById={balancesById}
       openingBalances={openingBalances}

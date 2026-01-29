@@ -45,11 +45,15 @@ export const TransactionEditDialog = ({
     occurredAt: string;
     amount: string;
     memo: string;
+    assetId?: string;
     assetName?: string;
+    categoryId?: string;
     categoryName?: string;
     merchant?: string;
     source?: string;
+    fromAssetId?: string;
     fromAssetName?: string;
+    toAssetId?: string;
     toAssetName?: string;
     fee?: string;
   } | null>(null);
@@ -71,6 +75,11 @@ export const TransactionEditDialog = ({
             ...baseCategoryOptions,
           ]
       : baseCategoryOptions;
+
+  const findAssetByName = (name: string) =>
+    assets.find((asset) => asset.name === name);
+  const findCategoryByName = (name: string, kind: "expense" | "income") =>
+    categories.find((category) => category.name === name && category.kind === kind);
 
   const selectableAssets = (() => {
     const existing = new Set(assets.map((asset) => asset.name));
@@ -108,7 +117,9 @@ export const TransactionEditDialog = ({
         occurredAt: transaction.occurredAt.slice(0, 10),
         amount: String(transaction.amount),
         memo: transaction.memo ?? "",
+        fromAssetId: transaction.fromAssetId,
         fromAssetName: transaction.fromAssetName,
+        toAssetId: transaction.toAssetId,
         toAssetName: transaction.toAssetName,
         fee: String(transaction.fee ?? 0),
       });
@@ -117,7 +128,9 @@ export const TransactionEditDialog = ({
         occurredAt: transaction.occurredAt.slice(0, 10),
         amount: String(transaction.amount),
         memo: transaction.memo ?? "",
+        assetId: transaction.assetId,
         assetName: transaction.assetName,
+        categoryId: transaction.categoryId,
         categoryName: transaction.categoryName,
         merchant: transaction.type === "expense" ? transaction.merchant ?? "" : undefined,
         source: transaction.type === "income" ? transaction.source ?? "" : undefined,
@@ -197,7 +210,10 @@ export const TransactionEditDialog = ({
         toast.error(t("toastTransferAssetRequired"));
         return;
       }
-      if (form.fromAssetName === form.toAssetName) {
+      if (
+        (form.fromAssetId && form.toAssetId && form.fromAssetId === form.toAssetId) ||
+        form.fromAssetName === form.toAssetName
+      ) {
         toast.error(t("toastTransferSameAsset"));
         return;
       }
@@ -208,26 +224,44 @@ export const TransactionEditDialog = ({
         amount: Number(form.amount),
         memo: form.memo || undefined,
       };
-      if (transaction.type === "expense") {
+    if (transaction.type === "expense") {
+        const resolvedAssetId =
+          form.assetId ?? findAssetByName(form.assetName ?? "")?.id;
+        const resolvedCategoryId =
+          form.categoryId ?? findCategoryByName(form.categoryName ?? "", "expense")?.id;
         payload = {
           ...payload,
+          assetId: resolvedAssetId,
           assetName: form.assetName,
+          categoryId: resolvedCategoryId,
           categoryName: form.categoryName,
           merchant: form.merchant || undefined,
         };
       }
       if (transaction.type === "income") {
+        const resolvedAssetId =
+          form.assetId ?? findAssetByName(form.assetName ?? "")?.id;
+        const resolvedCategoryId =
+          form.categoryId ?? findCategoryByName(form.categoryName ?? "", "income")?.id;
         payload = {
           ...payload,
+          assetId: resolvedAssetId,
           assetName: form.assetName,
+          categoryId: resolvedCategoryId,
           categoryName: form.categoryName,
           source: form.source || undefined,
         };
       }
       if (transaction.type === "transfer") {
+        const resolvedFromId =
+          form.fromAssetId ?? findAssetByName(form.fromAssetName ?? "")?.id;
+        const resolvedToId =
+          form.toAssetId ?? findAssetByName(form.toAssetName ?? "")?.id;
         payload = {
           ...payload,
+          fromAssetId: resolvedFromId,
           fromAssetName: form.fromAssetName,
+          toAssetId: resolvedToId,
           toAssetName: form.toAssetName,
           fee: Number(form.fee || 0),
         };
@@ -281,7 +315,10 @@ export const TransactionEditDialog = ({
             <div className="grid gap-4 md:grid-cols-2">
               <Select
                 value={form.assetName ?? ""}
-                onValueChange={(value) => setForm({ ...form, assetName: value })}
+                onValueChange={(value) => {
+                  const selected = findAssetByName(value);
+                  setForm({ ...form, assetId: selected?.id, assetName: value });
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={t("placeholderAsset")} />
@@ -296,7 +333,15 @@ export const TransactionEditDialog = ({
               </Select>
               <Select
                 value={form.categoryName ?? ""}
-                onValueChange={(value) => setForm({ ...form, categoryName: value })}
+                onValueChange={(value) => {
+                  const kind = transaction.type === "income" ? "income" : "expense";
+                  const selected = findCategoryByName(value, kind);
+                  setForm({
+                    ...form,
+                    categoryId: selected?.id,
+                    categoryName: value,
+                  });
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={t("placeholderCategory")} />
@@ -315,7 +360,14 @@ export const TransactionEditDialog = ({
             <div className="grid gap-4 md:grid-cols-2">
               <Select
                 value={form.fromAssetName ?? ""}
-                onValueChange={(value) => setForm({ ...form, fromAssetName: value })}
+                onValueChange={(value) => {
+                  const selected = findAssetByName(value);
+                  setForm({
+                    ...form,
+                    fromAssetId: selected?.id,
+                    fromAssetName: value,
+                  });
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={t("placeholderTransferFrom")} />
@@ -330,7 +382,14 @@ export const TransactionEditDialog = ({
               </Select>
               <Select
                 value={form.toAssetName ?? ""}
-                onValueChange={(value) => setForm({ ...form, toAssetName: value })}
+                onValueChange={(value) => {
+                  const selected = findAssetByName(value);
+                  setForm({
+                    ...form,
+                    toAssetId: selected?.id,
+                    toAssetName: value,
+                  });
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={t("placeholderTransferTo")} />

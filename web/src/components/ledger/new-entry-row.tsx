@@ -23,13 +23,17 @@ const emptyEntry = () => ({
   transferDirection: "out" as "out" | "in",
   amount: "",
   fee: "0",
+  assetId: storage.getLastAssetId() ?? "",
   assetName: storage.getLastAssetName() ?? "",
-  categoryName: "",
+  categoryId: storage.getLastCategoryId() ?? "",
+  categoryName: storage.getLastCategoryName() ?? "",
   merchant: "",
   source: "",
   counterparty: "",
   memo: "",
+  fromAssetId: storage.getLastAssetId() ?? "",
   fromAssetName: storage.getLastAssetName() ?? "",
+  toAssetId: "",
   toAssetName: "",
 });
 
@@ -38,35 +42,44 @@ const OTHER_CATEGORY_NAME = "その他";
 export const NewEntryRow = ({
   assets,
   categories,
+  fixedAssetId,
   fixedAssetName,
   disabled,
 }: {
   assets: Asset[];
   categories: Category[];
+  fixedAssetId?: string;
   fixedAssetName?: string;
   disabled?: boolean;
 }) => {
   const { t } = useText();
   const isDisabled = Boolean(disabled);
-  const buildInitialEntry = (assetName?: string) => {
+  const buildInitialEntry = (assetId?: string, assetName?: string) => {
     const base = emptyEntry();
-    if (assetName) {
+    if (assetName || assetId) {
       return {
         ...base,
-        assetName,
-        fromAssetName: assetName,
+        assetId: assetId ?? base.assetId,
+        assetName: assetName ?? base.assetName,
+        fromAssetId: assetId ?? base.fromAssetId,
+        fromAssetName: assetName ?? base.fromAssetName,
       };
     }
     return {
       ...base,
+      assetId: "",
       assetName: "",
+      fromAssetId: "",
       fromAssetName: "",
+      toAssetId: "",
       toAssetName: "",
     };
   };
   const { token } = useAuth();
   const invalidate = useInvalidateLedger();
-  const [entry, setEntry] = useState(() => buildInitialEntry(fixedAssetName));
+  const [entry, setEntry] = useState(() =>
+    buildInitialEntry(fixedAssetId, fixedAssetName)
+  );
   const [isSaving, setIsSaving] = useState(false);
   const dateRef = useRef<HTMLInputElement>(null);
 
@@ -89,6 +102,10 @@ export const NewEntryRow = ({
     () => categoryOptions.filter((category) => category.kind === "income"),
     [categoryOptions]
   );
+  const findAssetByName = (name: string) =>
+    assetOptions.find((asset) => asset.name === name);
+  const findCategoryByName = (name: string, kind: "expense" | "income") =>
+    categories.find((category) => category.name === name && category.kind === kind);
   const placeholderValue = "__placeholder__";
   const assetPlaceholderValue = "__asset_placeholder__";
 
@@ -112,6 +129,13 @@ export const NewEntryRow = ({
         ? entry.fromAssetName
         : entry.toAssetName
       : entry.assetName;
+  const transferBaseAssetId = fixedAssetId
+    ? fixedAssetId
+    : entry.type === "transfer"
+      ? entry.transferDirection === "out"
+        ? entry.fromAssetId
+        : entry.toAssetId
+      : entry.assetId;
 
   const hasAmount = entry.amount.trim() !== "" && !Number.isNaN(Number(entry.amount));
   const isEntryValid =
@@ -152,11 +176,11 @@ export const NewEntryRow = ({
   }, [isDisabled]);
 
   useEffect(() => {
-    setEntry(buildInitialEntry(fixedAssetName));
-  }, [fixedAssetName]);
+    setEntry(buildInitialEntry(fixedAssetId, fixedAssetName));
+  }, [fixedAssetId, fixedAssetName]);
 
   const resetEntry = () => {
-    setEntry(buildInitialEntry(fixedAssetName));
+    setEntry(buildInitialEntry(fixedAssetId, fixedAssetName));
   };
 
   const validateEntry = () => {
@@ -180,7 +204,10 @@ export const NewEntryRow = ({
         toast.error(t("toastTransferAssetRequired"));
         return false;
       }
-      if (entry.fromAssetName === entry.toAssetName) {
+      if (
+        (entry.fromAssetId && entry.toAssetId && entry.fromAssetId === entry.toAssetId) ||
+        entry.fromAssetName === entry.toAssetName
+      ) {
         toast.error(t("toastTransferSameAsset"));
         return false;
       }
@@ -205,37 +232,70 @@ export const NewEntryRow = ({
       };
       let created: Transaction | undefined;
       if (entry.type === "expense") {
+        const resolvedAssetId =
+          entry.assetId || findAssetByName(entry.assetName)?.id;
+        const resolvedCategoryId =
+          entry.categoryId || findCategoryByName(entry.categoryName, "expense")?.id;
         const payload = {
           ...payloadBase,
+          assetId: resolvedAssetId,
           assetName: entry.assetName,
+          categoryId: resolvedCategoryId,
           categoryName: entry.categoryName,
           merchant: entry.merchant || undefined,
         };
         created = await api.createExpense(token, payload);
         storage.setLastAssetName(entry.assetName);
         storage.setLastCategoryName(entry.categoryName);
+        if (resolvedAssetId) {
+          storage.setLastAssetId(resolvedAssetId);
+        }
+        if (resolvedCategoryId) {
+          storage.setLastCategoryId(resolvedCategoryId);
+        }
       }
       if (entry.type === "income") {
+        const resolvedAssetId =
+          entry.assetId || findAssetByName(entry.assetName)?.id;
+        const resolvedCategoryId =
+          entry.categoryId || findCategoryByName(entry.categoryName, "income")?.id;
         const payload = {
           ...payloadBase,
+          assetId: resolvedAssetId,
           assetName: entry.assetName,
+          categoryId: resolvedCategoryId,
           categoryName: entry.categoryName,
           source: entry.source || undefined,
         };
         created = await api.createIncome(token, payload);
         storage.setLastAssetName(entry.assetName);
         storage.setLastCategoryName(entry.categoryName);
+        if (resolvedAssetId) {
+          storage.setLastAssetId(resolvedAssetId);
+        }
+        if (resolvedCategoryId) {
+          storage.setLastCategoryId(resolvedCategoryId);
+        }
       }
       if (entry.type === "transfer") {
+        const resolvedFromId =
+          entry.fromAssetId || findAssetByName(entry.fromAssetName)?.id;
+        const resolvedToId =
+          entry.toAssetId || findAssetByName(entry.toAssetName)?.id;
         const payload = {
           ...payloadBase,
+          fromAssetId: resolvedFromId,
           fromAssetName: entry.fromAssetName,
+          toAssetId: resolvedToId,
           toAssetName: entry.toAssetName,
           fee: Number(entry.fee || 0),
           counterparty: entry.counterparty || undefined,
         };
         created = await api.createTransfer(token, payload);
         storage.setLastAssetName(entry.fromAssetName);
+        if (resolvedFromId) {
+          storage.setLastAssetId(resolvedFromId);
+        }
       }
       if (created) {
         toast.success(t("toastEntryAdded"));
@@ -291,16 +351,25 @@ export const NewEntryRow = ({
               onValueChange={(value) => {
                 if (value === assetPlaceholderValue) {
                   if (entry.transferDirection === "out") {
-                    setEntry({ ...entry, fromAssetName: "" });
+                    setEntry({ ...entry, fromAssetId: "", fromAssetName: "" });
                   } else {
-                    setEntry({ ...entry, toAssetName: "" });
+                    setEntry({ ...entry, toAssetId: "", toAssetName: "" });
                   }
                   return;
                 }
+                const selected = findAssetByName(value);
                 if (entry.transferDirection === "out") {
-                  setEntry({ ...entry, fromAssetName: value });
+                  setEntry({
+                    ...entry,
+                    fromAssetId: selected?.id ?? "",
+                    fromAssetName: value,
+                  });
                 } else {
-                  setEntry({ ...entry, toAssetName: value });
+                  setEntry({
+                    ...entry,
+                    toAssetId: selected?.id ?? "",
+                    toAssetName: value,
+                  });
                 }
               }}
               disabled={Boolean(fixedAssetName) || isDisabled}
@@ -328,10 +397,15 @@ export const NewEntryRow = ({
             value={entry.assetName}
             onValueChange={(value) => {
               if (value === assetPlaceholderValue) {
-                setEntry({ ...entry, assetName: "" });
+                setEntry({ ...entry, assetId: "", assetName: "" });
                 return;
               }
-              setEntry({ ...entry, assetName: value });
+              const selected = findAssetByName(value);
+              setEntry({
+                ...entry,
+                assetId: selected?.id ?? "",
+                assetName: value,
+              });
             }}
             disabled={Boolean(fixedAssetName) || isDisabled}
           >
@@ -398,46 +472,70 @@ export const NewEntryRow = ({
                   entry.fromAssetName ??
                   entry.toAssetName ??
                   "";
+                const baseAssetId =
+                  fixedAssetId ??
+                  entry.assetId ??
+                  entry.fromAssetId ??
+                  entry.toAssetId ??
+                  "";
                 setEntry({
                   ...entry,
                   type: "expense",
+                  assetId: baseAssetId,
+                  assetName: baseAssetName,
+                  categoryId: "",
                   categoryName: "",
                   transferDirection: "out",
+                  fromAssetId: baseAssetId,
                   fromAssetName: baseAssetName,
+                  toAssetId: "",
                   toAssetName: "",
                 });
                 return;
               }
-              setEntry({ ...entry, categoryName: "" });
+              setEntry({ ...entry, categoryId: "", categoryName: "" });
               return;
             }
             const [type, ...rest] = value.split("::");
             const id = rest.join("::");
             if (type === "transfer-out") {
               const baseAssetName = transferBaseAssetName ?? "";
+              const baseAssetId = transferBaseAssetId ?? "";
+              const selected = findAssetByName(id);
               setEntry({
                 ...entry,
                 type: "transfer",
                 transferDirection: "out",
+                fromAssetId: baseAssetId,
                 fromAssetName: baseAssetName,
+                toAssetId: selected?.id ?? "",
                 toAssetName: id ?? "",
                 categoryName: "",
+                categoryId: "",
               });
             } else if (type === "transfer-in") {
               const baseAssetName = transferBaseAssetName ?? "";
+              const baseAssetId = transferBaseAssetId ?? "";
+              const selected = findAssetByName(id);
               setEntry({
                 ...entry,
                 type: "transfer",
                 transferDirection: "in",
+                fromAssetId: selected?.id ?? "",
                 fromAssetName: id ?? "",
+                toAssetId: baseAssetId,
                 toAssetName: baseAssetName,
                 categoryName: "",
+                categoryId: "",
               });
             } else if (type === "expense" || type === "income") {
+              const selected = findCategoryByName(id ?? "", type);
               setEntry({
                 ...entry,
                 type: type as TransactionType,
+                categoryId: selected?.id ?? "",
                 categoryName: id ?? "",
+                assetId: entry.assetId,
                 toAssetName: "",
               });
             }
@@ -469,7 +567,7 @@ export const NewEntryRow = ({
               {t("labelOther")}
             </SelectItem>
             {assetOptions
-              .filter((asset) => asset.name !== transferBaseAssetName)
+              .filter((asset) => asset.id !== transferBaseAssetId)
               .map((asset) => (
                 <SelectItem
                   key={`transfer-out:${asset.id}`}
@@ -496,7 +594,7 @@ export const NewEntryRow = ({
               {t("labelOther")}
             </SelectItem>
             {assetOptions
-              .filter((asset) => asset.name !== transferBaseAssetName)
+              .filter((asset) => asset.id !== transferBaseAssetId)
               .map((asset) => (
                 <SelectItem
                   key={`transfer-in:${asset.id}`}

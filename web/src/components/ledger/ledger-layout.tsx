@@ -13,6 +13,7 @@ type LedgerLayoutProps = {
   transactions: Transaction[];
   assets: Asset[];
   categories: Category[];
+  fixedAssetId?: string;
   fixedAssetName?: string;
   balancesById: Record<string, number>;
   openingBalances: Record<string, number>;
@@ -29,6 +30,7 @@ export const LedgerLayout = ({
   transactions,
   assets,
   categories,
+  fixedAssetId,
   fixedAssetName,
   balancesById,
   openingBalances,
@@ -80,6 +82,7 @@ export const LedgerLayout = ({
     <NewEntryRow
       assets={assets}
       categories={categories}
+      fixedAssetId={fixedAssetId}
       fixedAssetName={fixedAssetName}
       disabled={isEditing}
     />
@@ -111,6 +114,7 @@ export const LedgerLayout = ({
               transactions={transactions}
               assets={assets}
               categories={categories}
+              fixedAssetId={fixedAssetId}
               fixedAssetName={fixedAssetName}
               balancesById={balancesById}
               openingBalances={openingBalances}

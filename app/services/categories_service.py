@@ -51,8 +51,8 @@ def update_category(uid: str, category_id: str, payload: CategoryUpdate) -> dict
     data.update(updates)
     data["id"] = category_id
     new_name = data.get("name")
-    if old_name and new_name and old_name != new_name:
-        transactions_service.rename_category_in_transactions(uid, old_name, new_name)
+    if new_name and (old_name or new_name):
+        transactions_service.rename_category_in_transactions(uid, category_id, old_name, new_name)
     return data
 
 

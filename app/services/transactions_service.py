@@ -10,9 +10,18 @@ from app.models.transactions import ExpenseCreate, IncomeCreate, TransferCreate,
 
 
 FIELDS_BY_TYPE = {
-    "expense": {"assetName", "categoryName", "merchant"},
-    "income": {"assetName", "categoryName", "source"},
-    "transfer": {"fromAssetName", "toAssetName", "fee", "feeCategoryName", "counterparty"},
+    "expense": {"assetId", "assetName", "categoryId", "categoryName", "merchant"},
+    "income": {"assetId", "assetName", "categoryId", "categoryName", "source"},
+    "transfer": {
+        "fromAssetId",
+        "fromAssetName",
+        "toAssetId",
+        "toAssetName",
+        "fee",
+        "feeCategoryId",
+        "feeCategoryName",
+        "counterparty",
+    },
 }
 
 
@@ -115,28 +124,195 @@ def _build_category_name_by_id(uid: str) -> Dict[str, str]:
     return mapping
 
 
+def _build_category_name_kind_index(
+    uid: str,
+) -> Dict[tuple[str, str], fs.DocumentReference]:
+    refs: Dict[tuple[str, str], fs.DocumentReference] = {}
+    for doc in firestore.categories_collection(uid).stream():
+        data = doc.to_dict()
+        name = data.get("name")
+        kind = data.get("kind")
+        if not name or not kind:
+            continue
+        refs[(name, kind)] = doc.reference
+    return refs
+
+
+def _next_asset_sort_order(uid: str) -> int:
+    query = (
+        firestore.assets_collection(uid)
+        .order_by("sortOrder", direction=fs.Query.DESCENDING)
+        .limit(1)
+    )
+    for doc in query.stream():
+        data = doc.to_dict()
+        return int(data.get("sortOrder", 0)) + 1
+    return 1
+
+
+def _next_category_sort_order(uid: str, kind: str) -> int:
+    query = (
+        firestore.categories_collection(uid)
+        .where(filter=FieldFilter("kind", "==", kind))
+        .order_by("sortOrder", direction=fs.Query.DESCENDING)
+        .limit(1)
+    )
+    for doc in query.stream():
+        data = doc.to_dict()
+        return int(data.get("sortOrder", 0)) + 1
+    return 1
+
+
+def _resolve_asset(
+    uid: str,
+    asset_id: Optional[str],
+    asset_name: Optional[str],
+    now: datetime,
+    asset_name_index: Dict[str, fs.DocumentReference],
+    next_sort_order: int,
+) -> tuple[str, str, int]:
+    if asset_id:
+        doc_ref = firestore.asset_doc(uid, asset_id)
+        snap = doc_ref.get()
+        if snap.exists:
+            data = snap.to_dict()
+            name = data.get("name") or asset_name or asset_id
+            return asset_id, name, next_sort_order
+        name = asset_name or asset_id
+        doc_ref.set(
+            {
+                "name": name,
+                "type": None,
+                "currency": "JPY",
+                "isActive": True,
+                "initialBalance": 0,
+                "currentBalance": 0,
+                "note": None,
+                "sortOrder": next_sort_order,
+                "createdAt": now,
+                "updatedAt": now,
+            }
+        )
+        asset_name_index[name] = doc_ref
+        return asset_id, name, next_sort_order + 1
+    if asset_name:
+        ref = asset_name_index.get(asset_name)
+        if ref:
+            return ref.id, asset_name, next_sort_order
+        doc_ref = firestore.assets_collection(uid).document()
+        doc_ref.set(
+            {
+                "name": asset_name,
+                "type": None,
+                "currency": "JPY",
+                "isActive": True,
+                "initialBalance": 0,
+                "currentBalance": 0,
+                "note": None,
+                "sortOrder": next_sort_order,
+                "createdAt": now,
+                "updatedAt": now,
+            }
+        )
+        asset_name_index[asset_name] = doc_ref
+        return doc_ref.id, asset_name, next_sort_order + 1
+    raise AppError(400, "assetName is required")
+
+
+def _resolve_category(
+    uid: str,
+    category_id: Optional[str],
+    category_name: Optional[str],
+    kind: str,
+    now: datetime,
+    category_index: Dict[tuple[str, str], fs.DocumentReference],
+    next_sort_order: int,
+) -> tuple[str, str, int]:
+    if category_id:
+        doc_ref = firestore.category_doc(uid, category_id)
+        snap = doc_ref.get()
+        if snap.exists:
+            data = snap.to_dict()
+            name = data.get("name") or category_name or category_id
+            return category_id, name, next_sort_order
+        name = category_name or category_id
+        doc_ref.set(
+            {
+                "name": name,
+                "isActive": True,
+                "sortOrder": next_sort_order,
+                "kind": kind,
+                "createdAt": now,
+                "updatedAt": now,
+            }
+        )
+        category_index[(name, kind)] = doc_ref
+        return category_id, name, next_sort_order + 1
+    if category_name:
+        ref = category_index.get((category_name, kind))
+        if ref:
+            return ref.id, category_name, next_sort_order
+        doc_ref = firestore.categories_collection(uid).document()
+        doc_ref.set(
+            {
+                "name": category_name,
+                "isActive": True,
+                "sortOrder": next_sort_order,
+                "kind": kind,
+                "createdAt": now,
+                "updatedAt": now,
+            }
+        )
+        category_index[(category_name, kind)] = doc_ref
+        return doc_ref.id, category_name, next_sort_order + 1
+    raise AppError(400, "categoryName is required")
+
+
 def _normalize_tx_names(
     tx: dict,
     asset_name_by_id: Dict[str, str],
     category_name_by_id: Dict[str, str],
 ) -> dict:
     asset_id = tx.get("assetId")
-    if not tx.get("assetName") and asset_id:
-        tx["assetName"] = asset_name_by_id.get(asset_id, asset_id)
+    if asset_id:
+        asset_value = asset_name_by_id.get(asset_id)
+        if asset_value:
+            if tx.get("assetName") != asset_value:
+                tx["assetName"] = asset_value
+        elif not tx.get("assetName"):
+            tx["assetName"] = asset_id
     from_asset_id = tx.get("fromAssetId")
-    if not tx.get("fromAssetName") and from_asset_id:
-        tx["fromAssetName"] = asset_name_by_id.get(from_asset_id, from_asset_id)
+    if from_asset_id:
+        from_value = asset_name_by_id.get(from_asset_id)
+        if from_value:
+            if tx.get("fromAssetName") != from_value:
+                tx["fromAssetName"] = from_value
+        elif not tx.get("fromAssetName"):
+            tx["fromAssetName"] = from_asset_id
     to_asset_id = tx.get("toAssetId")
-    if not tx.get("toAssetName") and to_asset_id:
-        tx["toAssetName"] = asset_name_by_id.get(to_asset_id, to_asset_id)
+    if to_asset_id:
+        to_value = asset_name_by_id.get(to_asset_id)
+        if to_value:
+            if tx.get("toAssetName") != to_value:
+                tx["toAssetName"] = to_value
+        elif not tx.get("toAssetName"):
+            tx["toAssetName"] = to_asset_id
     category_id = tx.get("categoryId")
-    if not tx.get("categoryName") and category_id:
-        tx["categoryName"] = category_name_by_id.get(category_id, category_id)
+    if category_id:
+        category_value = category_name_by_id.get(category_id)
+        if category_value:
+            if tx.get("categoryName") != category_value:
+                tx["categoryName"] = category_value
+        elif not tx.get("categoryName"):
+            tx["categoryName"] = category_id
     fee_category_id = tx.get("feeCategoryId")
-    if not tx.get("feeCategoryName") and fee_category_id:
-        tx["feeCategoryName"] = category_name_by_id.get(
-            fee_category_id, fee_category_id
-        )
+    if fee_category_id:
+        fee_value = category_name_by_id.get(fee_category_id)
+        if fee_value:
+            if tx.get("feeCategoryName") != fee_value:
+                tx["feeCategoryName"] = fee_value
+        elif not tx.get("feeCategoryName"):
+            tx["feeCategoryName"] = fee_category_id
     return tx
 
 
@@ -306,17 +482,23 @@ def _validate_tx_payload(tx: dict):
     _validate_common(tx)
     tx_type = tx.get("type")
     if tx_type == "expense":
+        _require(tx.get("assetId"), "assetId is required")
         _require(tx.get("assetName"), "assetName is required")
         if not tx.get("categoryName"):
             raise AppError(400, "categoryName is required")
+        _require(tx.get("categoryId"), "categoryId is required")
     elif tx_type == "income":
+        _require(tx.get("assetId"), "assetId is required")
         _require(tx.get("assetName"), "assetName is required")
         if not tx.get("categoryName"):
             raise AppError(400, "categoryName is required")
+        _require(tx.get("categoryId"), "categoryId is required")
     elif tx_type == "transfer":
+        _require(tx.get("fromAssetId"), "fromAssetId is required")
         _require(tx.get("fromAssetName"), "fromAssetName is required")
+        _require(tx.get("toAssetId"), "toAssetId is required")
         _require(tx.get("toAssetName"), "toAssetName is required")
-        if tx.get("fromAssetName") == tx.get("toAssetName"):
+        if tx.get("fromAssetId") == tx.get("toAssetId"):
             raise AppError(400, "fromAssetName and toAssetName must be different")
     else:
         raise AppError(400, "Invalid transaction type")
@@ -373,14 +555,38 @@ def _apply_balance_deltas(
 
 
 def create_expense(uid: str, payload: ExpenseCreate) -> dict:
-    asset_refs = _build_asset_name_index(uid)
+    asset_name_index = _build_asset_name_index(uid)
+    category_index = _build_category_name_kind_index(uid)
 
     def _work(transaction: fs.Transaction):
         now = _now()
+        next_asset_sort = _next_asset_sort_order(uid)
+        next_category_sort = _next_category_sort_order(uid, "expense")
         user_ref = firestore.user_doc(uid)
         user_snap = user_ref.get(transaction=transaction)
         existing_dirty = user_snap.to_dict().get("balanceDirtyFrom") if user_snap.exists else None
         data = payload.dict()
+        asset_id, asset_name, next_asset_sort = _resolve_asset(
+            uid,
+            data.get("assetId"),
+            data.get("assetName"),
+            now,
+            asset_name_index,
+            next_asset_sort,
+        )
+        category_id, category_name, next_category_sort = _resolve_category(
+            uid,
+            data.get("categoryId"),
+            data.get("categoryName"),
+            "expense",
+            now,
+            category_index,
+            next_category_sort,
+        )
+        data["assetId"] = asset_id
+        data["assetName"] = asset_name
+        data["categoryId"] = category_id
+        data["categoryName"] = category_name
         if data.get("dayOrder") is None:
             data["dayOrder"] = _default_day_order(now)
         data["type"] = "expense"
@@ -389,7 +595,7 @@ def create_expense(uid: str, payload: ExpenseCreate) -> dict:
         data["createdBy"] = uid
         _validate_tx_payload(data)
         deltas = compute_balance_deltas(None, data)
-        _apply_balance_deltas(transaction, asset_refs, deltas, now)
+        _apply_balance_deltas(transaction, asset_name_index, deltas, now)
         _queue_balance_dirty(
             transaction, user_ref, existing_dirty, _month_start(data["occurredAt"])
         )
@@ -403,14 +609,38 @@ def create_expense(uid: str, payload: ExpenseCreate) -> dict:
 
 
 def create_income(uid: str, payload: IncomeCreate) -> dict:
-    asset_refs = _build_asset_name_index(uid)
+    asset_name_index = _build_asset_name_index(uid)
+    category_index = _build_category_name_kind_index(uid)
 
     def _work(transaction: fs.Transaction):
         now = _now()
+        next_asset_sort = _next_asset_sort_order(uid)
+        next_category_sort = _next_category_sort_order(uid, "income")
         user_ref = firestore.user_doc(uid)
         user_snap = user_ref.get(transaction=transaction)
         existing_dirty = user_snap.to_dict().get("balanceDirtyFrom") if user_snap.exists else None
         data = payload.dict()
+        asset_id, asset_name, next_asset_sort = _resolve_asset(
+            uid,
+            data.get("assetId"),
+            data.get("assetName"),
+            now,
+            asset_name_index,
+            next_asset_sort,
+        )
+        category_id, category_name, next_category_sort = _resolve_category(
+            uid,
+            data.get("categoryId"),
+            data.get("categoryName"),
+            "income",
+            now,
+            category_index,
+            next_category_sort,
+        )
+        data["assetId"] = asset_id
+        data["assetName"] = asset_name
+        data["categoryId"] = category_id
+        data["categoryName"] = category_name
         if data.get("dayOrder") is None:
             data["dayOrder"] = _default_day_order(now)
         data["type"] = "income"
@@ -419,7 +649,7 @@ def create_income(uid: str, payload: IncomeCreate) -> dict:
         data["createdBy"] = uid
         _validate_tx_payload(data)
         deltas = compute_balance_deltas(None, data)
-        _apply_balance_deltas(transaction, asset_refs, deltas, now)
+        _apply_balance_deltas(transaction, asset_name_index, deltas, now)
         _queue_balance_dirty(
             transaction, user_ref, existing_dirty, _month_start(data["occurredAt"])
         )
@@ -433,14 +663,35 @@ def create_income(uid: str, payload: IncomeCreate) -> dict:
 
 
 def create_transfer(uid: str, payload: TransferCreate) -> dict:
-    asset_refs = _build_asset_name_index(uid)
+    asset_name_index = _build_asset_name_index(uid)
 
     def _work(transaction: fs.Transaction):
         now = _now()
+        next_asset_sort = _next_asset_sort_order(uid)
         user_ref = firestore.user_doc(uid)
         user_snap = user_ref.get(transaction=transaction)
         existing_dirty = user_snap.to_dict().get("balanceDirtyFrom") if user_snap.exists else None
         data = payload.dict()
+        from_asset_id, from_asset_name, next_asset_sort = _resolve_asset(
+            uid,
+            data.get("fromAssetId"),
+            data.get("fromAssetName"),
+            now,
+            asset_name_index,
+            next_asset_sort,
+        )
+        to_asset_id, to_asset_name, next_asset_sort = _resolve_asset(
+            uid,
+            data.get("toAssetId"),
+            data.get("toAssetName"),
+            now,
+            asset_name_index,
+            next_asset_sort,
+        )
+        data["fromAssetId"] = from_asset_id
+        data["fromAssetName"] = from_asset_name
+        data["toAssetId"] = to_asset_id
+        data["toAssetName"] = to_asset_name
         if data.get("dayOrder") is None:
             data["dayOrder"] = _default_day_order(now)
         data["type"] = "transfer"
@@ -449,7 +700,7 @@ def create_transfer(uid: str, payload: TransferCreate) -> dict:
         data["createdBy"] = uid
         _validate_tx_payload(data)
         deltas = compute_balance_deltas(None, data)
-        _apply_balance_deltas(transaction, asset_refs, deltas, now)
+        _apply_balance_deltas(transaction, asset_name_index, deltas, now)
         _queue_balance_dirty(
             transaction, user_ref, existing_dirty, _month_start(data["occurredAt"])
         )
@@ -464,6 +715,7 @@ def create_transfer(uid: str, payload: TransferCreate) -> dict:
 
 def update_transaction(uid: str, tx_id: str, payload: TransactionUpdate) -> dict:
     asset_refs = _build_asset_name_index(uid)
+    category_index = _build_category_name_kind_index(uid)
     asset_name_by_id = _build_asset_name_by_id(uid)
     category_name_by_id = _build_category_name_by_id(uid)
     patch = payload.dict(exclude_unset=True)
@@ -479,6 +731,9 @@ def update_transaction(uid: str, tx_id: str, payload: TransactionUpdate) -> dict
 
     def _work(transaction: fs.Transaction):
         now = _now()
+        next_asset_sort = _next_asset_sort_order(uid)
+        next_category_sort_expense = _next_category_sort_order(uid, "expense")
+        next_category_sort_income = _next_category_sort_order(uid, "income")
         tx_ref = firestore.transaction_doc(uid, tx_id)
         snap = tx_ref.get(transaction=transaction)
         if not snap.exists:
@@ -498,6 +753,61 @@ def update_transaction(uid: str, tx_id: str, payload: TransactionUpdate) -> dict
 
         if "type" not in new_tx:
             raise AppError(400, "type is required")
+
+        tx_type = new_tx.get("type")
+        if tx_type in ("expense", "income"):
+            asset_id, asset_name, next_asset_sort = _resolve_asset(
+                uid,
+                new_tx.get("assetId"),
+                new_tx.get("assetName"),
+                now,
+                asset_refs,
+                next_asset_sort,
+            )
+            category_kind = "expense" if tx_type == "expense" else "income"
+            next_category_sort = (
+                next_category_sort_expense
+                if category_kind == "expense"
+                else next_category_sort_income
+            )
+            category_id, category_name, next_category_sort = _resolve_category(
+                uid,
+                new_tx.get("categoryId"),
+                new_tx.get("categoryName"),
+                category_kind,
+                now,
+                category_index,
+                next_category_sort,
+            )
+            if category_kind == "expense":
+                next_category_sort_expense = next_category_sort
+            else:
+                next_category_sort_income = next_category_sort
+            new_tx["assetId"] = asset_id
+            new_tx["assetName"] = asset_name
+            new_tx["categoryId"] = category_id
+            new_tx["categoryName"] = category_name
+        if tx_type == "transfer":
+            from_id, from_name, next_asset_sort = _resolve_asset(
+                uid,
+                new_tx.get("fromAssetId"),
+                new_tx.get("fromAssetName"),
+                now,
+                asset_refs,
+                next_asset_sort,
+            )
+            to_id, to_name, next_asset_sort = _resolve_asset(
+                uid,
+                new_tx.get("toAssetId"),
+                new_tx.get("toAssetName"),
+                now,
+                asset_refs,
+                next_asset_sort,
+            )
+            new_tx["fromAssetId"] = from_id
+            new_tx["fromAssetName"] = from_name
+            new_tx["toAssetId"] = to_id
+            new_tx["toAssetName"] = to_name
 
         new_tx["updatedAt"] = now
         _validate_tx_payload(new_tx)
@@ -527,6 +837,10 @@ def update_transaction(uid: str, tx_id: str, payload: TransactionUpdate) -> dict
                 if field not in FIELDS_BY_TYPE.get(new_type, set()):
                     updates[field] = fs.DELETE_FIELD
                     new_tx.pop(field, None)
+
+        for field in FIELDS_BY_TYPE.get(new_type, set()):
+            if new_tx.get(field) != old_tx.get(field):
+                updates[field] = new_tx.get(field)
 
         transaction.update(tx_ref, updates)
         new_tx["id"] = tx_id
@@ -569,8 +883,8 @@ def list_transactions(
     from_dt: Optional[datetime],
     to_dt: Optional[datetime],
     tx_type: Optional[str],
-    asset_name: Optional[str],
-    category_name: Optional[str],
+    asset_id: Optional[str],
+    category_id: Optional[str],
     limit: int,
     cursor: Optional[str],
     include_opening_balances: bool,
@@ -594,61 +908,83 @@ def list_transactions(
 
     asset_name_by_id = _build_asset_name_by_id(uid)
     category_name_by_id = _build_category_name_by_id(uid)
+    asset_name_index = _build_asset_name_index(uid)
+    category_index = _build_category_name_kind_index(uid)
     now = _now()
     items = []
     for doc in query.stream():
         data = doc.to_dict()
         data["id"] = doc.id
+        original = dict(data)
         updates: Dict[str, object] = {}
-        if not data.get("assetName") and data.get("assetId"):
-            asset_id = data.get("assetId")
-            asset_value = asset_name_by_id.get(asset_id, asset_id)
-            data["assetName"] = asset_value
-            updates["assetName"] = asset_value
-            updates["assetId"] = fs.DELETE_FIELD
-        if not data.get("fromAssetName") and data.get("fromAssetId"):
-            from_asset_id = data.get("fromAssetId")
-            from_value = asset_name_by_id.get(from_asset_id, from_asset_id)
-            data["fromAssetName"] = from_value
-            updates["fromAssetName"] = from_value
-            updates["fromAssetId"] = fs.DELETE_FIELD
-        if not data.get("toAssetName") and data.get("toAssetId"):
-            to_asset_id = data.get("toAssetId")
-            to_value = asset_name_by_id.get(to_asset_id, to_asset_id)
-            data["toAssetName"] = to_value
-            updates["toAssetName"] = to_value
-            updates["toAssetId"] = fs.DELETE_FIELD
-        if not data.get("categoryName") and data.get("categoryId"):
-            cat_id = data.get("categoryId")
-            cat_value = category_name_by_id.get(cat_id, cat_id)
-            data["categoryName"] = cat_value
-            updates["categoryName"] = cat_value
-            updates["categoryId"] = fs.DELETE_FIELD
-        if not data.get("feeCategoryName") and data.get("feeCategoryId"):
-            fee_id = data.get("feeCategoryId")
-            fee_value = category_name_by_id.get(fee_id, fee_id)
-            data["feeCategoryName"] = fee_value
-            updates["feeCategoryName"] = fee_value
-            updates["feeCategoryId"] = fs.DELETE_FIELD
+        normalized = _normalize_tx_names(
+            dict(data), asset_name_by_id, category_name_by_id
+        )
+        data.update(normalized)
+        if data.get("assetId") and original.get("assetName") != data.get("assetName"):
+            updates["assetName"] = data.get("assetName")
+        if data.get("fromAssetId") and original.get("fromAssetName") != data.get(
+            "fromAssetName"
+        ):
+            updates["fromAssetName"] = data.get("fromAssetName")
+        if data.get("toAssetId") and original.get("toAssetName") != data.get("toAssetName"):
+            updates["toAssetName"] = data.get("toAssetName")
+        if data.get("categoryId") and original.get("categoryName") != data.get("categoryName"):
+            updates["categoryName"] = data.get("categoryName")
+        if data.get("feeCategoryId") and original.get("feeCategoryName") != data.get(
+            "feeCategoryName"
+        ):
+            updates["feeCategoryName"] = data.get("feeCategoryName")
+
+        if not data.get("assetId") and data.get("assetName"):
+            ref = asset_name_index.get(data.get("assetName"))
+            if ref:
+                data["assetId"] = ref.id
+                updates["assetId"] = ref.id
+        if not data.get("fromAssetId") and data.get("fromAssetName"):
+            ref = asset_name_index.get(data.get("fromAssetName"))
+            if ref:
+                data["fromAssetId"] = ref.id
+                updates["fromAssetId"] = ref.id
+        if not data.get("toAssetId") and data.get("toAssetName"):
+            ref = asset_name_index.get(data.get("toAssetName"))
+            if ref:
+                data["toAssetId"] = ref.id
+                updates["toAssetId"] = ref.id
+
+        tx_kind = data.get("type")
+        if not data.get("categoryId") and data.get("categoryName") and tx_kind in (
+            "expense",
+            "income",
+        ):
+            ref = category_index.get((data.get("categoryName"), tx_kind))
+            if ref:
+                data["categoryId"] = ref.id
+                updates["categoryId"] = ref.id
+        if not data.get("feeCategoryId") and data.get("feeCategoryName"):
+            ref = category_index.get((data.get("feeCategoryName"), "expense"))
+            if ref:
+                data["feeCategoryId"] = ref.id
+                updates["feeCategoryId"] = ref.id
         if updates:
             updates["updatedAt"] = now
             doc.reference.update(updates)
         items.append(data)
 
-    if asset_name or category_name:
+    if asset_id or category_id:
         filtered = []
         for item in items:
-            if asset_name:
+            if asset_id:
                 if item.get("type") == "transfer":
-                    if asset_name not in {
-                        item.get("fromAssetName"),
-                        item.get("toAssetName"),
+                    if asset_id not in {
+                        item.get("fromAssetId"),
+                        item.get("toAssetId"),
                     }:
                         continue
                 else:
-                    if item.get("assetName") != asset_name:
+                    if item.get("assetId") != asset_id:
                         continue
-            if category_name and item.get("categoryName") != category_name:
+            if category_id and item.get("categoryId") != category_id:
                 continue
             filtered.append(item)
         items = filtered
@@ -699,26 +1035,68 @@ def _bulk_update_transactions_field(
     return updated
 
 
-def rename_asset_in_transactions(uid: str, old_name: str, new_name: str) -> int:
-    if not old_name or not new_name or old_name == new_name:
+def _bulk_update_transactions_name_by_id(
+    uid: str, id_field: str, name_field: str, target_id: str, new_name: str, now: datetime
+) -> int:
+    query = firestore.transactions_collection(uid).where(
+        filter=FieldFilter(id_field, "==", target_id)
+    )
+    client = firestore.get_client()
+    batch = client.batch()
+    count = 0
+    updated = 0
+    for doc in query.stream():
+        batch.update(doc.reference, {name_field: new_name, "updatedAt": now})
+        count += 1
+        updated += 1
+        if count >= 400:
+            batch.commit()
+            batch = client.batch()
+            count = 0
+    if count > 0:
+        batch.commit()
+    return updated
+
+
+def rename_asset_in_transactions(uid: str, asset_id: str, old_name: str, new_name: str) -> int:
+    if not new_name or (old_name and old_name == new_name):
         return 0
     now = _now()
     updated = 0
-    updated += _bulk_update_transactions_field(uid, "assetName", old_name, new_name, now)
-    updated += _bulk_update_transactions_field(uid, "fromAssetName", old_name, new_name, now)
-    updated += _bulk_update_transactions_field(uid, "toAssetName", old_name, new_name, now)
+    if asset_id:
+        updated += _bulk_update_transactions_name_by_id(
+            uid, "assetId", "assetName", asset_id, new_name, now
+        )
+        updated += _bulk_update_transactions_name_by_id(
+            uid, "fromAssetId", "fromAssetName", asset_id, new_name, now
+        )
+        updated += _bulk_update_transactions_name_by_id(
+            uid, "toAssetId", "toAssetName", asset_id, new_name, now
+        )
+    if old_name:
+        updated += _bulk_update_transactions_field(uid, "assetName", old_name, new_name, now)
+        updated += _bulk_update_transactions_field(uid, "fromAssetName", old_name, new_name, now)
+        updated += _bulk_update_transactions_field(uid, "toAssetName", old_name, new_name, now)
     if updated:
         firestore.user_doc(uid).set({"transactionsUpdatedAt": now}, merge=True)
     return updated
 
 
-def rename_category_in_transactions(uid: str, old_name: str, new_name: str) -> int:
-    if not old_name or not new_name or old_name == new_name:
+def rename_category_in_transactions(uid: str, category_id: str, old_name: str, new_name: str) -> int:
+    if not new_name or (old_name and old_name == new_name):
         return 0
     now = _now()
     updated = 0
-    updated += _bulk_update_transactions_field(uid, "categoryName", old_name, new_name, now)
-    updated += _bulk_update_transactions_field(uid, "feeCategoryName", old_name, new_name, now)
+    if category_id:
+        updated += _bulk_update_transactions_name_by_id(
+            uid, "categoryId", "categoryName", category_id, new_name, now
+        )
+        updated += _bulk_update_transactions_name_by_id(
+            uid, "feeCategoryId", "feeCategoryName", category_id, new_name, now
+        )
+    if old_name:
+        updated += _bulk_update_transactions_field(uid, "categoryName", old_name, new_name, now)
+        updated += _bulk_update_transactions_field(uid, "feeCategoryName", old_name, new_name, now)
     if updated:
         firestore.user_doc(uid).set({"transactionsUpdatedAt": now}, merge=True)
     return updated
@@ -775,14 +1153,7 @@ def import_transactions(uid: str, transactions: List[dict]):
     asset_name_by_id = _build_asset_name_by_id(uid)
     category_name_by_id = _build_category_name_by_id(uid)
     asset_refs = _build_asset_name_index(uid)
-
-    category_refs: Dict[tuple, fs.DocumentReference] = {}
-    for doc in firestore.categories_collection(uid).stream():
-        data = doc.to_dict()
-        name = data.get("name")
-        kind = data.get("kind")
-        if name and kind:
-            category_refs[(name, kind)] = doc.reference
+    category_refs = _build_category_name_kind_index(uid)
 
     needed_assets: set[str] = set()
     needed_categories: set[tuple] = set()
@@ -807,25 +1178,25 @@ def import_transactions(uid: str, transactions: List[dict]):
 
         normalized = _normalize_tx_names(tx, asset_name_by_id, category_name_by_id)
 
-        asset_name = normalized.get("assetName")
+        asset_name = normalized.get("assetName") or normalized.get("assetId")
         if asset_name:
             needed_assets.add(asset_name)
-        from_asset = normalized.get("fromAssetName")
+        from_asset = normalized.get("fromAssetName") or normalized.get("fromAssetId")
         if from_asset:
             needed_assets.add(from_asset)
-        to_asset = normalized.get("toAssetName")
+        to_asset = normalized.get("toAssetName") or normalized.get("toAssetId")
         if to_asset:
             needed_assets.add(to_asset)
 
         if normalized.get("type") == "expense":
-            category_name = normalized.get("categoryName")
+            category_name = normalized.get("categoryName") or normalized.get("categoryId")
             if category_name:
                 needed_categories.add((category_name, "expense"))
         if normalized.get("type") == "income":
-            category_name = normalized.get("categoryName")
+            category_name = normalized.get("categoryName") or normalized.get("categoryId")
             if category_name:
                 needed_categories.add((category_name, "income"))
-        fee_category = normalized.get("feeCategoryName")
+        fee_category = normalized.get("feeCategoryName") or normalized.get("feeCategoryId")
         if fee_category:
             needed_categories.add((fee_category, "expense"))
 
@@ -842,6 +1213,7 @@ def import_transactions(uid: str, transactions: List[dict]):
     count = 0
     now = _now()
 
+    next_asset_sort = _next_asset_sort_order(uid)
     # Create missing assets
     for name in needed_assets:
         if name in asset_refs:
@@ -855,10 +1227,11 @@ def import_transactions(uid: str, transactions: List[dict]):
             "initialBalance": 0,
             "currentBalance": 0,
             "note": None,
-            "sortOrder": 0,
+            "sortOrder": next_asset_sort,
             "createdAt": now,
             "updatedAt": now,
         }
+        next_asset_sort += 1
         batch.set(doc_ref, data)
         asset_refs[name] = doc_ref
         count += 1
@@ -867,6 +1240,10 @@ def import_transactions(uid: str, transactions: List[dict]):
             batch = client.batch()
             count = 0
 
+    next_category_sort: Dict[str, int] = {
+        "expense": _next_category_sort_order(uid, "expense"),
+        "income": _next_category_sort_order(uid, "income"),
+    }
     # Create missing categories
     for name, kind in needed_categories:
         if (name, kind) in category_refs:
@@ -875,11 +1252,12 @@ def import_transactions(uid: str, transactions: List[dict]):
         data = {
             "name": name,
             "isActive": True,
-            "sortOrder": 0,
+            "sortOrder": next_category_sort[kind],
             "kind": kind,
             "createdAt": now,
             "updatedAt": now,
         }
+        next_category_sort[kind] += 1
         batch.set(doc_ref, data)
         category_refs[(name, kind)] = doc_ref
         count += 1
@@ -899,16 +1277,27 @@ def import_transactions(uid: str, transactions: List[dict]):
         data = _normalize_tx_names(tx.copy(), asset_name_by_id, category_name_by_id)
         if "id" in data:
             del data["id"]
-        if "assetId" in data:
-            del data["assetId"]
-        if "fromAssetId" in data:
-            del data["fromAssetId"]
-        if "toAssetId" in data:
-            del data["toAssetId"]
-        if "categoryId" in data:
-            del data["categoryId"]
-        if "feeCategoryId" in data:
-            del data["feeCategoryId"]
+
+        asset_name = data.get("assetName")
+        if asset_name and asset_name in asset_refs:
+            data["assetId"] = asset_refs[asset_name].id
+        from_asset = data.get("fromAssetName")
+        if from_asset and from_asset in asset_refs:
+            data["fromAssetId"] = asset_refs[from_asset].id
+        to_asset = data.get("toAssetName")
+        if to_asset and to_asset in asset_refs:
+            data["toAssetId"] = asset_refs[to_asset].id
+        tx_type = data.get("type")
+        category_name = data.get("categoryName")
+        if category_name and tx_type in ("expense", "income"):
+            ref = category_refs.get((category_name, tx_type))
+            if ref:
+                data["categoryId"] = ref.id
+        fee_category_name = data.get("feeCategoryName")
+        if fee_category_name:
+            ref = category_refs.get((fee_category_name, "expense"))
+            if ref:
+                data["feeCategoryId"] = ref.id
 
         if isinstance(data.get("createdAt"), str):
             try:

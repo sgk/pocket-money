@@ -37,12 +37,14 @@ const EditableRow = ({
   transaction,
   assets,
   categories,
+  fixedAssetId,
   fixedAssetName,
   onCancel,
 }: {
   transaction: Transaction;
   assets: Asset[];
   categories: Category[];
+  fixedAssetId?: string;
   fixedAssetName?: string;
   onCancel: () => void;
 }) => {
@@ -55,12 +57,16 @@ const EditableRow = ({
     occurredAt: string;
     amount: string;
     memo: string;
+    assetId?: string;
     assetName?: string;
+    categoryId?: string;
     categoryName?: string;
     merchant?: string;
     source?: string;
     counterparty?: string;
+    fromAssetId?: string;
     fromAssetName?: string;
+    toAssetId?: string;
     toAssetName?: string;
     transferDirection?: "out" | "in";
   }>({
@@ -68,16 +74,24 @@ const EditableRow = ({
     occurredAt: transaction.occurredAt.slice(0, 10),
     amount: String(transaction.amount),
     memo: transaction.memo ?? "",
+    assetId: transaction.type === "transfer" ? undefined : transaction.assetId,
     assetName: transaction.type === "transfer" ? undefined : transaction.assetName,
+    categoryId: transaction.type === "transfer" ? undefined : transaction.categoryId,
     categoryName: transaction.type === "transfer" ? undefined : transaction.categoryName,
     merchant: transaction.type === "expense" ? transaction.merchant ?? "" : undefined,
     source: transaction.type === "income" ? transaction.source ?? "" : undefined,
     counterparty: transaction.type === "transfer" ? transaction.counterparty ?? "" : undefined,
+    fromAssetId: transaction.type === "transfer" ? transaction.fromAssetId : undefined,
     fromAssetName: transaction.type === "transfer" ? transaction.fromAssetName : undefined,
+    toAssetId: transaction.type === "transfer" ? transaction.toAssetId : undefined,
     toAssetName: transaction.type === "transfer" ? transaction.toAssetName : undefined,
     transferDirection:
       transaction.type === "transfer"
-        ? fixedAssetName && transaction.toAssetName === fixedAssetName
+        ? (fixedAssetId
+            ? transaction.toAssetId === fixedAssetId
+            : fixedAssetName
+              ? transaction.toAssetName === fixedAssetName
+              : false)
           ? "in"
           : "out"
         : undefined,
@@ -117,6 +131,10 @@ const EditableRow = ({
 
   const availableExpenseCategories = withCustomCategory(expenseCategories, "expense");
   const availableIncomeCategories = withCustomCategory(incomeCategories, "income");
+  const findAssetByName = (name: string) =>
+    assets.find((asset) => asset.name === name);
+  const findCategoryByName = (name: string, kind: "expense" | "income") =>
+    categories.find((category) => category.name === name && category.kind === kind);
   const categoryValue =
     form.type === "expense" || form.type === "income"
       ? form.categoryName
@@ -223,7 +241,10 @@ const EditableRow = ({
         toast.error(t("toastTransferAssetRequired"));
         return;
       }
-      if (form.fromAssetName === form.toAssetName) {
+      if (
+        (form.fromAssetId && form.toAssetId && form.fromAssetId === form.toAssetId) ||
+        form.fromAssetName === form.toAssetName
+      ) {
         toast.error(t("toastTransferSameAsset"));
         return;
       }
@@ -236,28 +257,46 @@ const EditableRow = ({
         memo: form.memo || undefined,
       };
       if (form.type === "expense") {
+        const resolvedAssetId =
+          form.assetId ?? findAssetByName(form.assetName ?? "")?.id;
+        const resolvedCategoryId =
+          form.categoryId ?? findCategoryByName(form.categoryName ?? "", "expense")?.id;
         payload = {
           ...payload,
           type: "expense",
+          assetId: resolvedAssetId,
           assetName: form.assetName,
+          categoryId: resolvedCategoryId,
           categoryName: form.categoryName,
           merchant: form.merchant || undefined,
         };
       }
       if (form.type === "income") {
+        const resolvedAssetId =
+          form.assetId ?? findAssetByName(form.assetName ?? "")?.id;
+        const resolvedCategoryId =
+          form.categoryId ?? findCategoryByName(form.categoryName ?? "", "income")?.id;
         payload = {
           ...payload,
           type: "income",
+          assetId: resolvedAssetId,
           assetName: form.assetName,
+          categoryId: resolvedCategoryId,
           categoryName: form.categoryName,
           source: form.source || undefined,
         };
       }
       if (form.type === "transfer") {
+        const resolvedFromId =
+          form.fromAssetId ?? findAssetByName(form.fromAssetName ?? "")?.id;
+        const resolvedToId =
+          form.toAssetId ?? findAssetByName(form.toAssetName ?? "")?.id;
         payload = {
           ...payload,
           type: "transfer",
+          fromAssetId: resolvedFromId,
           fromAssetName: form.fromAssetName,
+          toAssetId: resolvedToId,
           toAssetName: form.toAssetName,
           counterparty: form.counterparty || undefined,
         };
@@ -318,10 +357,11 @@ const EditableRow = ({
   }, [onCancel]);
 
   const disableAsset =
-    Boolean(fixedAssetName) &&
+    Boolean(fixedAssetId || fixedAssetName) &&
     form.type !== "transfer" &&
-    form.assetName === fixedAssetName;
-  const disableTransferAsset = Boolean(fixedAssetName) && form.type === "transfer";
+    ((fixedAssetId && form.assetId === fixedAssetId) ||
+      (!form.assetId && fixedAssetName && form.assetName === fixedAssetName));
+  const disableTransferAsset = Boolean(fixedAssetId || fixedAssetName) && form.type === "transfer";
 
   const transferDirection = form.transferDirection ?? "out";
   const placeholderValue = "__placeholder__";
@@ -331,6 +371,11 @@ const EditableRow = ({
     : transferDirection === "out"
       ? form.fromAssetName
       : form.toAssetName;
+  const transferBaseAssetId = fixedAssetId
+    ? fixedAssetId
+    : transferDirection === "out"
+      ? form.fromAssetId
+      : form.toAssetId;
   const transferValue =
     transferDirection === "out"
       ? form.toAssetName
@@ -361,15 +406,16 @@ const EditableRow = ({
             onValueChange={(value) => {
               if (value === assetPlaceholderValue) {
                 if (transferDirection === "out") {
-                  setForm({ ...form, fromAssetName: "" });
+                  setForm({ ...form, fromAssetId: "", fromAssetName: "" });
                 } else {
-                  setForm({ ...form, toAssetName: "" });
+                  setForm({ ...form, toAssetId: "", toAssetName: "" });
                 }
                 return;
               }
+              const selected = findAssetByName(value);
               transferDirection === "out"
-                ? setForm({ ...form, fromAssetName: value })
-                : setForm({ ...form, toAssetName: value });
+                ? setForm({ ...form, fromAssetId: selected?.id, fromAssetName: value })
+                : setForm({ ...form, toAssetId: selected?.id, toAssetName: value });
             }}
             disabled={disableTransferAsset}
           >
@@ -395,10 +441,11 @@ const EditableRow = ({
             value={form.assetName ?? ""}
             onValueChange={(value) => {
               if (value === assetPlaceholderValue) {
-                setForm({ ...form, assetName: "" });
+                setForm({ ...form, assetId: "", assetName: "" });
                 return;
               }
-              setForm({ ...form, assetName: value });
+              const selected = findAssetByName(value);
+              setForm({ ...form, assetId: selected?.id, assetName: value });
             }}
             disabled={disableAsset}
           >
@@ -453,13 +500,18 @@ const EditableRow = ({
             onValueChange={(value) => {
               if (value === placeholderValue) {
                 const baseAssetName = fixedAssetName ?? form.assetName ?? "";
+                const baseAssetId = fixedAssetId ?? form.assetId ?? "";
                 setForm({
                   ...form,
                   type: "expense",
+                  assetId: baseAssetId,
                   assetName: baseAssetName,
+                  categoryId: "",
                   categoryName: "",
                   transferDirection: "out",
+                  fromAssetId: undefined,
                   fromAssetName: undefined,
+                  toAssetId: undefined,
                   toAssetName: undefined,
                 });
                 return;
@@ -467,20 +519,30 @@ const EditableRow = ({
               const [type, ...rest] = value.split("::");
               const id = rest.join("::");
               const baseAssetName = transferBaseAssetName ?? "";
+              const baseAssetId = transferBaseAssetId ?? "";
+              const selected = findAssetByName(id);
               if (type === "transfer-out") {
                 setForm({
                   ...form,
                   transferDirection: "out",
+                  fromAssetId: baseAssetId,
                   fromAssetName: baseAssetName,
+                  toAssetId: selected?.id,
                   toAssetName: id ?? "",
+                  categoryId: "",
+                  categoryName: "",
                 });
               }
               if (type === "transfer-in") {
                 setForm({
                   ...form,
                   transferDirection: "in",
+                  fromAssetId: selected?.id,
                   fromAssetName: id ?? "",
+                  toAssetId: baseAssetId,
                   toAssetName: baseAssetName,
+                  categoryId: "",
+                  categoryName: "",
                 });
               }
             }}
@@ -496,7 +558,7 @@ const EditableRow = ({
                 {t("labelExpense")}
               </div>
               {selectableAssets
-                .filter((asset) => asset.name !== transferBaseAssetName)
+                .filter((asset) => asset.id !== transferBaseAssetId)
                 .map((asset) => (
                   <SelectItem
                     key={`transfer-out:${asset.id}`}
@@ -509,7 +571,7 @@ const EditableRow = ({
                 {t("labelIncome")}
               </div>
               {selectableAssets
-                .filter((asset) => asset.name !== transferBaseAssetName)
+                .filter((asset) => asset.id !== transferBaseAssetId)
                 .map((asset) => (
                   <SelectItem
                     key={`transfer-in:${asset.id}`}
@@ -525,15 +587,17 @@ const EditableRow = ({
             value={categoryValue}
             onValueChange={(value) => {
               if (value === placeholderValue) {
-                setForm({ ...form, categoryName: "" });
+                setForm({ ...form, categoryId: "", categoryName: "" });
                 return;
               }
               const [type, ...rest] = value.split("::");
               const name = rest.join("::");
               if (type === "expense" || type === "income") {
+                const selected = findCategoryByName(name ?? "", type);
                 setForm({
                   ...form,
                   type,
+                  categoryId: selected?.id,
                   categoryName: name ?? "",
                 });
               }
@@ -703,6 +767,7 @@ export const LedgerTable = ({
   transactions,
   assets,
   categories,
+  fixedAssetId,
   fixedAssetName,
   balancesById,
   openingBalances,
@@ -716,6 +781,7 @@ export const LedgerTable = ({
   transactions: Transaction[];
   assets: Asset[];
   categories: Category[];
+  fixedAssetId?: string;
   fixedAssetName?: string;
   balancesById?: Record<string, number>;
   openingBalances?: Record<string, number>;
@@ -751,6 +817,16 @@ export const LedgerTable = ({
     openingBalanceValue === null ? "-" : formatJPYPlain(openingBalanceValue);
   const openingDateText = openingDate ? formatDateSlash(openingDate) : "-";
   const isDesc = order === "desc";
+
+  const isIncomingTransfer = (tx: Transaction) => {
+    if (fixedAssetId) {
+      return tx.toAssetId === fixedAssetId;
+    }
+    if (fixedAssetName) {
+      return tx.toAssetName === fixedAssetName;
+    }
+    return false;
+  };
 
   const entryRowNode = useMemo(() => {
     if (!entryRow) return null;
@@ -803,7 +879,7 @@ export const LedgerTable = ({
         cell: ({ row }) => {
           const tx = row.original;
           if (tx.type === "transfer") {
-            if (fixedAssetName && tx.toAssetName === fixedAssetName) {
+            if (isIncomingTransfer(tx)) {
               return tx.toAssetName ?? "";
             }
             return tx.fromAssetName ?? "";
@@ -846,7 +922,7 @@ export const LedgerTable = ({
           if (tx.type === "income") {
             return `${t("labelIncome")}: ${tx.categoryName ?? ""}`;
           }
-          if (fixedAssetName && tx.toAssetName === fixedAssetName) {
+          if (isIncomingTransfer(tx)) {
             return `${t("labelIncome")}: ${t("transferFromOption", {
               assetName: tx.fromAssetName ?? "",
             })}`;
@@ -914,7 +990,7 @@ export const LedgerTable = ({
         },
       },
     ],
-    [balancesById, fixedAssetName, t]
+    [balancesById, fixedAssetId, fixedAssetName, t]
   );
 
   const sorted = useMemo(() => {
@@ -1257,6 +1333,7 @@ export const LedgerTable = ({
                   transaction={row.original}
                   assets={assets}
                   categories={categories}
+                  fixedAssetId={fixedAssetId}
                   fixedAssetName={fixedAssetName}
                   onCancel={() => setEditingId(null)}
                 />
