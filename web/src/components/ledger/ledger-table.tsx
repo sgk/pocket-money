@@ -1402,10 +1402,6 @@ export const LedgerTable = ({
                           </span>
                         </div>
                         <div className="ledger-mobile-item">
-                          <span className="ledger-mobile-label">{t("labelCounterparty")}</span>
-                          <span className="ledger-mobile-value">{counterpartyValue}</span>
-                        </div>
-                        <div className="ledger-mobile-item">
                           <span className="ledger-mobile-label">{t("labelMemo")}</span>
                           <span className="ledger-mobile-value">{memoValue}</span>
                         </div>
@@ -1418,6 +1414,12 @@ export const LedgerTable = ({
                         <div className="ledger-mobile-item">
                           <span className="ledger-mobile-label">{t("labelCategory")}</span>
                           <span className="ledger-mobile-value">{actionValue}</span>
+                        </div>
+                      </div>
+                      <div className="ledger-mobile-col">
+                        <div className="ledger-mobile-item">
+                          <span className="ledger-mobile-label">{t("labelCounterparty")}</span>
+                          <span className="ledger-mobile-value">{counterpartyValue}</span>
                         </div>
                         <div className="ledger-mobile-item">
                           <span className="ledger-mobile-label">{t("labelAmount")}</span>

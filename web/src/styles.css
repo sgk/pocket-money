@@ -281,9 +281,9 @@ h1, h2, h3, .font-display {
   .ledger-mobile-card {
     display: flex;
     align-items: flex-start;
-    gap: 10px;
+    gap: 8px;
     margin: 0;
-    padding: 0.4rem 0;
+    padding: 0.3rem 0;
     width: 100%;
     box-sizing: border-box;
     border: none;
@@ -319,12 +319,12 @@ h1, h2, h3, .font-display {
   .ledger-mobile-item {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
     min-width: 0;
   }
 
   .ledger-mobile-label {
-    flex: 0 0 48px;
+    flex: 0 0 44px;
     font-size: 0.6rem;
     color: hsl(var(--muted-foreground));
     letter-spacing: 0.08em;
