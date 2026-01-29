@@ -157,7 +157,7 @@ const CategoryRow = ({
 
   return (
     <div
-      className={`grid grid-cols-[1fr_72px_112px] items-center gap-2 rounded-lg border px-3 py-0.5 text-sm ${
+      className={`grid grid-cols-[1fr_112px] items-center gap-2 rounded-lg border px-3 py-0.5 text-sm ${
         rowOpacityClass
       } ${isDragging ? "opacity-40" : ""}`}
       ref={rowRef}
@@ -175,6 +175,27 @@ const CategoryRow = ({
         >
           ≡
         </div>
+        {isEditing ? (
+          <button
+            type="button"
+            role="switch"
+            aria-checked={category.isActive}
+            aria-label={`${kindLabel} ${category.name}`}
+            className={`relative inline-flex h-5 w-9 items-center rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+              category.isActive ? "border-emerald-500 bg-emerald-500" : "border-input bg-muted"
+            }`}
+            onClick={(event) => {
+              event.stopPropagation();
+              onToggleActive(category.id, !category.isActive);
+            }}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition ${
+                category.isActive ? "translate-x-4" : "translate-x-1"
+              }`}
+            />
+          </button>
+        ) : null}
         {isEditing ? (
           <Input
             value={name}
@@ -195,18 +216,6 @@ const CategoryRow = ({
           <span className="text-sm font-medium">{name}</span>
         )}
       </div>
-      {isEditing ? (
-        <div className="flex items-center justify-center">
-          <input
-            type="checkbox"
-            checked={category.isActive}
-            onChange={(event) => onToggleActive(category.id, event.target.checked)}
-            aria-label={`${kindLabel} ${category.name}`}
-          />
-        </div>
-      ) : (
-        <div />
-      )}
       <div className="flex items-center justify-center">
         {isEditing ? (
           <div className="flex items-center gap-1">
@@ -466,9 +475,8 @@ const CategoryList = ({
       onDragEnter={handleDragEnterList}
       onDragLeave={handleDragLeaveList}
     >
-      <div className="grid grid-cols-[1fr_72px_112px] items-center gap-2 px-3 text-base">
+      <div className="grid grid-cols-[1fr_112px] items-center gap-2 px-3 text-base">
         <span>{kindLabel}</span>
-        <span />
         <span />
       </div>
       {ordered.length === 0 ? (

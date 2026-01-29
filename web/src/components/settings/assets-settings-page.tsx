@@ -186,7 +186,7 @@ const AssetRow = ({
 
   const DesktopRow = (
     <div
-      className={`hidden items-center gap-2 rounded-lg border bg-card/80 px-3 py-1.5 text-sm md:grid md:grid-cols-[16px_minmax(200px,2fr)_minmax(120px,1fr)_minmax(180px,2fr)_104px_48px_112px] md:items-center ${
+      className={`hidden items-center gap-2 rounded-lg border bg-card/80 px-3 py-1.5 text-sm md:grid md:grid-cols-[16px_44px_minmax(200px,2fr)_minmax(120px,1fr)_minmax(180px,2fr)_104px_112px] md:items-center ${
         rowOpacityClass
       } ${isDragging ? "opacity-40" : ""}`}
       ref={rowRef}
@@ -203,6 +203,31 @@ const AssetRow = ({
       >
         ≡
       </div>
+      {isEditing ? (
+        <button
+          type="button"
+          role="switch"
+          aria-checked={form.isActive}
+          aria-label={t("assetsSettingsActive")}
+          className={`relative inline-flex h-5 w-9 items-center rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+            form.isActive ? "border-emerald-500 bg-emerald-500" : "border-input bg-muted"
+          }`}
+          onClick={(event) => {
+            event.stopPropagation();
+            const next = !form.isActive;
+            setForm({ ...form, isActive: next });
+            onToggleActive(asset.id, next);
+          }}
+        >
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition ${
+              form.isActive ? "translate-x-4" : "translate-x-1"
+            }`}
+          />
+        </button>
+      ) : (
+        <div />
+      )}
       {isEditing ? (
         <>
           <Input
@@ -284,21 +309,6 @@ const AssetRow = ({
             {formatJPY(Number(form.initialBalance || 0))}
           </div>
         </>
-      )}
-      {isEditing ? (
-        <label className="flex items-center justify-center">
-          <input
-            type="checkbox"
-            checked={form.isActive}
-            onChange={(event) => {
-              const next = event.target.checked;
-              setForm({ ...form, isActive: next });
-              onToggleActive(asset.id, next);
-            }}
-          />
-        </label>
-      ) : (
-        <div />
       )}
       <div className="flex items-center justify-end">
         {isEditing ? (
@@ -480,19 +490,27 @@ const AssetRow = ({
           <div className="flex items-center gap-3 ml-auto sm:ml-0">
             {isEditing ? (
               <>
-                <label className="flex items-center text-xs text-muted-foreground cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={form.isActive}
-                    onChange={(event) => {
-                      const next = event.target.checked;
-                      setForm({ ...form, isActive: next });
-                      onToggleActive(asset.id, next);
-                    }}
-                    className="translate-y-px"
-                    aria-label={t("assetsSettingsActive")}
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={form.isActive}
+                  aria-label={t("assetsSettingsActive")}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                    form.isActive ? "border-emerald-500 bg-emerald-500" : "border-input bg-muted"
+                  }`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    const next = !form.isActive;
+                    setForm({ ...form, isActive: next });
+                    onToggleActive(asset.id, next);
+                  }}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition ${
+                      form.isActive ? "translate-x-4" : "translate-x-1"
+                    }`}
                   />
-                </label>
+                </button>
                 <div className="flex items-center gap-1">
                   <Button
                     type="button"
