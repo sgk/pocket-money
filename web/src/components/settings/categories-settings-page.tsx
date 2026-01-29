@@ -206,7 +206,7 @@ const CategoryRow = ({
           <Input
             value={name}
             onChange={(event) => setName(event.target.value)}
-            className="h-8"
+            className="h-8 min-w-0 flex-1"
             onKeyDown={(event) => {
               if (event.key === "Enter") {
                 event.preventDefault();
