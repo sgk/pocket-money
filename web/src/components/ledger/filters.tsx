@@ -80,10 +80,10 @@ export const Filters = ({
     <div className="grid gap-3">
       {/* md 未満は縦積みレイアウトで幅不足によるはみ出しを防ぐ */}
       <div className="grid gap-3 md:hidden">
-        {/* 530px未満では日付を折返し、530px以上で1行維持 */}
-        <div className="flex flex-nowrap max-[530px]:flex-wrap items-center gap-1">
+        {/* できるだけ1行に収め、どうしても折れるときはプリセットの後を折り返す */}
+        <div className="flex flex-wrap items-center gap-1">
           <Select value={preset} onValueChange={(value) => setPreset(value as PresetValue)}>
-            <SelectTrigger className="!w-auto min-w-[84px] flex-shrink-0">
+            <SelectTrigger className="!w-auto min-w-[64px] flex-shrink-0 h-8 px-2 text-xs">
               <SelectValue placeholder={t("filterPeriodPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
@@ -94,27 +94,29 @@ export const Filters = ({
               ))}
             </SelectContent>
           </Select>
-          <Input
-            type="date"
-            value={filters.from}
-            onChange={(event) => {
-              setFilters({ ...filters, from: event.target.value });
-              setPreset("custom");
-            }}
-            className="flex-1 min-w-[100px] max-[530px]:min-w-[140px]"
-          />
-          <span className="text-sm text-muted-foreground flex-shrink-0">
-            {t("filterRangeSeparator")}
-          </span>
-          <Input
-            type="date"
-            value={filters.to}
-            onChange={(event) => {
-              setFilters({ ...filters, to: event.target.value });
-              setPreset("custom");
-            }}
-            className="flex-1 min-w-[100px] max-[530px]:min-w-[140px]"
-          />
+          <div className="flex flex-1 min-w-0 items-center gap-1 max-[360px]:basis-full">
+            <Input
+              type="date"
+              value={filters.from}
+              onChange={(event) => {
+                setFilters({ ...filters, from: event.target.value });
+                setPreset("custom");
+              }}
+              className="flex-1 min-w-0 h-8 px-2 text-xs"
+            />
+            <span className="text-xs text-muted-foreground flex-shrink-0">
+              {t("filterRangeSeparator")}
+            </span>
+            <Input
+              type="date"
+              value={filters.to}
+              onChange={(event) => {
+                setFilters({ ...filters, to: event.target.value });
+                setPreset("custom");
+              }}
+              className="flex-1 min-w-0 h-8 px-2 text-xs"
+            />
+          </div>
         </div>
         <div className="flex flex-nowrap max-[400px]:flex-wrap items-center gap-2">
           <Input
