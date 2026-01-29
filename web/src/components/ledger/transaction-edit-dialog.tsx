@@ -130,14 +130,52 @@ export const TransactionEditDialog = ({
   }
 
   const hasAmount = form.amount.trim() !== "" && !Number.isNaN(Number(form.amount));
+  const initialDate = transaction.occurredAt.slice(0, 10);
+  const initialMemo = transaction.memo ?? "";
+  const initialAmount = transaction.amount;
+  const normalizedAmount = Number(form.amount);
+  const isDirty = (() => {
+    if (form.occurredAt !== initialDate) {
+      return true;
+    }
+    if (Number.isNaN(normalizedAmount) || normalizedAmount !== initialAmount) {
+      return true;
+    }
+    if ((form.memo ?? "") !== initialMemo) {
+      return true;
+    }
+    if (transaction.type === "expense") {
+      return (
+        (form.assetName ?? "") !== (transaction.assetName ?? "") ||
+        (form.categoryName ?? "") !== (transaction.categoryName ?? "") ||
+        (form.merchant ?? "") !== (transaction.merchant ?? "")
+      );
+    }
+    if (transaction.type === "income") {
+      return (
+        (form.assetName ?? "") !== (transaction.assetName ?? "") ||
+        (form.categoryName ?? "") !== (transaction.categoryName ?? "") ||
+        (form.source ?? "") !== (transaction.source ?? "")
+      );
+    }
+    return (
+      (form.fromAssetName ?? "") !== (transaction.fromAssetName ?? "") ||
+      (form.toAssetName ?? "") !== (transaction.toAssetName ?? "") ||
+      Number(form.fee ?? 0) !== Number(transaction.fee ?? 0)
+    );
+  })();
   const isSaveDisabled =
-    transaction.type === "transfer"
+    (transaction.type === "transfer"
       ? !form.fromAssetName?.trim() || !form.toAssetName?.trim() || !hasAmount
-      : !form.assetName?.trim() || !form.categoryName?.trim() || !hasAmount;
+      : !form.assetName?.trim() || !form.categoryName?.trim() || !hasAmount) ||
+    !isDirty;
 
   const handleSave = async () => {
     if (!token) {
       toast.error(t("toastLoginRequired"));
+      return;
+    }
+    if (!isDirty) {
       return;
     }
     if (form.amount === "" || Number.isNaN(Number(form.amount))) {

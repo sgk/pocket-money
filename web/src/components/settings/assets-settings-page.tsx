@@ -63,7 +63,6 @@ const AssetRow = ({
     initialBalance: String(asset.initialBalance ?? 0),
     isActive: asset.isActive,
   });
-  const [isDirty, setIsDirty] = useState(false);
   const rowRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -74,7 +73,6 @@ const AssetRow = ({
       initialBalance: String(asset.initialBalance ?? 0),
       isActive: asset.isActive,
     });
-    setIsDirty(false);
   }, [asset]);
 
   useEffect(() => {
@@ -88,7 +86,6 @@ const AssetRow = ({
       initialBalance: String(asset.initialBalance ?? 0),
       isActive: asset.isActive,
     });
-    setIsDirty(false);
   }, [asset, isEditing]);
 
   useEffect(() => {
@@ -106,6 +103,19 @@ const AssetRow = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isEditing]);
 
+  const normalizedName = form.name.trim();
+  const normalizedType = form.type.trim();
+  const normalizedNote = form.note.trim();
+  const normalizedInitialBalance = Number(
+    form.initialBalance.trim() === "" ? 0 : form.initialBalance
+  );
+  const initialBalanceValue = Number(asset.initialBalance ?? 0);
+  const isDirty =
+    normalizedName !== asset.name ||
+    normalizedType !== (asset.type ?? "") ||
+    normalizedNote !== (asset.note ?? "") ||
+    normalizedInitialBalance !== initialBalanceValue;
+
   const handleSave = async () => {
     if (!form.name.trim()) {
       setForm({
@@ -118,7 +128,6 @@ const AssetRow = ({
     if (!isDirty) {
       return true;
     }
-    setIsDirty(false);
     const initialValue = form.initialBalance.trim();
     const parsedInitial = initialValue === "" ? 0 : Number(initialValue);
     if (Number.isNaN(parsedInitial)) {
@@ -137,7 +146,6 @@ const AssetRow = ({
 
   const handleChange = (next: Partial<typeof form>) => {
     setForm((prev) => ({ ...prev, ...next }));
-    setIsDirty(true);
   };
 
   const handleRowClick = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -177,12 +185,12 @@ const AssetRow = ({
       initialBalance: String(asset.initialBalance ?? 0),
       isActive: asset.isActive,
     });
-    setIsDirty(false);
     onRequestClose();
   };
 
   const rowOpacityClass = inactive ? (isEditing ? "opacity-50" : "opacity-30") : "";
-  const isSaveDisabled = !form.name.trim();
+  const isSaveDisabled = normalizedName === "" || !isDirty;
+  const saveIconClass = isSaveDisabled ? "text-muted-foreground/40" : "text-emerald-600";
 
   const DesktopRow = (
     <div
@@ -325,7 +333,7 @@ const AssetRow = ({
               aria-label={t("assetsSettingsSaveAria")}
               disabled={isSaveDisabled}
             >
-              <Check className="h-4 w-4 text-emerald-600" />
+              <Check className={`h-4 w-4 ${saveIconClass}`} />
             </Button>
             <Button
               type="button"
@@ -524,7 +532,7 @@ const AssetRow = ({
                   aria-label={t("assetsSettingsSaveAria")}
                   disabled={isSaveDisabled}
                 >
-                  <Check className="h-4 w-4 text-emerald-600" />
+                  <Check className={`h-4 w-4 ${saveIconClass}`} />
                 </Button>
                 <Button
                   type="button"

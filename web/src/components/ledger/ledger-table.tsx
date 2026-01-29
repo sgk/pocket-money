@@ -125,10 +125,50 @@ const EditableRow = ({
       : "";
 
   const hasAmount = form.amount.trim() !== "" && !Number.isNaN(Number(form.amount));
+  const initialDate = transaction.occurredAt.slice(0, 10);
+  const initialMemo = transaction.memo ?? "";
+  const initialAmount = transaction.amount;
+  const normalizedAmount = Number(form.amount);
+  const isDirty = (() => {
+    if (form.type !== transaction.type) {
+      return true;
+    }
+    if (form.occurredAt !== initialDate) {
+      return true;
+    }
+    if (Number.isNaN(normalizedAmount) || normalizedAmount !== initialAmount) {
+      return true;
+    }
+    if ((form.memo ?? "") !== initialMemo) {
+      return true;
+    }
+    if (form.type === "expense") {
+      return (
+        (form.assetName ?? "") !== (transaction.assetName ?? "") ||
+        (form.categoryName ?? "") !== (transaction.categoryName ?? "") ||
+        (form.merchant ?? "") !== (transaction.merchant ?? "")
+      );
+    }
+    if (form.type === "income") {
+      return (
+        (form.assetName ?? "") !== (transaction.assetName ?? "") ||
+        (form.categoryName ?? "") !== (transaction.categoryName ?? "") ||
+        (form.source ?? "") !== (transaction.source ?? "")
+      );
+    }
+    return (
+      (form.fromAssetName ?? "") !== (transaction.fromAssetName ?? "") ||
+      (form.toAssetName ?? "") !== (transaction.toAssetName ?? "") ||
+      (form.counterparty ?? "") !== (transaction.counterparty ?? "")
+    );
+  })();
   const isSaveDisabled =
-    form.type === "transfer"
+    (form.type === "transfer"
       ? !form.fromAssetName?.trim() || !form.toAssetName?.trim() || !hasAmount
-      : !form.assetName?.trim() || !form.categoryName?.trim() || !hasAmount;
+      : !form.assetName?.trim() || !form.categoryName?.trim() || !hasAmount) ||
+    !isDirty;
+  const isSaveButtonDisabled = isSaving || isSaveDisabled;
+  const saveIconClass = isSaveButtonDisabled ? "text-muted-foreground/40" : "text-emerald-600";
 
   const selectableAssets = useMemo(() => {
     const existing = new Set(assets.map((asset) => asset.name));
@@ -159,6 +199,9 @@ const EditableRow = ({
   const handleSave = async () => {
     if (!token) {
       toast.error(t("toastLoginRequired"));
+      return;
+    }
+    if (!isDirty) {
       return;
     }
     if (form.amount === "" || Number.isNaN(Number(form.amount))) {
@@ -557,11 +600,11 @@ const EditableRow = ({
               variant="ghost"
               size="icon"
               onClick={handleSave}
-              disabled={isSaving || isSaveDisabled}
+              disabled={isSaveButtonDisabled}
               aria-label={t("actionSave")}
               className="h-7 w-7"
             >
-              <Check className="h-4 w-4 text-emerald-600" />
+              <Check className={`h-4 w-4 ${saveIconClass}`} />
             </Button>
             <Button
               type="button"
@@ -599,11 +642,11 @@ const EditableRow = ({
             variant="ghost"
             size="icon"
             onClick={handleSave}
-            disabled={isSaving || isSaveDisabled}
+            disabled={isSaveButtonDisabled}
             aria-label={t("actionSave")}
             className="h-7 w-7"
           >
-            <Check className="h-4 w-4 text-emerald-600" />
+            <Check className={`h-4 w-4 ${saveIconClass}`} />
           </Button>
           <Button
             type="button"

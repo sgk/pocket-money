@@ -153,7 +153,13 @@ const CategoryRow = ({
   };
 
   const rowOpacityClass = inactive ? (isEditing ? "opacity-50" : "opacity-30") : "";
-  const isSaveDisabled = name.trim() === "";
+  const trimmedName = name.trim();
+  const isDirty =
+    trimmedName !== "" &&
+    trimmedName !== category.name &&
+    trimmedName !== lastSubmittedName;
+  const isSaveDisabled = trimmedName === "" || !isDirty;
+  const saveIconClass = isSaveDisabled ? "text-muted-foreground/40" : "text-emerald-600";
 
   return (
     <div
@@ -231,7 +237,7 @@ const CategoryRow = ({
               aria-label={t("actionSave")}
               disabled={isSaveDisabled}
             >
-              <Check className="h-4 w-4 text-emerald-600" />
+              <Check className={`h-4 w-4 ${saveIconClass}`} />
             </Button>
             <Button
               type="button"
