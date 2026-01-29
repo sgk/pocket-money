@@ -16,6 +16,7 @@ export const upperTexts = defineTexts({
   loginProcessing: text("ログイン処理中..."),
   loginMissingGoogleId: text("GoogleのIDが未設定です"),
   loginError: text("ログインに失敗しました。もう一度試してください。"),
+  loginNetworkError: text("通信エラーが発生しました。通信状況を確認してください。"),
 
   // ナビゲーション
   navSummary: text("概要"),
@@ -106,6 +107,10 @@ export const upperTexts = defineTexts({
   toastEntryAdded: text("記録を追加したよ"),
   toastEntryUpdated: text("記録を更新したよ"),
   toastEntryDeleted: text("記録を削除したよ"),
+  toastNetworkError: text("通信エラーが発生しました。通信状況を確認してください。"),
+  toastUnexpectedError: text(
+    "エラーが発生しました。頻発する場合はアプリを再読み込みしてください。改善しない場合は管理者に連絡してください。"
+  ),
   confirmDeleteEntry: text("この記録を削除する？"),
   dialogEditEntryTitle: text("記録を更新"),
   unknownError: text("不明なエラー"),

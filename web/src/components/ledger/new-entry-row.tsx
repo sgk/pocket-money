@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { api } from "@/lib/api";
+import { api, isNetworkError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useInvalidateLedger } from "@/lib/query";
 import { todayISO } from "@/lib/date";
@@ -243,7 +243,7 @@ export const NewEntryRow = ({
         resetEntry();
       }
     } catch (error) {
-      toast.error((error as Error).message);
+      toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
     } finally {
       setIsSaving(false);
     }

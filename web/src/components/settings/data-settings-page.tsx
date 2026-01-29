@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { api } from "@/lib/api";
+import { api, isNetworkError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useInvalidateLedger } from "@/lib/query";
 import { Topbar } from "@/components/layout/topbar";
@@ -123,7 +123,7 @@ export const DataSettingsPage = () => {
       URL.revokeObjectURL(url);
       toast.success(t("toastExportJsonSuccess"));
     } catch (e) {
-      toast.error(t("toastExportError"));
+      toast.error(isNetworkError(e) ? t("toastNetworkError") : t("toastUnexpectedError"));
       console.error(e);
     } finally {
       setIsExporting(false);
@@ -147,7 +147,7 @@ export const DataSettingsPage = () => {
       URL.revokeObjectURL(url);
       toast.success(t("toastExportCsvSuccess"));
     } catch (e) {
-        toast.error(t("toastExportError"));
+        toast.error(isNetworkError(e) ? t("toastNetworkError") : t("toastUnexpectedError"));
         console.error(e);
     } finally {
         setIsExportingCsv(false);
@@ -185,9 +185,7 @@ export const DataSettingsPage = () => {
       toast.success(t("toastImportSuccess"));
       invalidate();
     } catch (e) {
-      toast.error(
-        `${t("toastImportError")}: ${e instanceof Error ? e.message : t("unknownError")}`
-      );
+      toast.error(isNetworkError(e) ? t("toastNetworkError") : t("toastUnexpectedError"));
       console.error(e);
     } finally {
       setIsImporting(false);
@@ -252,7 +250,7 @@ export const DataSettingsPage = () => {
       await api.deleteAllTransactions(token);
       toast.success(t("toastResetSuccess"));
     } catch (e) {
-      toast.error(t("toastResetError"));
+      toast.error(isNetworkError(e) ? t("toastNetworkError") : t("toastUnexpectedError"));
     } finally {
       setIsDeletingData(false);
     }
@@ -269,7 +267,7 @@ export const DataSettingsPage = () => {
       // Redirect handled by logout usually, or:
       window.location.href = "/login";
     } catch (e) {
-      toast.error(t("toastDeleteAccountError"));
+      toast.error(isNetworkError(e) ? t("toastNetworkError") : t("toastUnexpectedError"));
     } finally {
       setIsDeletingAccount(false);
     }

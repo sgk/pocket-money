@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { api, isNetworkError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useInvalidateLedger } from "@/lib/query";
 import type { Asset, Category, Transaction } from "@/lib/types";
@@ -237,7 +237,7 @@ export const TransactionEditDialog = ({
       invalidate();
       onOpenChange(false);
     } catch (error) {
-      toast.error((error as Error).message);
+      toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
     }
   };
 
@@ -256,7 +256,7 @@ export const TransactionEditDialog = ({
       invalidate();
       onOpenChange(false);
     } catch (error) {
-      toast.error((error as Error).message);
+      toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
     }
   };
 

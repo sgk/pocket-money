@@ -9,7 +9,7 @@ import { Check, Trash2, X } from "lucide-react";
 import type { Asset, Category, Transaction } from "@/lib/types";
 import { formatDateSlash, toDateKey } from "@/lib/date";
 import { formatJPYPlain } from "@/lib/money";
-import { api } from "@/lib/api";
+import { api, isNetworkError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useInvalidateLedger } from "@/lib/query";
 import { Button } from "@/components/ui/button";
@@ -267,7 +267,7 @@ const EditableRow = ({
       invalidate();
       onCancel();
     } catch (error) {
-      toast.error((error as Error).message);
+      toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
     } finally {
       setIsSaving(false);
     }
@@ -289,7 +289,7 @@ const EditableRow = ({
       invalidate();
       onCancel();
     } catch (error) {
-      toast.error((error as Error).message);
+      toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
     } finally {
       setIsSaving(false);
     }
@@ -1090,7 +1090,7 @@ export const LedgerTable = ({
       );
       invalidate();
     } catch (error) {
-      toast.error((error as Error).message);
+      toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
     } finally {
       setIndicator(null);
       setDraggingId(null);

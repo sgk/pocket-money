@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Trash2, X } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, isNetworkError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Link } from "react-router-dom";
 import { useAssets } from "@/lib/query";
@@ -743,7 +743,7 @@ export const AssetsSettingsPage = () => {
       setNewAsset({ name: "", type: "", initialBalance: "0", note: "" });
       queryClient.invalidateQueries({ queryKey: ["assets"] });
     } catch (error) {
-      toast.error((error as Error).message);
+      toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
     }
   };
 
@@ -778,7 +778,7 @@ export const AssetsSettingsPage = () => {
       toast.success(t("toastAssetUpdated"));
       queryClient.invalidateQueries({ queryKey: ["assets"] });
     } catch (error) {
-      toast.error((error as Error).message);
+      toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
     }
   };
 
@@ -793,7 +793,7 @@ export const AssetsSettingsPage = () => {
       });
       queryClient.invalidateQueries({ queryKey: ["assets"] });
     } catch (error) {
-      toast.error((error as Error).message);
+      toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
       queryClient.invalidateQueries({ queryKey: ["assets"] });
     }
   };
@@ -817,7 +817,7 @@ export const AssetsSettingsPage = () => {
         setEditingAssetId(null);
       }
     } catch (error) {
-      toast.error((error as Error).message);
+      toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
     }
   };
 
@@ -836,7 +836,7 @@ export const AssetsSettingsPage = () => {
       });
       queryClient.invalidateQueries({ queryKey: ["assets"] });
     } catch (error) {
-      toast.error((error as Error).message);
+      toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
     }
   };
 

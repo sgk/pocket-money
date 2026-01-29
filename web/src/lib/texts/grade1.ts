@@ -19,6 +19,7 @@ export const grade1Texts = defineTexts<Record<TextKey, TextEntry>>({
   loginProcessing: text("ログイン処理中..."),
   loginMissingGoogleId: text("GoogleのIDが未設定です"),
   loginError: text("ログインに失敗しました。もう一度試してください。"),
+  loginNetworkError: text("つうしんエラーが おきたよ。でんぱや つうしんを かくにんしてね。"),
 
   // ナビゲーション
   navSummary: text("まとめ"),
@@ -111,6 +112,10 @@ export const grade1Texts = defineTexts<Record<TextKey, TextEntry>>({
   toastEntryAdded: text("きろくを たしたよ"),
   toastEntryUpdated: text("きろくを なおしたよ"),
   toastEntryDeleted: text("きろくを けしたよ"),
+  toastNetworkError: text("つうしんエラーが おきたよ。でんぱや つうしんを かくにんしてね。"),
+  toastUnexpectedError: text(
+    "エラーが おきたよ。よく おきるなら アプリを さい読みこみ してね。なおらないなら おとなのひとに つたえてね。"
+  ),
   confirmDeleteEntry: text("この きろくを けす？"),
   dialogEditEntryTitle: text("きろくを なおす"),
   unknownError: text("わからないエラー"),

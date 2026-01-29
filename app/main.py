@@ -21,6 +21,19 @@ from app.core.errors import (
 
 app = FastAPI(title="Pocket Money API", version="0.1.0")
 
+@app.middleware("http")
+async def capture_request_body(request, call_next):
+    body = await request.body()
+    if body:
+        limited = body[:2048]
+        request.state.request_body = limited.decode("utf-8", errors="replace")
+        request.state.request_body_truncated = len(body) > len(limited)
+    else:
+        request.state.request_body = None
+        request.state.request_body_truncated = False
+    request._body = body
+    return await call_next(request)
+
 
 @app.get("/healthz")
 def healthz():

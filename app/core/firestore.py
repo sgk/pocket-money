@@ -71,3 +71,7 @@ def balance_snapshots_collection(uid: str):
 
 def balance_snapshot_doc(uid: str, month_key: str):
     return balance_snapshots_collection(uid).document(month_key)
+
+
+def error_logs_collection():
+    return get_client().collection("errorLogs")

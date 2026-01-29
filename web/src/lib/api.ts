@@ -9,6 +9,18 @@ import type {
 
 const API_BASE_URL = window.location.origin;
 
+export class ApiError extends Error {
+  code: "network" | "http";
+
+  constructor(code: "network" | "http", message: string) {
+    super(message);
+    this.code = code;
+  }
+}
+
+export const isNetworkError = (error: unknown): boolean =>
+  error instanceof ApiError && error.code === "network";
+
 const buildUrl = (path: string, params?: Record<string, string | number | undefined>) => {
   const url = new URL(path, API_BASE_URL);
   if (params) {
@@ -27,18 +39,23 @@ const fetchJson = async <T>(
   options: RequestInit = {},
   params?: Record<string, string | number | undefined>
 ): Promise<T> => {
-  const res = await fetch(buildUrl(path, params), {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      ...(options.headers ?? {}),
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(buildUrl(path, params), {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        ...(options.headers ?? {}),
+      },
+    });
+  } catch (error) {
+    throw new ApiError("network", "NETWORK_ERROR");
+  }
 
   if (!res.ok) {
     const message = await res.text();
-    throw new Error(message || "API エラーが発生しました");
+    throw new ApiError("http", message || "API エラーが発生しました");
   }
 
   if (res.status === 204) {
@@ -87,20 +104,25 @@ const clearTransactionsCache = () => {
 
 export const api = {
   loginWithGoogle: async (credential: string) => {
-    const res = await fetch(buildUrl("/api/login"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ credential }),
-    });
+    let res: Response;
+    try {
+      res = await fetch(buildUrl("/api/login"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credential }),
+      });
+    } catch (error) {
+      throw new ApiError("network", "NETWORK_ERROR");
+    }
 
     if (!res.ok) {
       const message = await res.text();
-      throw new Error(message || "ログインに失敗しました");
+      throw new ApiError("http", message || "ログインに失敗しました");
     }
 
     const data = (await res.json()) as { token?: string };
     if (!data.token) {
-      throw new Error("ログインに失敗しました");
+      throw new ApiError("http", "ログインに失敗しました");
     }
     return data.token;
   },
@@ -144,9 +166,14 @@ export const api = {
       headers["If-Modified-Since"] = cached.lastModified;
     }
 
-    const res = await fetch(buildUrl("/api/transactions", params), {
-      headers,
-    });
+    let res: Response;
+    try {
+      res = await fetch(buildUrl("/api/transactions", params), {
+        headers,
+      });
+    } catch (error) {
+      throw new ApiError("network", "NETWORK_ERROR");
+    }
 
     if (res.status === 304) {
       if (!cached) {
@@ -157,7 +184,7 @@ export const api = {
 
     if (!res.ok) {
       const message = await res.text();
-      throw new Error(message || "API エラーが発生しました");
+      throw new ApiError("http", message || "API エラーが発生しました");
     }
 
     const data = (await res.json()) as TransactionsResponse;

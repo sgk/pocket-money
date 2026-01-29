@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { api } from "@/lib/api";
+import { api, isNetworkError } from "@/lib/api";
 import { useText } from "@/lib/text";
 
 declare global {
@@ -40,7 +40,7 @@ export const LoginPage = () => {
         navigate("/", { replace: true });
       } catch (err) {
         console.error(err);
-        setError(t("loginError"));
+        setError(isNetworkError(err) ? t("loginNetworkError") : t("loginError"));
       } finally {
         setIsSubmitting(false);
       }

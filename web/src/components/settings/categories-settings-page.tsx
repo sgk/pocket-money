@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Trash2, X } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, isNetworkError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useCategories } from "@/lib/query";
 import { useQueryClient } from "@tanstack/react-query";
@@ -643,7 +643,7 @@ export const CategoriesSettingsPage = () => {
       setNewCategory({ name: "", kind: "expense" });
       queryClient.invalidateQueries({ queryKey: ["categories"] });
     } catch (error) {
-      toast.error((error as Error).message);
+      toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
     }
   };
 
@@ -658,7 +658,7 @@ export const CategoriesSettingsPage = () => {
       });
       queryClient.invalidateQueries({ queryKey: ["categories"] });
     } catch (error) {
-      toast.error((error as Error).message);
+      toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
     }
   };
 
@@ -679,7 +679,7 @@ export const CategoriesSettingsPage = () => {
       });
       queryClient.invalidateQueries({ queryKey: ["categories"] });
     } catch (error) {
-      toast.error((error as Error).message);
+      toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
     }
   };
 
@@ -701,7 +701,7 @@ export const CategoriesSettingsPage = () => {
         setEditingCategoryId(null);
       }
     } catch (error) {
-      toast.error((error as Error).message);
+      toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
     }
   };
 
@@ -743,7 +743,7 @@ export const CategoriesSettingsPage = () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       return true;
     } catch (error) {
-      toast.error((error as Error).message);
+      toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
       return false;
     }
   };
@@ -799,7 +799,7 @@ export const CategoriesSettingsPage = () => {
       });
       queryClient.invalidateQueries({ queryKey: ["categories"] });
     } catch (error) {
-      toast.error((error as Error).message);
+      toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
     }
   };
 
