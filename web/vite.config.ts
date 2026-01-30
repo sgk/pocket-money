@@ -9,7 +9,7 @@ export default defineConfig({
       registerType: "autoUpdate",
       manifest: {
         name: "おこづかいノート",
-        short_name: "おこづかい",
+        short_name: "おこづかいノート",
         description: "いれもの別に管理できるお小遣い帳アプリ",
         start_url: "/",
         scope: "/",
