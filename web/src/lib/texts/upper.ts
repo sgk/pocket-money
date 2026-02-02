@@ -36,6 +36,23 @@ export const upperTexts = defineTexts({
   onboardingAgreeError: text("同意の処理に失敗しました。"),
   onboardingInviteError: text("招待の確認に失敗しました。"),
   onboardingParentEmailRequired: text("親のメールアドレスを入力してください。"),
+  onboardingIntroExportTitle: text("データのエクスポート"),
+  onboardingIntroExportDescription: text(
+    "利用許諾条件に同意しなくても、以前のデータをダウンロードできます。"
+  ),
+  onboardingIntroNextDescription: text(
+    "このアプリの利用を開始するには次の画面に進んでください。"
+  ),
+  onboardingIntroNextButton: text("進む"),
+  onboardingExportJson: text("JSONをダウンロード"),
+  onboardingExportCsv: text("CSVをダウンロード"),
+  onboardingExporting: text("ダウンロード中..."),
+  onboardingExportSuccess: text("エクスポートが完了しました。"),
+  onboardingExportCsvSuccess: text("CSVのエクスポートが完了しました。"),
+  onboardingExportError: text("エクスポートに失敗しました。"),
+  onboardingStepAgeLabel: text("年齢選択"),
+  onboardingStepAdultLabel: text("利用許諾条件に同意"),
+  onboardingStepChildLabel: text("招待した親のGoogleアカウント"),
 
   // 利用許諾条件ページ
   termsPageTitle: text("利用許諾条件"),

@@ -4,7 +4,7 @@ from typing import Optional, List
 
 from fastapi import APIRouter, Depends, Header, Query, Response
 
-from app.api.deps import get_ready_user
+from app.api.deps import get_current_user, get_ready_user
 from app.core.errors import AppError
 from app.models.transactions import (
     ExpenseCreate,
@@ -103,7 +103,7 @@ def create_transfer(payload: TransferCreate, user=Depends(get_ready_user)):
 
 
 @router.get("/export", response_model=List[dict])
-def export_transactions_route(user=Depends(get_ready_user)):
+def export_transactions_route(user=Depends(get_current_user)):
     return transactions_service.export_transactions(user.uid)
 
 
