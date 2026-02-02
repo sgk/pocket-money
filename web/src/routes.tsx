@@ -31,14 +31,14 @@ const CategoriesSettingsPage = lazy(() =>
     default: module.CategoriesSettingsPage,
   }))
 );
-const PersonalSettingsPage = lazy(() =>
-  import("@/components/settings/personal-settings-page").then((module) => ({
-    default: module.PersonalSettingsPage,
-  }))
-);
 const DataSettingsPage = lazy(() =>
   import("@/components/settings/data-settings-page").then((module) => ({
     default: module.DataSettingsPage,
+  }))
+);
+const TermsPage = lazy(() =>
+  import("@/pages/terms-page").then((module) => ({
+    default: module.TermsPage,
   }))
 );
 const SettingsPage = lazy(() =>
@@ -62,7 +62,7 @@ export const RoutesConfig = () => (
       <Route path="settings" element={withSuspense(<SettingsPage />)} />
       <Route path="settings/assets" element={withSuspense(<AssetsSettingsPage />)} />
       <Route path="settings/categories" element={withSuspense(<CategoriesSettingsPage />)} />
-      <Route path="settings/personal" element={withSuspense(<PersonalSettingsPage />)} />
+      <Route path="settings/terms" element={withSuspense(<TermsPage />)} />
       <Route path="settings/data" element={withSuspense(<DataSettingsPage />)} />
     </Route>
   </Routes>

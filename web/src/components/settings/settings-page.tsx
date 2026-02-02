@@ -1,8 +1,9 @@
 import { useRef, useState } from "react";
+import { Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { api, isNetworkError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { useInvalidateLedger } from "@/lib/query";
+import { useBootstrap, useInvalidateLedger, useInvites } from "@/lib/query";
 import { Topbar } from "@/components/layout/topbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +32,11 @@ export const SettingsPage = () => {
   const { t, grade, setGrade } = useText();
   const gradeOptions = useGradeOptions();
   const { token, logout } = useAuth();
+  const { data } = useBootstrap();
+  const profile = data?.profile;
+  const ageGroup = profile?.ageGroup;
+  const isAdult = ageGroup === "adult";
+  const invitesQuery = useInvites(isAdult);
   const invalidate = useInvalidateLedger();
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -38,8 +44,13 @@ export const SettingsPage = () => {
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isExportingCsv, setIsExportingCsv] = useState(false);
   const [isDragActive, setIsDragActive] = useState(false);
+  const [childEmail, setChildEmail] = useState("");
+  const [isInviting, setIsInviting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounter = useRef(0);
+  const parent = profile?.parent;
+  const invites = invitesQuery.data?.items ?? [];
+  const inviteLimit = invitesQuery.data?.limit ?? 10;
 
   const jsonToCsv = (items: any[]) => {
     if (items.length === 0) return "";
@@ -140,6 +151,48 @@ export const SettingsPage = () => {
       console.error(e);
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handleInvite = async () => {
+    if (!token) return;
+    if (!childEmail.trim()) {
+      toast.error(t("personalSettingsInviteEmailRequired"));
+      return;
+    }
+    if (invites.length >= inviteLimit) {
+      toast.error(t("personalSettingsInviteLimitReached"));
+      return;
+    }
+    setIsInviting(true);
+    try {
+      await api.createInvite(token, { childEmail: childEmail.trim() });
+      toast.success(t("personalSettingsInviteSuccess"));
+      setChildEmail("");
+      await invitesQuery.refetch();
+    } catch (error) {
+      toast.error(isNetworkError(error) ? t("toastNetworkError") : t("personalSettingsInviteError"));
+      console.error(error);
+    } finally {
+      setIsInviting(false);
+    }
+  };
+
+  const handleCancelInvite = async (inviteId: string, isActive: boolean) => {
+    if (!token) return;
+    const confirmMessage = isActive
+      ? `${t("personalSettingsInviteCancelConfirm")} ${t("personalSettingsInviteCancelConfirmActive")}`
+      : t("personalSettingsInviteCancelConfirm");
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+    try {
+      await api.cancelInvite(token, inviteId);
+      toast.success(t("personalSettingsInviteCancelSuccess"));
+      await invitesQuery.refetch();
+    } catch (error) {
+      toast.error(isNetworkError(error) ? t("toastNetworkError") : t("personalSettingsInviteCancelError"));
+      console.error(error);
     }
   };
 
@@ -318,6 +371,117 @@ export const SettingsPage = () => {
               </div>
             </CardContent>
           </Card>
+          {isAdult ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("settingsSectionLegal")}</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-2">
+                <SettingsLink to="/settings/terms" label={t("termsPageTitle")} />
+              </CardContent>
+            </Card>
+          ) : null}
+          {ageGroup === "child" ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">{t("personalSettingsParentTitle")}</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-2 text-sm">
+                {parent ? (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">
+                        {t("personalSettingsParentName")}
+                      </span>
+                      <span>{parent.displayName ?? "-"}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">
+                        {t("personalSettingsParentEmail")}
+                      </span>
+                      <span>{parent.email ?? "-"}</span>
+                    </div>
+                  </>
+                ) : (
+                  <span className="text-muted-foreground">
+                    {t("personalSettingsParentEmpty")}
+                  </span>
+                )}
+              </CardContent>
+            </Card>
+          ) : null}
+          {ageGroup === "adult" ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">{t("personalSettingsInviteTitle")}</CardTitle>
+                <CardDescription>{t("personalSettingsInviteDescription")}</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <div className="grid gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <Input
+                      type="email"
+                      value={childEmail}
+                      onChange={(event) => setChildEmail(event.target.value)}
+                      placeholder={t("personalSettingsInviteEmailLabel")}
+                    />
+                    <Button type="button" onClick={handleInvite} disabled={isInviting}>
+                      {t("personalSettingsInviteSubmit")}
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid gap-2 text-sm">
+                  <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+                    <span>{t("personalSettingsInviteListTitle")}</span>
+                    <span>
+                      {t("personalSettingsInviteLimitNote", {
+                        count: String(invites.length),
+                        limit: String(inviteLimit),
+                      })}
+                    </span>
+                  </div>
+                  {invites.length === 0 ? (
+                    <div className="text-sm text-muted-foreground">
+                      {t("personalSettingsInviteListEmpty")}
+                    </div>
+                  ) : (
+                    <div className="grid gap-2">
+                      {invites.map((invite) => (
+                        <div
+                          key={invite.id}
+                          className="flex flex-col gap-2 rounded-md border px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                        >
+                          <div className="min-w-0">
+                            <div className="truncate font-medium">
+                              {invite.childEmail ?? "-"}
+                              {invite.usedAt && invite.childName
+                                ? ` (${invite.childName})`
+                                : ""}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {invite.usedAt
+                                ? t("personalSettingsInviteStatusActive")
+                                : t("personalSettingsInviteStatusPending")}
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCancelInvite(invite.id, Boolean(invite.usedAt))}
+                            aria-label={t("personalSettingsInviteCancel")}
+                          >
+                            <Trash2 className="h-4 w-4 text-rose-600" />
+                            <span className="sr-only">{t("personalSettingsInviteCancel")}</span>
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
 
           <Card>
             <CardHeader>
@@ -367,42 +531,44 @@ export const SettingsPage = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-destructive/50">
-            <CardHeader>
-              <CardTitle className="text-destructive">{t("dataDangerTitle")}</CardTitle>
-              <CardDescription>
-                {t("dataDangerDescription")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col gap-2">
-                <h4 className="font-medium">{t("dataResetTitle")}</h4>
-                <p className="text-sm text-muted-foreground">{t("dataResetDescription")}</p>
-                <Button
-                  variant="destructive"
-                  onClick={handleDeleteAll}
-                  disabled={isDeletingData}
-                  className="w-fit"
-                >
-                  {isDeletingData ? t("dataResetDeleting") : t("dataResetButton")}
-                </Button>
-              </div>
-              <div className="border-t pt-4 flex flex-col gap-2">
-                <h4 className="font-medium">{t("dataDeleteAccountTitle")}</h4>
-                <p className="text-sm text-muted-foreground">
-                  {t("dataDeleteAccountDescription")}
-                </p>
-                <Button
-                  variant="destructive"
-                  onClick={handleDeleteAccount}
-                  disabled={isDeletingAccount}
-                  className="w-fit"
-                >
-                  {isDeletingAccount ? t("dataDeleteAccountProcessing") : t("dataDeleteAccountButton")}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          {isAdult ? (
+            <Card className="border-destructive/50">
+              <CardHeader>
+                <CardTitle className="text-destructive">{t("dataDangerTitle")}</CardTitle>
+                <CardDescription>
+                  {t("dataDangerDescription")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-col gap-2">
+                  <h4 className="font-medium">{t("dataResetTitle")}</h4>
+                  <p className="text-sm text-muted-foreground">{t("dataResetDescription")}</p>
+                  <Button
+                    variant="destructive"
+                    onClick={handleDeleteAll}
+                    disabled={isDeletingData}
+                    className="w-fit"
+                  >
+                    {isDeletingData ? t("dataResetDeleting") : t("dataResetButton")}
+                  </Button>
+                </div>
+                <div className="border-t pt-4 flex flex-col gap-2">
+                  <h4 className="font-medium">{t("dataDeleteAccountTitle")}</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {t("dataDeleteAccountDescription")}
+                  </p>
+                  <Button
+                    variant="destructive"
+                    onClick={handleDeleteAccount}
+                    disabled={isDeletingAccount}
+                    className="w-fit"
+                  >
+                    {isDeletingAccount ? t("dataDeleteAccountProcessing") : t("dataDeleteAccountButton")}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
       </div>
     </div>

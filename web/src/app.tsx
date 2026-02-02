@@ -1,9 +1,11 @@
 import { useEffect } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
-import { useBootstrap } from "@/lib/query";
+import { useBootstrap, useOnboardingStatus } from "@/lib/query";
 import { RoutesConfig } from "@/routes";
 import { useText } from "@/lib/text";
+import { OnboardingPage } from "@/pages/onboarding-page";
+import { TermsPage } from "@/pages/terms-page";
 
 const LoadingScreen = () => {
   const { t } = useText();
@@ -20,7 +22,16 @@ export const App = () => {
   const { token, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const bootstrap = useBootstrap();
+  const onboarding = useOnboardingStatus();
+  const isReady = onboarding.data?.state === "ready";
+  const bootstrap = useBootstrap(isReady);
+
+  useEffect(() => {
+    if (onboarding.isError) {
+      logout();
+      navigate("/login", { replace: true });
+    }
+  }, [onboarding.isError, logout, navigate]);
 
   useEffect(() => {
     if (bootstrap.isError) {
@@ -29,12 +40,26 @@ export const App = () => {
     }
   }, [bootstrap.isError, logout, navigate]);
 
-  if (token && bootstrap.isLoading) {
+  if (token && onboarding.isLoading) {
     return <LoadingScreen />;
   }
 
   if (!token && location.pathname !== "/login") {
     return <Navigate to="/login" replace />;
+  }
+
+  if (token && onboarding.data && onboarding.data.state !== "ready") {
+    return <OnboardingPage />;
+  }
+
+  if (token && bootstrap.isLoading) {
+    return <LoadingScreen />;
+  }
+
+  if (token && onboarding.data?.profile?.ageGroup === "child") {
+    if (location.pathname.startsWith("/settings/terms")) {
+      return <Navigate to="/settings" replace />;
+    }
   }
 
   return <RoutesConfig />;

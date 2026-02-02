@@ -18,6 +18,45 @@ export const upperTexts = defineTexts({
   loginError: text("ログインに失敗しました。もう一度試してください。"),
   loginNetworkError: text("通信エラーが発生しました。通信状況を確認してください。"),
 
+  // 初期設定・同意
+  onboardingTitle: text("はじめての設定"),
+  onboardingSubtitle: text("年齢と利用許諾条件を確認してください。"),
+  onboardingAgePrompt: text("あなたは18歳以上ですか？"),
+  onboardingAgeAdult: text("18歳以上"),
+  onboardingAgeChild: text("18歳未満"),
+  onboardingTermsHint: textWith(
+    ({ displayStart, graceEnd }) =>
+      `表示開始日 ${displayStart ?? ""} / 猶予期限 ${graceEnd ?? ""}`.trim()
+  ),
+  onboardingAgree: text("同意して続ける"),
+  onboardingParentConsentMessage: text("この操作は保護者の確認が必要です。"),
+  onboardingParentEmailPrompt: text("招待した親のGoogleアカウントを入力してください。"),
+  onboardingParentEmailPlaceholder: text("parent@example.com"),
+  onboardingInviteSubmit: text("招待を確認する"),
+  onboardingAgreeError: text("同意の処理に失敗しました。"),
+  onboardingInviteError: text("招待の確認に失敗しました。"),
+  onboardingParentEmailRequired: text("親のメールアドレスを入力してください。"),
+
+  // 利用許諾条件ページ
+  termsPageTitle: text("利用許諾条件"),
+  termsPageSubtitle: text("同意状況と利用許諾条件を確認します。"),
+  termsNewTitle: text("新しい版の利用許諾条件"),
+  termsAgreedTitle: text("同意済みの利用許諾条件"),
+  termsAgreedMeta: textWith(
+    ({ displayStart, graceEnd }) =>
+      `表示開始日 ${displayStart ?? ""} / 猶予期限 ${graceEnd ?? ""}`.trim()
+  ),
+  termsAgreedAtLabel: text("同意日"),
+  termsAgreedWillExpire: textWith(
+    ({ graceEnd }) => `この規約は ${graceEnd ?? ""} で無効になります。`.trim()
+  ),
+  termsAgreedWithdraw: text("同意をとりやめる"),
+  termsAgreedWithdrawConfirm: text("同意をとりやめてログアウトします。よろしいですか？"),
+  termsAgreedWithdrawError: text("同意の取り消しに失敗しました。"),
+  termsAgreedEmpty: text("同意済みの利用許諾条件がありません。"),
+  termsAgreeSuccess: text("利用許諾条件に同意しました。"),
+  termsAgreeError: text("利用許諾条件の同意に失敗しました。"),
+
   // ナビゲーション
   navSummary: text("概要"),
   navAll: text("取引一覧"),
@@ -30,6 +69,8 @@ export const upperTexts = defineTexts({
   settingsTitle: text("設定"),
   settingsSubtitle: text("設定をまとめて確認"),
   settingsSectionBasic: text("基本設定"),
+  settingsSectionLegal: text("利用許諾条件"),
+  settingsSectionFamily: text("家族の設定"),
 
   // まとめ画面
   dashboardTitle: text("サマリー"),
@@ -131,6 +172,37 @@ export const upperTexts = defineTexts({
   personalSettingsGradeDescription: text("学年に合わせて表記が変わるよ"),
   personalSettingsGradeLabel: text("いまの学年"),
   personalSettingsGradeNote: text("4月1日以後に初回アクセスすると1学年進むよ"),
+  personalSettingsTermsTitle: text("利用許諾条件"),
+  personalSettingsTermsDescription: text("現在同意している条件と同意日を表示します。"),
+  personalSettingsTermsVersion: text("同意した版"),
+  personalSettingsTermsAgreedAt: text("同意日"),
+  personalSettingsTermsNotAgreed: text("未同意"),
+  personalSettingsParentTitle: text("保護者情報"),
+  personalSettingsParentName: text("保護者の氏名"),
+  personalSettingsParentEmail: text("保護者のGoogleアカウント"),
+  personalSettingsParentEmpty: text("保護者情報が未設定です"),
+  personalSettingsInviteTitle: text("子の招待"),
+  personalSettingsInviteDescription: text("子のGoogleアカウントを指定して招待します。"),
+  personalSettingsInviteEmailLabel: text("子のGoogleアカウント"),
+  personalSettingsInviteSubmit: text("招待を作成する"),
+  personalSettingsInviteSuccess: text("招待を作成しました"),
+  personalSettingsInviteError: text("招待の作成に失敗しました"),
+  personalSettingsInviteEmailRequired: text("子のメールアドレスを入力してください。"),
+  personalSettingsInviteListTitle: text("招待済みの子"),
+  personalSettingsInviteListEmpty: text("招待中の子はまだいません。"),
+  personalSettingsInviteStatusActive: text("利用開始済み"),
+  personalSettingsInviteStatusPending: text("未開始"),
+  personalSettingsInviteCancel: text("招待をキャンセル"),
+  personalSettingsInviteCancelConfirm: text("招待をキャンセルしますか？"),
+  personalSettingsInviteCancelConfirmActive: text(
+    "すでに利用中なので、子は利用できなくなります。"
+  ),
+  personalSettingsInviteCancelSuccess: text("招待をキャンセルしました"),
+  personalSettingsInviteCancelError: text("招待のキャンセルに失敗しました"),
+  personalSettingsInviteLimitNote: textWith(
+    ({ count, limit }) => `最大${limit ?? ""}名まで（現在${count ?? ""}名）`.trim()
+  ),
+  personalSettingsInviteLimitReached: text("子の登録上限に達しています。"),
   gradeOptionKinder: text("幼稚園以下"),
   gradeOptionGrade1: text("小学校1年生"),
   gradeOptionGrade2: text("小学校2年生"),

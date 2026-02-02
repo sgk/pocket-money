@@ -75,3 +75,19 @@ def balance_snapshot_doc(uid: str, month_key: str):
 
 def error_logs_collection():
     return get_client().collection("errorLogs")
+
+
+def invites_collection():
+    return get_client().collection("invites")
+
+
+def invite_doc(invite_id: str):
+    return invites_collection().document(invite_id)
+
+
+def terms_collection():
+    return get_client().collection("terms")
+
+
+def terms_doc(term_id: str):
+    return terms_collection().document(term_id)

@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 from app.core.auth import create_session_token_from_google
 from app.core.errors import AppError
-from app.api.deps import get_current_user
+from app.api.deps import get_ready_user
 from app.services import transactions_service
 
 
@@ -23,5 +23,5 @@ def login(body: LoginRequest):
     return {"token": token}
 
 @router.delete("/auth/me", status_code=204)
-def delete_account(user=Depends(get_current_user)):
+def delete_account(user=Depends(get_ready_user)):
     transactions_service.delete_user_account(user.uid)

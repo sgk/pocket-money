@@ -2,12 +2,15 @@ import type {
   Asset,
   BootstrapResponse,
   Category,
+  InvitesResponse,
   MonthlySummary,
+  OnboardingStatus,
   Transaction,
   TransactionsResponse,
 } from "@/lib/types";
 
 const API_BASE_URL = window.location.origin;
+const AUTH_STORAGE_KEY = "auth.token";
 
 export class ApiError extends Error {
   code: "network" | "http";
@@ -54,7 +57,24 @@ const fetchJson = async <T>(
   }
 
   if (!res.ok) {
-    const message = await res.text();
+    let message = "";
+    let details: any = null;
+    const contentType = res.headers.get("content-type") ?? "";
+    if (contentType.includes("application/json")) {
+      try {
+        const payload = await res.json();
+        message = payload?.error?.message ?? "";
+        details = payload?.error?.details ?? null;
+      } catch (error) {
+        message = "";
+      }
+    } else {
+      message = await res.text();
+    }
+    if (res.status === 403 && details?.state === "needsAge") {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      window.location.href = "/login";
+    }
     throw new ApiError("http", message || "API エラーが発生しました");
   }
 
@@ -126,6 +146,28 @@ export const api = {
     }
     return data.token;
   },
+  getOnboardingStatus: (token: string) =>
+    fetchJson<OnboardingStatus>(token, "/api/onboarding/status"),
+  agreeTerms: (token: string, payload: { ageGroup?: string }) =>
+    fetchJson<OnboardingStatus>(token, "/api/onboarding/agree-terms", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  acceptInvite: (token: string, payload: { parentEmail: string }) =>
+    fetchJson<OnboardingStatus>(token, "/api/onboarding/accept-invite", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  withdrawTerms: (token: string) =>
+    fetchJson<void>(token, "/api/onboarding/withdraw-terms", { method: "POST" }),
+  getInvites: (token: string) => fetchJson<InvitesResponse>(token, "/api/invites"),
+  createInvite: (token: string, payload: { childEmail: string }) =>
+    fetchJson<{ inviteId: string }>(token, "/api/invites", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  cancelInvite: (token: string, inviteId: string) =>
+    fetchJson<void>(token, `/api/invites/${inviteId}`, { method: "DELETE" }),
   bootstrap: (token: string) =>
     fetchJson<BootstrapResponse>(token, "/api/bootstrap", { method: "POST" }),
   getAssets: (token: string) => fetchJson<Asset[]>(token, "/api/assets"),

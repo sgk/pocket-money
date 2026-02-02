@@ -3,6 +3,10 @@ export type TextParams = {
   balance?: string;
   name?: string;
   assetName?: string;
+  displayStart?: string;
+  graceEnd?: string;
+  count?: string;
+  limit?: string;
 };
 
 export type TextEntry = (params?: TextParams) => string;

@@ -11,6 +11,8 @@ from app.api.routes_config import router as config_router
 from app.api.routes_summary import router as summary_router
 from app.api.routes_transactions import router as transactions_router
 from app.api.routes_auth import router as auth_router
+from app.api.routes_invites import router as invites_router
+from app.api.routes_onboarding import router as onboarding_router
 from app.core.errors import (
     AppError,
     json_error_handler,
@@ -47,6 +49,8 @@ app.include_router(config_router)
 app.include_router(transactions_router)
 app.include_router(summary_router)
 app.include_router(auth_router)
+app.include_router(invites_router)
+app.include_router(onboarding_router)
 
 app.add_exception_handler(AppError, json_error_handler)
 app.add_exception_handler(Exception, unhandled_exception_handler)
@@ -103,6 +107,11 @@ def spa_settings_categories():
 
 @app.get("/settings/data")
 def spa_settings_data():
+    return serve_index()
+
+
+@app.get("/settings/terms")
+def spa_settings_terms():
     return serve_index()
 
 

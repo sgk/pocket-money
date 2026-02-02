@@ -3,13 +3,33 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import type { TransactionType, TransactionsResponse } from "@/lib/types";
 
-export const useBootstrap = () => {
+export const useBootstrap = (enabled = true) => {
   const { token } = useAuth();
   return useQuery({
     queryKey: ["bootstrap"],
     queryFn: () => api.bootstrap(token ?? ""),
-    enabled: Boolean(token),
+    enabled: Boolean(token) && enabled,
     staleTime: 1000 * 60 * 5,
+    retry: false,
+  });
+};
+
+export const useOnboardingStatus = () => {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ["onboarding"],
+    queryFn: () => api.getOnboardingStatus(token ?? ""),
+    enabled: Boolean(token),
+    retry: false,
+  });
+};
+
+export const useInvites = (enabled = true) => {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ["invites"],
+    queryFn: () => api.getInvites(token ?? ""),
+    enabled: Boolean(token) && enabled,
     retry: false,
   });
 };

@@ -2,89 +2,32 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends
 
-from app.api.deps import get_current_user
+from app.api.deps import get_ready_user
 from app.core import firestore
+from app.core.errors import AppError
 
 
 router = APIRouter(prefix="/api", tags=["bootstrap"])
 
 
-DEFAULT_CATEGORIES = [
-    {"name": "たべもの", "sortOrder": 1, "kind": "expense"},
-    {"name": "のりもの", "sortOrder": 2, "kind": "expense"},
-    {"name": "ぶんぼうぐ", "sortOrder": 3, "kind": "expense"},
-    {"name": "おこづかい", "sortOrder": 10, "kind": "income"},
-]
-
-
 @router.post("/bootstrap")
-def bootstrap(user=Depends(get_current_user)):
+def bootstrap(user=Depends(get_ready_user)):
     uid = user.uid
-
-    def _work(transaction):
-        now = datetime.now(timezone.utc)
-        user_ref = firestore.user_doc(uid)
-        user_snap = user_ref.get(transaction=transaction)
-
-        if not user_snap.exists:
-            profile = {
-                "createdAt": now,
-                "updatedAt": now,
-                "transactionsUpdatedAt": now,
-                "displayName": user.display_name,
-                "email": user.email,
-                "photoUrl": user.photo_url,
-                "currency": "JPY",
-                "settings": {"timezone": "Asia/Tokyo"},
-            }
-            transaction.set(user_ref, profile)
-
-            asset_ref = firestore.assets_collection(uid).document()
-            transaction.set(
-                asset_ref,
-                {
-                    "name": "おさいふ",
-                    "type": "げんきん",
-                    "currency": "JPY",
-                    "isActive": True,
-                    "initialBalance": 0,
-                    "currentBalance": 0,
-                    "note": None,
-                    "sortOrder": 1,
-                    "createdAt": now,
-                    "updatedAt": now,
-                },
-            )
-
-            for cat in DEFAULT_CATEGORIES:
-                cat_ref = firestore.categories_collection(uid).document()
-                transaction.set(
-                    cat_ref,
-                    {
-                        "name": cat["name"],
-                        "isActive": True,
-                        "sortOrder": cat["sortOrder"],
-                        "kind": cat["kind"],
-                        "createdAt": now,
-                        "updatedAt": now,
-                    },
-                )
-
-        updates = {"updatedAt": now}
-        if user.display_name:
-            updates["displayName"] = user.display_name
-        if user.email:
-            updates["email"] = user.email
-        if user.photo_url:
-            updates["photoUrl"] = user.photo_url
-        if len(updates) > 1:
-            transaction.set(user_ref, updates, merge=True)
-
-        return True
-
-    firestore.run_in_transaction(_work)
-
-    profile = firestore.user_doc(uid).get().to_dict()
+    profile_snap = firestore.user_doc(uid).get()
+    if not profile_snap.exists:
+        raise AppError(404, "Profile not found")
+    now = datetime.now(timezone.utc)
+    updates = {"updatedAt": now}
+    if user.display_name:
+        updates["displayName"] = user.display_name
+    if user.email:
+        updates["email"] = user.email
+    if user.photo_url:
+        updates["photoUrl"] = user.photo_url
+    profile = profile_snap.to_dict()
+    if len(updates) > 1:
+        firestore.user_doc(uid).set(updates, merge=True)
+        profile.update(updates)
     assets = []
     for doc in firestore.assets_collection(uid).stream():
         data = doc.to_dict()

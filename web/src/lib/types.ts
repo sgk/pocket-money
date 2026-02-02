@@ -22,6 +22,53 @@ export type UserProfile = {
   displayName?: string;
   email?: string;
   photoUrl?: string;
+  ageGroup?: "adult" | "child";
+  parent?: ParentInfo;
+  termsAgreement?: TermsAgreement;
+};
+
+export type ParentInfo = {
+  uid?: string;
+  email?: string;
+  displayName?: string;
+};
+
+export type TermsAgreement = {
+  termId?: string;
+  agreedAt?: string;
+  agreedByUid?: string;
+};
+
+export type TermsPayload = {
+  termId: string;
+  title: string;
+  body: string;
+  displayStartAt: string;
+  graceEndsAt: string;
+};
+
+export type OnboardingState = "ready" | "needsAge" | "needsTerms" | "needsParentConsent";
+
+export type OnboardingStatus = {
+  state: OnboardingState;
+  terms: TermsPayload;
+  profile?: UserProfile;
+  agreedTerms?: TermsPayload | null;
+  effectiveDeadline?: string | null;
+};
+
+export type InviteItem = {
+  id: string;
+  childEmail?: string;
+  createdAt?: string;
+  usedAt?: string | null;
+  childUid?: string;
+  childName?: string;
+};
+
+export type InvitesResponse = {
+  items: InviteItem[];
+  limit: number;
 };
 
 export type BootstrapResponse = {
