@@ -3,8 +3,7 @@ import { Check, Trash2, X } from "lucide-react";
 import { api, isNetworkError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Link } from "react-router-dom";
-import { useAssets } from "@/lib/query";
-import { useQueryClient } from "@tanstack/react-query";
+import { useAssets, useInvalidateLedger } from "@/lib/query";
 import { Topbar } from "@/components/layout/topbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -579,7 +578,7 @@ const AssetRow = ({
 export const AssetsSettingsPage = () => {
   const { t } = useText();
   const { token, childId } = useAuth();
-  const queryClient = useQueryClient();
+  const invalidate = useInvalidateLedger();
   const { data: assets = [] } = useAssets();
   const [newAsset, setNewAsset] = useState({
     name: "",
@@ -740,7 +739,7 @@ export const AssetsSettingsPage = () => {
       });
       toast.success(t("toastAssetAdded"));
       setNewAsset({ name: "", type: "", initialBalance: "0", note: "" });
-      queryClient.invalidateQueries({ queryKey: ["assets"] });
+      invalidate();
     } catch (error) {
       toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
     }
@@ -775,7 +774,7 @@ export const AssetsSettingsPage = () => {
         }, childId);
       });
       toast.success(t("toastAssetUpdated"));
-      queryClient.invalidateQueries({ queryKey: ["assets"] });
+      invalidate();
     } catch (error) {
       toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
     }
@@ -790,10 +789,10 @@ export const AssetsSettingsPage = () => {
       await runSaving(async () => {
         await api.updateAsset(token, id, { isActive: value }, childId);
       });
-      queryClient.invalidateQueries({ queryKey: ["assets"] });
+      invalidate();
     } catch (error) {
       toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
-      queryClient.invalidateQueries({ queryKey: ["assets"] });
+      invalidate();
     }
   };
 
@@ -811,7 +810,7 @@ export const AssetsSettingsPage = () => {
         await api.deleteAsset(token, id, childId);
       });
       toast.success(t("toastAssetDeleted"));
-      queryClient.invalidateQueries({ queryKey: ["assets"] });
+      invalidate();
       if (editingAssetId === id) {
         setEditingAssetId(null);
       }
@@ -833,7 +832,7 @@ export const AssetsSettingsPage = () => {
           )
         );
       });
-      queryClient.invalidateQueries({ queryKey: ["assets"] });
+      invalidate();
     } catch (error) {
       toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
     }
