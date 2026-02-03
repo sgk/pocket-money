@@ -265,11 +265,11 @@ export const api = {
     fetchJson<void>(token, "/api/transactions/all", { method: "DELETE" }, {}, childId),
   deleteAccount: (token: string, childId?: string | null) =>
     fetchJson<void>(token, "/api/auth/me", { method: "DELETE" }, {}, childId),
-  updateProfile: (token: string, payload: { grade?: string }) =>
+  updateProfile: (token: string, payload: { grade?: string }, childId?: string | null) =>
     fetchJson<void>(token, "/api/onboarding/profile", {
       method: "PATCH",
       body: JSON.stringify(payload),
-    }),
+    }, {}, childId),
   createExpense: (token: string, payload: Record<string, unknown>, childId?: string | null) =>
     fetchJson<Transaction>(token, "/api/transactions/expense", {
       method: "POST",

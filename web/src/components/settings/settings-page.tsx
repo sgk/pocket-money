@@ -357,7 +357,6 @@ export const SettingsPage = () => {
                 <Select
                   value={grade}
                   onValueChange={(value) => setGrade(value as typeof grade)}
-                  disabled={isParent}
                 >
                   <SelectTrigger className="w-full md:w-64">
                     <SelectValue placeholder={t("personalSettingsGradeLabel")} />
@@ -376,7 +375,7 @@ export const SettingsPage = () => {
               </div>
             </CardContent>
           </Card>
-          {isAdult || isParent ? (
+          {isAdult && !isParent ? (
             <Card>
               <CardHeader>
                 <CardTitle>{t("settingsSectionLegal")}</CardTitle>

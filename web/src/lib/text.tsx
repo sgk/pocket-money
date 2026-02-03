@@ -100,10 +100,12 @@ export const TextProvider = ({ children }: { children: React.ReactNode }) => {
   }, [grade]);
 
   const setGrade = (next: Grade) => {
-    storage.setGrade(next);
+    if (!childId) {
+      storage.setGrade(next);
+    }
     setGradeState(next);
-    if (token && !childId) {
-      void api.updateProfile(token, { grade: next });
+    if (token) {
+      void api.updateProfile(token, { grade: next }, childId);
     }
   };
 

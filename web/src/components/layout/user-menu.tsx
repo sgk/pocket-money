@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Check, User, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth";
-import { useBootstrap } from "@/lib/query";
+import { useBootstrap, useInvalidateLedger } from "@/lib/query";
 import { useText } from "@/lib/text";
 
 type UserMenuProps = {
@@ -15,6 +15,7 @@ export const UserMenu = ({ compact = false, isOpen, onOpenChange }: UserMenuProp
   const { t } = useText();
   const { childId, setChildId, logout } = useAuth();
   const { data } = useBootstrap();
+  const invalidate = useInvalidateLedger();
   const navigate = useNavigate();
   const [internalOpen, setInternalOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -117,6 +118,7 @@ export const UserMenu = ({ compact = false, isOpen, onOpenChange }: UserMenuProp
                 className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left hover:bg-secondary"
                 onClick={() => {
                   setChildId(null);
+                  invalidate();
                   onOpenChange?.(false);
                   setInternalOpen(false);
                 }}
@@ -133,6 +135,7 @@ export const UserMenu = ({ compact = false, isOpen, onOpenChange }: UserMenuProp
                   className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left hover:bg-secondary"
                   onClick={() => {
                     setChildId(child.uid || null);
+                    invalidate();
                     onOpenChange?.(false);
                     setInternalOpen(false);
                   }}

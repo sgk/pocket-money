@@ -104,5 +104,7 @@ export const useInvalidateLedger = () => {
     queryClient.refetchQueries({ queryKey: ["transactions"] });
     queryClient.invalidateQueries({ queryKey: ["summary"] });
     queryClient.invalidateQueries({ queryKey: ["assets"] });
+    queryClient.invalidateQueries({ queryKey: ["categories"] });
+    queryClient.invalidateQueries({ queryKey: ["bootstrap"] });
   };
 };
