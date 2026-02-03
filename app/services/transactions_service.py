@@ -349,7 +349,8 @@ def _seed_balances(uid: str, as_of: datetime) -> Dict[str, int]:
         created_at = data.get("createdAt")
         include = True
         if created_at:
-            include = _to_utc(created_at) <= as_of
+            # 常に「その時刻より前」を対象にする。境界（as_ofちょうど）は次の月のループで処理される
+            include = _to_utc(created_at) < as_of
         balances[name] = int(data.get("initialBalance", 0)) if include else 0
     return balances
 
@@ -447,6 +448,14 @@ def _ensure_snapshots(uid: str, target_month: datetime):
         return
 
     asset_name_by_id = _build_asset_name_by_id(uid)
+
+    # 全資産を取得して、ループ内で作成月を判定して初期残高を加算する
+    all_assets = []
+    for doc in firestore.assets_collection(uid).stream():
+        data = doc.to_dict()
+        if data.get("name"):
+            all_assets.append(data)
+
     prev_snapshot = _get_snapshot(uid, _prev_month(start_month))
     if prev_snapshot:
         balances = _normalize_balance_keys(
@@ -458,6 +467,16 @@ def _ensure_snapshots(uid: str, target_month: datetime):
     month = start_month
     while month <= end_month:
         month_end = _next_month(month)
+
+        # この月に作成された資産の初期残高を加算する
+        for asset in all_assets:
+            created_at = asset.get("createdAt")
+            if created_at:
+                created_at_utc = _to_utc(created_at)
+                if month <= created_at_utc < month_end:
+                    name = asset["name"]
+                    balances[name] = balances.get(name, 0) + int(asset.get("initialBalance", 0))
+
         balances = _apply_transactions_between(uid, month, month_end, balances)
         _save_snapshot(uid, month, balances)
         month = month_end
