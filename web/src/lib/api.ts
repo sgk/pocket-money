@@ -24,7 +24,10 @@ export class ApiError extends Error {
 export const isNetworkError = (error: unknown): boolean =>
   error instanceof ApiError && error.code === "network";
 
-const buildUrl = (path: string, params?: Record<string, string | number | undefined>) => {
+const buildUrl = (
+  path: string,
+  params?: Record<string, string | number | boolean | undefined>
+) => {
   const url = new URL(path, API_BASE_URL);
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
@@ -40,7 +43,7 @@ const fetchJson = async <T>(
   token: string,
   path: string,
   options: RequestInit = {},
-  params?: Record<string, string | number | undefined>
+  params?: Record<string, string | number | boolean | undefined>
 ): Promise<T> => {
   let res: Response;
   try {

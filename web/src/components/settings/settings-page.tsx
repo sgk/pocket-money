@@ -300,11 +300,11 @@ export const SettingsPage = () => {
 
   const handleDeleteAll = async () => {
     if (!token) return;
-    if (!window.confirm(t("dataDeleteAllConfirm"))) return;
+    if (!window.confirm(t("dataResetConfirm"))) return;
     try {
       setIsDeletingData(true);
       await api.deleteAllTransactions(token);
-      toast.success(t("toastDeleteAllSuccess"));
+      toast.success(t("toastResetSuccess"));
       invalidate();
     } catch (e) {
       toast.error(isNetworkError(e) ? t("toastNetworkError") : t("toastUnexpectedError"));

@@ -28,7 +28,6 @@ export const AssetLedgerPage = () => {
   const { data } = useTransactions({
     from: filters.from,
     to: filters.to,
-    type: filters.type,
     assetId: resolvedAssetId,
     includeOpeningBalances: true,
   });

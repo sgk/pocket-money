@@ -60,7 +60,7 @@ export const TextProvider = ({ children }: { children: React.ReactNode }) => {
     const raw = storage.getGrade();
     storedGradeRef.current = isGrade(raw) ? raw : null;
   }
-  const storedGrade = storedGradeRef.current === "unset" ? null : storedGradeRef.current;
+  const storedGrade = storedGradeRef.current as Grade | null;
   const [grade, setGradeState] = useState<Grade>(storedGrade ?? DEFAULT_GRADE);
 
   useEffect(() => {

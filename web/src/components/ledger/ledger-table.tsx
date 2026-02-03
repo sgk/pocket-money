@@ -160,25 +160,28 @@ const EditableRow = ({
     if ((form.memo ?? "") !== initialMemo) {
       return true;
     }
-    if (form.type === "expense") {
+    if (form.type === "expense" && transaction.type === "expense") {
       return (
         (form.assetName ?? "") !== (transaction.assetName ?? "") ||
         (form.categoryName ?? "") !== (transaction.categoryName ?? "") ||
         (form.merchant ?? "") !== (transaction.merchant ?? "")
       );
     }
-    if (form.type === "income") {
+    if (form.type === "income" && transaction.type === "income") {
       return (
         (form.assetName ?? "") !== (transaction.assetName ?? "") ||
         (form.categoryName ?? "") !== (transaction.categoryName ?? "") ||
         (form.source ?? "") !== (transaction.source ?? "")
       );
     }
-    return (
-      (form.fromAssetName ?? "") !== (transaction.fromAssetName ?? "") ||
-      (form.toAssetName ?? "") !== (transaction.toAssetName ?? "") ||
-      (form.counterparty ?? "") !== (transaction.counterparty ?? "")
-    );
+    if (form.type === "transfer" && transaction.type === "transfer") {
+      return (
+        (form.fromAssetName ?? "") !== (transaction.fromAssetName ?? "") ||
+        (form.toAssetName ?? "") !== (transaction.toAssetName ?? "") ||
+        (form.counterparty ?? "") !== (transaction.counterparty ?? "")
+      );
+    }
+    return true;
   })();
   const isSaveDisabled =
     (form.type === "transfer"
@@ -356,11 +359,12 @@ const EditableRow = ({
     return () => window.removeEventListener("keydown", handler);
   }, [onCancel]);
 
-  const disableAsset =
+  const disableAsset = Boolean(
     Boolean(fixedAssetId || fixedAssetName) &&
-    form.type !== "transfer" &&
-    ((fixedAssetId && form.assetId === fixedAssetId) ||
-      (!form.assetId && fixedAssetName && form.assetName === fixedAssetName));
+      form.type !== "transfer" &&
+      ((fixedAssetId && form.assetId === fixedAssetId) ||
+        (!form.assetId && fixedAssetName && form.assetName === fixedAssetName))
+  );
   const disableTransferAsset = Boolean(fixedAssetId || fixedAssetName) && form.type === "transfer";
 
   const transferDirection = form.transferDirection ?? "out";
@@ -776,7 +780,6 @@ export const LedgerTable = ({
   onEditingChange,
   renderMode = "full",
   entryRow,
-  entryPosition = "top",
 }: {
   transactions: Transaction[];
   assets: Asset[];
@@ -819,6 +822,7 @@ export const LedgerTable = ({
   const isDesc = order === "desc";
 
   const isIncomingTransfer = (tx: Transaction) => {
+    if (tx.type !== "transfer") return false;
     if (fixedAssetId) {
       return tx.toAssetId === fixedAssetId;
     }

@@ -13,6 +13,7 @@ declare global {
           initialize: (options: {
             client_id: string;
             callback: (response: { credential: string }) => void;
+            ux_mode?: string;
           }) => void;
           renderButton: (element: HTMLElement, options: Record<string, unknown>) => void;
         };

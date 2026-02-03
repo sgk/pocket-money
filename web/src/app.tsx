@@ -5,7 +5,6 @@ import { useBootstrap, useOnboardingStatus } from "@/lib/query";
 import { RoutesConfig } from "@/routes";
 import { useText } from "@/lib/text";
 import { OnboardingPage } from "@/pages/onboarding-page";
-import { TermsPage } from "@/pages/terms-page";
 
 const LoadingScreen = () => {
   const { t } = useText();

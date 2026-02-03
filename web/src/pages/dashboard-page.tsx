@@ -18,7 +18,7 @@ export const DashboardPage = () => {
     to: formatDate(endOfMonth(new Date(now.getFullYear(), now.getMonth(), 1))),
     limit: 200,
   });
-  const transactions = data.items;
+  const transactions = data?.items ?? [];
 
   const totalBalance = useMemo(
     () => assets.reduce((sum, asset) => sum + asset.currentBalance, 0),
