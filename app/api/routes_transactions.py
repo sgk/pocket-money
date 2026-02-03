@@ -61,7 +61,7 @@ def list_transactions(
     tx_type: Optional[str] = Query(None, alias="type"),
     asset_id: Optional[str] = Query(None, alias="assetId"),
     category_id: Optional[str] = Query(None, alias="categoryId"),
-    limit: int = Query(50, ge=1, le=200),
+    limit: int = Query(50, ge=1, le=1000),
     cursor: Optional[str] = None,
     include_opening_balances: bool = Query(False, alias="includeOpeningBalances"),
     if_modified_since: Optional[str] = Header(None, alias="If-Modified-Since"),
