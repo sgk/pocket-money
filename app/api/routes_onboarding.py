@@ -42,6 +42,7 @@ class AcceptInviteRequest(BaseModel):
 
 class ProfileUpdate(BaseModel):
     grade: str | None = None
+    recalculate: bool | None = None
 
 
 @router.get("/status")
@@ -264,6 +265,11 @@ def update_profile(body: ProfileUpdate, user=Depends(get_ready_user)):
     updates = {"updatedAt": now}
     if body.grade is not None:
         updates["grade"] = body.grade
+    if body.recalculate:
+        from datetime import datetime, timezone
+
+        updates["balanceDirtyFrom"] = datetime(2000, 1, 1, tzinfo=timezone.utc)
+        updates["transactionsUpdatedAt"] = now
     user_ref.set(updates, merge=True)
     return {"status": "ok"}
 

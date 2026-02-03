@@ -43,6 +43,7 @@ export const SettingsPage = () => {
   const [isImporting, setIsImporting] = useState(false);
   const [isDeletingData, setIsDeletingData] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [isRecalculating, setIsRecalculating] = useState(false);
   const [isExportingCsv, setIsExportingCsv] = useState(false);
   const [isDragActive, setIsDragActive] = useState(false);
   const [childEmail, setChildEmail] = useState("");
@@ -330,6 +331,21 @@ export const SettingsPage = () => {
     }
   };
 
+  const handleRecalculate = async () => {
+    if (!token) return;
+    if (!window.confirm(t("dataRecalculateConfirm"))) return;
+    try {
+      setIsRecalculating(true);
+      await api.updateProfile(token, { recalculate: true }, childId);
+      toast.success(t("toastRecalculateSuccess"));
+      invalidate();
+    } catch (e) {
+      toast.error(isNetworkError(e) ? t("toastNetworkError") : t("toastUnexpectedError"));
+    } finally {
+      setIsRecalculating(false);
+    }
+  };
+
   return (
     <div className="flex h-full flex-col bg-background">
       <Topbar title={t("settingsTitle")} subtitle={t("settingsSubtitle")} />
@@ -554,6 +570,20 @@ export const SettingsPage = () => {
                     className="w-fit"
                   >
                     {isDeletingData ? t("dataResetDeleting") : t("dataResetButton")}
+                  </Button>
+                </div>
+                <div className="border-t pt-4 flex flex-col gap-2">
+                  <h4 className="font-medium">{t("dataRecalculateTitle")}</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {t("dataRecalculateDescription")}
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={handleRecalculate}
+                    disabled={isRecalculating}
+                    className="w-fit"
+                  >
+                    {isRecalculating ? t("dataRecalculating") : t("dataRecalculateButton")}
                   </Button>
                 </div>
                 <div className="border-t pt-4 flex flex-col gap-2">

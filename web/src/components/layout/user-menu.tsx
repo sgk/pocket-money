@@ -31,7 +31,7 @@ export const UserMenu = ({ compact = false, isOpen, onOpenChange }: UserMenuProp
   const menuLabel = displayName || label;
   const photoUrl = profile?.photoUrl;
   const children = data?.children ?? [];
-  const isViewingChild = Boolean(data?.isParent);
+  const isImpersonating = Boolean(childId);
 
   useEffect(() => {
     setImageError(false);
@@ -123,10 +123,10 @@ export const UserMenu = ({ compact = false, isOpen, onOpenChange }: UserMenuProp
                   setInternalOpen(false);
                 }}
               >
-                <span className={!isViewingChild ? "font-bold text-sky-700" : ""}>
+                <span className={!isImpersonating ? "font-bold text-sky-700" : ""}>
                   {t("userMenuSelf")}
                 </span>
-                {!isViewingChild && <Check className="h-4 w-4 text-sky-700" />}
+                {!isImpersonating && <Check className="h-4 w-4 text-sky-700" />}
               </button>
               {children.map((child) => (
                 <button

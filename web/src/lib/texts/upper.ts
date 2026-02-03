@@ -287,6 +287,12 @@ export const upperTexts = defineTexts({
   dataResetButton: text("全データを削除"),
   toastResetSuccess: text("全てのデータを削除しました"),
   toastResetError: text("削除に失敗しました"),
+  dataRecalculateTitle: text("残高の再計算"),
+  dataRecalculateDescription: text("もし元帳の残高が合わない場合は、再計算を試してください。過去の計算結果をすべてやり直します。"),
+  dataRecalculateConfirm: text("全期間の残高を再計算します。よろしいですか？"),
+  dataRecalculating: text("計算中..."),
+  dataRecalculateButton: text("再計算を実行"),
+  toastRecalculateSuccess: text("再計算を予約しました。しばらくすると反映されます。"),
   dataDeleteAccountTitle: text("退会"),
   dataDeleteAccountDescription: text(
     "アカウントとすべてのデータを完全に削除します。"

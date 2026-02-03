@@ -30,6 +30,7 @@ export const AssetLedgerPage = () => {
     to: filters.to,
     assetId: resolvedAssetId,
     includeOpeningBalances: true,
+    limit: 1000,
   });
   const transactions = data?.items ?? [];
   const openingBalances = data?.openingBalances ?? {};

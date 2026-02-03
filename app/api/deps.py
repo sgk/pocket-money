@@ -61,6 +61,12 @@ def get_ready_user(request: Request, user=Depends(authenticate)):
 
 
 def get_parent_user(user=Depends(authenticate)):
+    from app.core.config import get_settings
+
+    settings = get_settings()
+    if settings.dev_user_id and user.uid == settings.dev_user_id:
+        return user
+
     profile_snap = firestore.user_doc(user.uid).get()
     if not profile_snap.exists:
         raise AppError(404, "Profile not found")

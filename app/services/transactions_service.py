@@ -424,6 +424,10 @@ def _save_snapshot(uid: str, month_start: datetime, balances: Dict[str, int]):
 
 def _ensure_snapshots(uid: str, target_month: datetime):
     target_month = _month_start(target_month)
+    now_month = _month_start(_now())
+    # Ensure update at least until target_month or current month
+    end_month = target_month if target_month > now_month else now_month
+
     user_ref = firestore.user_doc(uid)
     user_snap = user_ref.get()
     dirty_from = None
@@ -434,7 +438,7 @@ def _ensure_snapshots(uid: str, target_month: datetime):
 
     snapshot = _get_snapshot(uid, target_month)
     start_month = None
-    if dirty_from and dirty_from <= target_month:
+    if dirty_from and dirty_from <= end_month:
         start_month = dirty_from
     elif not snapshot:
         start_month = target_month
@@ -452,13 +456,13 @@ def _ensure_snapshots(uid: str, target_month: datetime):
         balances = _compute_balances_until(uid, start_month)
 
     month = start_month
-    while month <= target_month:
+    while month <= end_month:
         month_end = _next_month(month)
         balances = _apply_transactions_between(uid, month, month_end, balances)
         _save_snapshot(uid, month, balances)
         month = month_end
 
-    if dirty_from and dirty_from <= target_month:
+    if dirty_from:
         user_ref.update({"balanceDirtyFrom": fs.DELETE_FIELD})
 
 
@@ -1095,7 +1099,11 @@ def rename_asset_in_transactions(uid: str, asset_id: str, old_name: str, new_nam
         updated += _bulk_update_transactions_field(uid, "fromAssetName", old_name, new_name, now)
         updated += _bulk_update_transactions_field(uid, "toAssetName", old_name, new_name, now)
     if updated:
-        firestore.user_doc(uid).set({"transactionsUpdatedAt": now}, merge=True)
+        # Renaming asset affects all snapshots
+        dirty_from = datetime(2000, 1, 1, tzinfo=timezone.utc)
+        firestore.user_doc(uid).set(
+            {"transactionsUpdatedAt": now, "balanceDirtyFrom": dirty_from}, merge=True
+        )
     return updated
 
 

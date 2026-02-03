@@ -23,6 +23,7 @@ export const LedgerPage = () => {
     from: filters.from,
     to: filters.to,
     includeOpeningBalances: true,
+    limit: 1000,
   });
   const transactions = data?.items ?? [];
   const openingBalances = data?.openingBalances ?? {};
@@ -36,8 +37,11 @@ export const LedgerPage = () => {
     [transactions, openingBalances]
   );
 
-  const now = new Date();
-  const { data: summary } = useMonthlySummary(now.getFullYear(), now.getMonth() + 1);
+  const filterDate = new Date(filters.from);
+  const { data: summary } = useMonthlySummary(
+    filterDate.getFullYear(),
+    filterDate.getMonth() + 1
+  );
 
   const filtered = useMemo(() => {
     const keyword = filters.search.trim().toLowerCase();
