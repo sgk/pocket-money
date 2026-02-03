@@ -551,6 +551,24 @@ export const SettingsPage = () => {
             </CardContent>
           </Card>
 
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("dataRecalculateTitle")}</CardTitle>
+              <CardDescription>
+                {t("dataRecalculateDescription")}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                variant="outline"
+                onClick={handleRecalculate}
+                disabled={isRecalculating}
+              >
+                {isRecalculating ? t("dataRecalculating") : t("dataRecalculateButton")}
+              </Button>
+            </CardContent>
+          </Card>
+
           {isAdult || isParent ? (
             <Card className="border-destructive/50">
               <CardHeader>
@@ -570,20 +588,6 @@ export const SettingsPage = () => {
                     className="w-fit"
                   >
                     {isDeletingData ? t("dataResetDeleting") : t("dataResetButton")}
-                  </Button>
-                </div>
-                <div className="border-t pt-4 flex flex-col gap-2">
-                  <h4 className="font-medium">{t("dataRecalculateTitle")}</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {t("dataRecalculateDescription")}
-                  </p>
-                  <Button
-                    variant="outline"
-                    onClick={handleRecalculate}
-                    disabled={isRecalculating}
-                    className="w-fit"
-                  >
-                    {isRecalculating ? t("dataRecalculating") : t("dataRecalculateButton")}
                   </Button>
                 </div>
                 <div className="border-t pt-4 flex flex-col gap-2">
