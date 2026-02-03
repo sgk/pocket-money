@@ -3,7 +3,7 @@ from google.cloud import firestore as fs
 from google.cloud.firestore_v1 import FieldFilter
 from pydantic import BaseModel
 
-from app.api.deps import get_ready_user
+from app.api.deps import get_parent_user, get_ready_user
 from app.core import firestore
 from app.core.errors import AppError
 from app.core.terms import load_terms_snapshot, resolve_agreed_terms, resolve_effective_deadline
@@ -52,14 +52,7 @@ def _collect_child_keys(parent_uid: str):
 
 
 @router.get("/invites")
-def list_invites(user=Depends(get_ready_user)):
-    parent_profile_snap = firestore.user_doc(user.uid).get()
-    if not parent_profile_snap.exists:
-        raise AppError(404, "Profile not found")
-    parent_profile = parent_profile_snap.to_dict()
-    if parent_profile.get("ageGroup") != "adult":
-        raise AppError(403, "Only adult can invite")
-
+def list_invites(user=Depends(get_parent_user)):
     _, invites = _collect_child_keys(user.uid)
     child_uids = [data.get("childUid") for _, data in invites if data.get("childUid")]
     child_names = {}
@@ -90,7 +83,7 @@ def list_invites(user=Depends(get_ready_user)):
 
 
 @router.post("/invites")
-def create_invite(body: InviteCreateRequest, user=Depends(get_ready_user)):
+def create_invite(body: InviteCreateRequest, user=Depends(get_parent_user)):
     now = now_utc()
     parent_email = require_user_email(user)
     child_email = normalize_email(body.childEmail)
@@ -100,11 +93,7 @@ def create_invite(body: InviteCreateRequest, user=Depends(get_ready_user)):
         raise AppError(400, "Child email must be different")
 
     parent_snap = firestore.user_doc(user.uid).get()
-    if not parent_snap.exists:
-        raise AppError(404, "Profile not found")
     parent_profile = parent_snap.to_dict()
-    if parent_profile.get("ageGroup") != "adult":
-        raise AppError(403, "Only adult can invite")
     snapshot = load_terms_snapshot(now)
     agreement = parent_profile.get("termsAgreement")
     agreed_terms = resolve_agreed_terms(agreement, snapshot)
@@ -146,7 +135,7 @@ def create_invite(body: InviteCreateRequest, user=Depends(get_ready_user)):
 
 
 @router.delete("/invites/{invite_id}", status_code=204)
-def cancel_invite(invite_id: str, user=Depends(get_ready_user)):
+def cancel_invite(invite_id: str, user=Depends(get_parent_user)):
     now = now_utc()
 
     def _work(transaction):

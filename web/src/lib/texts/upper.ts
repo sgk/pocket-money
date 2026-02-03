@@ -9,6 +9,8 @@ export const upperTexts = defineTexts({
   userAvatarAlt: text("ユーザー"),
   noEmail: text("メールなし"),
   logout: text("ログアウト"),
+  userMenuChildren: text("子のデータ"),
+  userMenuSelf: text("自分のデータ"),
 
   // ログイン
   loginTitle: text("ログイン"),

@@ -36,6 +36,7 @@ export const SettingsPage = () => {
   const profile = data?.profile;
   const ageGroup = profile?.ageGroup;
   const isAdult = ageGroup === "adult";
+  const isParent = Boolean(data?.isParent);
   const invitesQuery = useInvites(isAdult);
   const invalidate = useInvalidateLedger();
   const [isExporting, setIsExporting] = useState(false);
@@ -353,7 +354,11 @@ export const SettingsPage = () => {
                 <span className="text-sm text-muted-foreground">
                   {t("personalSettingsGradeDescription")}
                 </span>
-                <Select value={grade} onValueChange={(value) => setGrade(value as typeof grade)}>
+                <Select
+                  value={grade}
+                  onValueChange={(value) => setGrade(value as typeof grade)}
+                  disabled={isParent}
+                >
                   <SelectTrigger className="w-full md:w-64">
                     <SelectValue placeholder={t("personalSettingsGradeLabel")} />
                   </SelectTrigger>
@@ -371,7 +376,7 @@ export const SettingsPage = () => {
               </div>
             </CardContent>
           </Card>
-          {isAdult ? (
+          {isAdult || isParent ? (
             <Card>
               <CardHeader>
                 <CardTitle>{t("settingsSectionLegal")}</CardTitle>
@@ -531,7 +536,7 @@ export const SettingsPage = () => {
             </CardContent>
           </Card>
 
-          {isAdult ? (
+          {isAdult || isParent ? (
             <Card className="border-destructive/50">
               <CardHeader>
                 <CardTitle className="text-destructive">{t("dataDangerTitle")}</CardTitle>

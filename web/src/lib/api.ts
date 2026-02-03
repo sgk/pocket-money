@@ -43,17 +43,22 @@ const fetchJson = async <T>(
   token: string,
   path: string,
   options: RequestInit = {},
-  params?: Record<string, string | number | boolean | undefined>
+  params?: Record<string, string | number | boolean | undefined>,
+  childId?: string | null
 ): Promise<T> => {
   let res: Response;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+    ...(options.headers as Record<string, string> ?? {}),
+  };
+  if (childId) {
+    headers["X-Child-Id"] = childId;
+  }
   try {
     res = await fetch(buildUrl(path, params), {
       ...options,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-        ...(options.headers ?? {}),
-      },
+      headers,
     });
   } catch (error) {
     throw new ApiError("network", "NETWORK_ERROR");
@@ -97,6 +102,7 @@ type TransactionsParams = {
   limit?: number;
   cursor?: string;
   includeOpeningBalances?: boolean;
+  childId?: string | null;
 };
 
 type TransactionsCacheEntry = {
@@ -117,6 +123,7 @@ const transactionsCacheKey = (token: string, params: TransactionsParams): string
     limit: params.limit ?? 200,
     cursor: params.cursor ?? "",
     includeOpeningBalances: params.includeOpeningBalances ? "1" : "0",
+    childId: params.childId ?? "",
   };
   return JSON.stringify(normalized);
 };
@@ -171,36 +178,38 @@ export const api = {
     }),
   cancelInvite: (token: string, inviteId: string) =>
     fetchJson<void>(token, `/api/invites/${inviteId}`, { method: "DELETE" }),
-  bootstrap: (token: string) =>
-    fetchJson<BootstrapResponse>(token, "/api/bootstrap", { method: "POST" }),
-  getAssets: (token: string) => fetchJson<Asset[]>(token, "/api/assets"),
-  createAsset: (token: string, payload: Partial<Asset>) =>
+  bootstrap: (token: string, childId?: string | null) =>
+    fetchJson<BootstrapResponse>(token, "/api/bootstrap", { method: "POST" }, {}, childId),
+  getAssets: (token: string, childId?: string | null) =>
+    fetchJson<Asset[]>(token, "/api/assets", {}, {}, childId),
+  createAsset: (token: string, payload: Partial<Asset>, childId?: string | null) =>
     fetchJson<Asset>(token, "/api/assets", {
       method: "POST",
       body: JSON.stringify(payload),
-    }),
-  updateAsset: (token: string, assetId: string, payload: Partial<Asset>) =>
+    }, {}, childId),
+  updateAsset: (token: string, assetId: string, payload: Partial<Asset>, childId?: string | null) =>
     fetchJson<Asset>(token, `/api/assets/${assetId}`, {
       method: "PATCH",
       body: JSON.stringify(payload),
-    }),
-  deleteAsset: (token: string, assetId: string) =>
-    fetchJson<void>(token, `/api/assets/${assetId}`, { method: "DELETE" }),
-  getCategories: (token: string) => fetchJson<Category[]>(token, "/api/categories"),
-  createCategory: (token: string, payload: Partial<Category>) =>
+    }, {}, childId),
+  deleteAsset: (token: string, assetId: string, childId?: string | null) =>
+    fetchJson<void>(token, `/api/assets/${assetId}`, { method: "DELETE" }, {}, childId),
+  getCategories: (token: string, childId?: string | null) =>
+    fetchJson<Category[]>(token, "/api/categories", {}, {}, childId),
+  createCategory: (token: string, payload: Partial<Category>, childId?: string | null) =>
     fetchJson<Category>(token, "/api/categories", {
       method: "POST",
       body: JSON.stringify(payload),
-    }),
-  updateCategory: (token: string, categoryId: string, payload: Partial<Category>) =>
+    }, {}, childId),
+  updateCategory: (token: string, categoryId: string, payload: Partial<Category>, childId?: string | null) =>
     fetchJson<Category>(token, `/api/categories/${categoryId}`, {
       method: "PATCH",
       body: JSON.stringify(payload),
-    }),
-  deleteCategory: (token: string, categoryId: string) =>
-    fetchJson<void>(token, `/api/categories/${categoryId}`, { method: "DELETE" }),
-  getTransactions: async (token: string, params: TransactionsParams) => {
-    const key = transactionsCacheKey(token, params);
+    }, {}, childId),
+  deleteCategory: (token: string, categoryId: string, childId?: string | null) =>
+    fetchJson<void>(token, `/api/categories/${categoryId}`, { method: "DELETE" }, {}, childId),
+  getTransactions: async (token: string, params: TransactionsParams, childId?: string | null) => {
+    const key = transactionsCacheKey(token, { ...params, childId });
     const cached = transactionsCache.get(key);
 
     const headers: Record<string, string> = {
@@ -210,10 +219,16 @@ export const api = {
     if (cached) {
       headers["If-Modified-Since"] = cached.lastModified;
     }
+    if (childId) {
+      headers["X-Child-Id"] = childId;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { childId: _, ...queryParams } = params;
 
     let res: Response;
     try {
-      res = await fetch(buildUrl("/api/transactions", params), {
+      res = await fetch(buildUrl("/api/transactions", queryParams as any), {
         headers,
       });
     } catch (error) {
@@ -239,39 +254,45 @@ export const api = {
     }
     return data;
   },
-  exportTransactions: (token: string) => fetchJson<Transaction[]>(token, "/api/transactions/export"),
-  importTransactions: (token: string, transactions: Transaction[]) =>
+  exportTransactions: (token: string, childId?: string | null) =>
+    fetchJson<Transaction[]>(token, "/api/transactions/export", {}, {}, childId),
+  importTransactions: (token: string, transactions: Transaction[], childId?: string | null) =>
     fetchJson<void>(token, "/api/transactions/import", {
       method: "POST",
       body: JSON.stringify(transactions),
-    }),
-  deleteAllTransactions: (token: string) =>
-    fetchJson<void>(token, "/api/transactions/all", { method: "DELETE" }),
+    }, {}, childId),
+  deleteAllTransactions: (token: string, childId?: string | null) =>
+    fetchJson<void>(token, "/api/transactions/all", { method: "DELETE" }, {}, childId),
   deleteAccount: (token: string) =>
     fetchJson<void>(token, "/api/auth/me", { method: "DELETE" }),
-  createExpense: (token: string, payload: Record<string, unknown>) =>
-    fetchJson<Transaction>(token, "/api/transactions/expense", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    }),
-  createIncome: (token: string, payload: Record<string, unknown>) =>
-    fetchJson<Transaction>(token, "/api/transactions/income", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    }),
-  createTransfer: (token: string, payload: Record<string, unknown>) =>
-    fetchJson<Transaction>(token, "/api/transactions/transfer", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    }),
-  updateTransaction: (token: string, txId: string, payload: Record<string, unknown>) =>
-    fetchJson<Transaction>(token, `/api/transactions/${txId}`, {
+  updateProfile: (token: string, payload: { grade?: string }) =>
+    fetchJson<void>(token, "/api/onboarding/profile", {
       method: "PATCH",
       body: JSON.stringify(payload),
     }),
-  deleteTransaction: (token: string, txId: string) =>
-    fetchJson<void>(token, `/api/transactions/${txId}`, { method: "DELETE" }),
-  getMonthlySummary: (token: string, year: number, month: number) =>
-    fetchJson<MonthlySummary>(token, "/api/summary/monthly", {}, { year, month }),
+  createExpense: (token: string, payload: Record<string, unknown>, childId?: string | null) =>
+    fetchJson<Transaction>(token, "/api/transactions/expense", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }, {}, childId),
+  createIncome: (token: string, payload: Record<string, unknown>, childId?: string | null) =>
+    fetchJson<Transaction>(token, "/api/transactions/income", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }, {}, childId),
+  createTransfer: (token: string, payload: Record<string, unknown>, childId?: string | null) =>
+    fetchJson<Transaction>(token, "/api/transactions/transfer", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }, {}, childId),
+  updateTransaction: (token: string, txId: string, payload: Record<string, unknown>, childId?: string | null) =>
+    fetchJson<Transaction>(token, `/api/transactions/${txId}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }, {}, childId),
+  deleteTransaction: (token: string, txId: string, childId?: string | null) =>
+    fetchJson<void>(token, `/api/transactions/${txId}`, { method: "DELETE" }, {}, childId),
+  getMonthlySummary: (token: string, year: number, month: number, childId?: string | null) =>
+    fetchJson<MonthlySummary>(token, "/api/summary/monthly", {}, { year, month }, childId),
   clearTransactionsCache,
 };

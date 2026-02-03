@@ -7,6 +7,9 @@ import React, {
   useState,
 } from "react";
 import { storage, STORAGE_KEYS } from "@/lib/storage";
+import { useAuth } from "@/lib/auth";
+import { useBootstrap } from "@/lib/query";
+import { api } from "@/lib/api";
 import {
   DEFAULT_GRADE,
   GRADE_OPTIONS,
@@ -55,6 +58,8 @@ type TextContextValue = {
 const TextContext = createContext<TextContextValue | undefined>(undefined);
 
 export const TextProvider = ({ children }: { children: React.ReactNode }) => {
+  const { token, childId } = useAuth();
+  const { data: bootstrap } = useBootstrap();
   const storedGradeRef = useRef<Grade | null | "unset">("unset");
   if (storedGradeRef.current === "unset") {
     const raw = storage.getGrade();
@@ -97,7 +102,22 @@ export const TextProvider = ({ children }: { children: React.ReactNode }) => {
   const setGrade = (next: Grade) => {
     storage.setGrade(next);
     setGradeState(next);
+    if (token && !childId) {
+      void api.updateProfile(token, { grade: next });
+    }
   };
+
+  useEffect(() => {
+    if (childId) {
+      const childGrade = bootstrap?.profile?.grade;
+      if (childGrade && isGrade(childGrade)) {
+        setGradeState(childGrade);
+      }
+    } else {
+      const raw = storage.getGrade();
+      setGradeState(isGrade(raw) ? raw : DEFAULT_GRADE);
+    }
+  }, [childId, bootstrap]);
 
   const value = useMemo(
     () => ({
