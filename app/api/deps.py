@@ -16,6 +16,7 @@ def get_current_user(request: Request, user=Depends(authenticate)):
 
 
 def get_ready_user(request: Request, user=Depends(authenticate)):
+    request.state.user = user
     request.state.auth_user = user
     uid = user.uid
     child_id = request.headers.get("X-Child-Id")

@@ -780,6 +780,7 @@ export const LedgerTable = ({
   onEditingChange,
   renderMode = "full",
   entryRow,
+  entryPosition,
 }: {
   transactions: Transaction[];
   assets: Asset[];
@@ -820,6 +821,7 @@ export const LedgerTable = ({
     openingBalanceValue === null ? "-" : formatJPYPlain(openingBalanceValue);
   const openingDateText = openingDate ? formatDateSlash(openingDate) : "-";
   const isDesc = order === "desc";
+  const actualEntryPosition = entryPosition ?? (isDesc ? "top" : "bottom");
 
   const isIncomingTransfer = (tx: Transaction) => {
     if (tx.type !== "transfer") return false;
@@ -1287,7 +1289,7 @@ export const LedgerTable = ({
                 })}
               </tr>
             ))}
-            {isDesc ? entryRowNode : null}
+            {actualEntryPosition === "top" ? entryRowNode : null}
           </thead>
         ) : null}
         {renderMode !== "header-only" ? (
@@ -1535,7 +1537,7 @@ export const LedgerTable = ({
               </tr>
             );
           })}
-          {!isDesc ? entryRowNode : null}
+          {actualEntryPosition === "bottom" ? entryRowNode : null}
           {isDesc ? (
             <tr className="border-t bg-secondary/10 ledger-row ledger-row--opening">
               <td className="p-3" data-label={t("labelDate")} data-col="date">

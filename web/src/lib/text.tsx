@@ -67,6 +67,7 @@ export const TextProvider = ({ children }: { children: React.ReactNode }) => {
   }
   const storedGrade = storedGradeRef.current as Grade | null;
   const [grade, setGradeState] = useState<Grade>(storedGrade ?? DEFAULT_GRADE);
+  const lastSyncedBootstrapGradeRef = useRef<string | null>(null);
 
   useEffect(() => {
     const now = new Date();
@@ -104,27 +105,26 @@ export const TextProvider = ({ children }: { children: React.ReactNode }) => {
       storage.setGrade(next);
     }
     setGradeState(next);
+    lastSyncedBootstrapGradeRef.current = next;
     if (token) {
       void api.updateProfile(token, { grade: next }, childId);
     }
   };
 
   useEffect(() => {
-    if (childId) {
-      const childGrade = bootstrap?.profile?.grade;
-      if (childGrade && isGrade(childGrade)) {
-        setGradeState(childGrade);
-      }
-    } else {
-      const profileGrade = bootstrap?.profile?.grade;
-      const storedGrade = storage.getGrade();
-      if (profileGrade && isGrade(profileGrade)) {
-        if (profileGrade !== storedGrade) {
+    const profileGrade = bootstrap?.profile?.grade;
+    if (profileGrade && isGrade(profileGrade)) {
+      if (profileGrade !== lastSyncedBootstrapGradeRef.current) {
+        lastSyncedBootstrapGradeRef.current = profileGrade;
+        setGradeState(profileGrade);
+        if (!childId) {
           storage.setGrade(profileGrade);
         }
-        setGradeState(profileGrade);
-      } else {
-        setGradeState(isGrade(storedGrade) ? storedGrade : DEFAULT_GRADE);
+      }
+    } else if (!childId && !profileGrade) {
+      const stored = storage.getGrade();
+      if (isGrade(stored)) {
+        setGradeState(stored);
       }
     }
   }, [childId, bootstrap]);
