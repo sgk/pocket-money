@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 
 from app.api.deps import get_ready_user
 from app.models.assets import AssetCreate, AssetOut, AssetUpdate
@@ -11,7 +11,8 @@ router = APIRouter(prefix="/api/assets", tags=["assets"])
 
 
 @router.get("", response_model=List[AssetOut])
-def list_assets(user=Depends(get_ready_user)):
+def list_assets(response: Response, user=Depends(get_ready_user)):
+    response.headers["Vary"] = "X-Child-Id"
     return assets_service.list_assets(user.uid)
 
 

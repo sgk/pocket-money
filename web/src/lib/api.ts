@@ -52,11 +52,13 @@ const fetchJson = async <T>(
     Authorization: `Bearer ${token}`,
     ...(options.headers as Record<string, string> ?? {}),
   };
+  const queryParams = { ...params };
   if (childId) {
     headers["X-Child-Id"] = childId;
+    queryParams.childId = childId;
   }
   try {
-    res = await fetch(buildUrl(path, params), {
+    res = await fetch(buildUrl(path, queryParams), {
       ...options,
       headers,
     });
@@ -219,12 +221,11 @@ export const api = {
     if (cached) {
       headers["If-Modified-Since"] = cached.lastModified;
     }
+    const queryParams = { ...params };
     if (childId) {
       headers["X-Child-Id"] = childId;
+      queryParams.childId = childId;
     }
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { childId: _, ...queryParams } = params;
 
     let res: Response;
     try {

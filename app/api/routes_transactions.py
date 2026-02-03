@@ -69,10 +69,14 @@ def list_transactions(
     last_modified = transactions_service.get_transactions_last_modified(user.uid)
     last_modified_http = _http_date(last_modified)
     response.headers["Last-Modified"] = last_modified_http
+    response.headers["Vary"] = "X-Child-Id"
 
     ims_dt = _parse_if_modified_since(if_modified_since)
     if ims_dt and _to_utc(last_modified).replace(microsecond=0) <= ims_dt:
-        return Response(status_code=304, headers={"Last-Modified": last_modified_http})
+        return Response(
+            status_code=304,
+            headers={"Last-Modified": last_modified_http, "Vary": "X-Child-Id"},
+        )
 
     return transactions_service.list_transactions(
         user.uid,
@@ -103,7 +107,8 @@ def create_transfer(payload: TransferCreate, user=Depends(get_ready_user)):
 
 
 @router.get("/export", response_model=List[dict])
-def export_transactions_route(user=Depends(get_ready_user)):
+def export_transactions_route(response: Response, user=Depends(get_ready_user)):
+    response.headers["Vary"] = "X-Child-Id"
     return transactions_service.export_transactions(user.uid)
 
 
