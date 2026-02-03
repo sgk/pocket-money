@@ -75,7 +75,7 @@ export const NewEntryRow = ({
       toAssetName: "",
     };
   };
-  const { token } = useAuth();
+  const { token, childId } = useAuth();
   const invalidate = useInvalidateLedger();
   const [entry, setEntry] = useState(() =>
     buildInitialEntry(fixedAssetId, fixedAssetName)
@@ -244,7 +244,7 @@ export const NewEntryRow = ({
           categoryName: entry.categoryName,
           merchant: entry.merchant || undefined,
         };
-        created = await api.createExpense(token, payload);
+        created = await api.createExpense(token, payload, childId);
         storage.setLastAssetName(entry.assetName);
         storage.setLastCategoryName(entry.categoryName);
         if (resolvedAssetId) {
@@ -267,7 +267,7 @@ export const NewEntryRow = ({
           categoryName: entry.categoryName,
           source: entry.source || undefined,
         };
-        created = await api.createIncome(token, payload);
+        created = await api.createIncome(token, payload, childId);
         storage.setLastAssetName(entry.assetName);
         storage.setLastCategoryName(entry.categoryName);
         if (resolvedAssetId) {
@@ -291,7 +291,7 @@ export const NewEntryRow = ({
           fee: Number(entry.fee || 0),
           counterparty: entry.counterparty || undefined,
         };
-        created = await api.createTransfer(token, payload);
+        created = await api.createTransfer(token, payload, childId);
         storage.setLastAssetName(entry.fromAssetName);
         if (resolvedFromId) {
           storage.setLastAssetId(resolvedFromId);

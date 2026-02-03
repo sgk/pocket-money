@@ -49,7 +49,7 @@ const EditableRow = ({
   onCancel: () => void;
 }) => {
   const { t } = useText();
-  const { token } = useAuth();
+  const { token, childId } = useAuth();
   const invalidate = useInvalidateLedger();
   const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState<{
@@ -304,7 +304,7 @@ const EditableRow = ({
           counterparty: form.counterparty || undefined,
         };
       }
-      await api.updateTransaction(token, transaction.id, payload);
+      await api.updateTransaction(token, transaction.id, payload, childId);
       toast.success(t("toastEntryUpdated"));
       invalidate();
       onCancel();
@@ -326,7 +326,7 @@ const EditableRow = ({
     }
     try {
       setIsSaving(true);
-      await api.deleteTransaction(token, transaction.id);
+      await api.deleteTransaction(token, transaction.id, childId);
       toast.success(t("toastEntryDeleted"));
       invalidate();
       onCancel();
@@ -796,7 +796,7 @@ export const LedgerTable = ({
   entryPosition?: "top" | "bottom";
 }) => {
   const { t } = useText();
-  const { token } = useAuth();
+  const { token, childId } = useAuth();
   const invalidate = useInvalidateLedger();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -1165,7 +1165,7 @@ export const LedgerTable = ({
     try {
       await Promise.all(
         updates.map((update) =>
-          api.updateTransaction(token, update.id, update.payload)
+          api.updateTransaction(token, update.id, update.payload, childId)
         )
       );
       invalidate();

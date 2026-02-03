@@ -263,8 +263,8 @@ export const api = {
     }, {}, childId),
   deleteAllTransactions: (token: string, childId?: string | null) =>
     fetchJson<void>(token, "/api/transactions/all", { method: "DELETE" }, {}, childId),
-  deleteAccount: (token: string) =>
-    fetchJson<void>(token, "/api/auth/me", { method: "DELETE" }),
+  deleteAccount: (token: string, childId?: string | null) =>
+    fetchJson<void>(token, "/api/auth/me", { method: "DELETE" }, {}, childId),
   updateProfile: (token: string, payload: { grade?: string }) =>
     fetchJson<void>(token, "/api/onboarding/profile", {
       method: "PATCH",

@@ -114,8 +114,16 @@ export const TextProvider = ({ children }: { children: React.ReactNode }) => {
         setGradeState(childGrade);
       }
     } else {
-      const raw = storage.getGrade();
-      setGradeState(isGrade(raw) ? raw : DEFAULT_GRADE);
+      const profileGrade = bootstrap?.profile?.grade;
+      const storedGrade = storage.getGrade();
+      if (profileGrade && isGrade(profileGrade)) {
+        if (profileGrade !== storedGrade) {
+          storage.setGrade(profileGrade);
+        }
+        setGradeState(profileGrade);
+      } else {
+        setGradeState(isGrade(storedGrade) ? storedGrade : DEFAULT_GRADE);
+      }
     }
   }, [childId, bootstrap]);
 

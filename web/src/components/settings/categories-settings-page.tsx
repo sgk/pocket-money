@@ -551,7 +551,7 @@ const CategoryList = ({
 
 export const CategoriesSettingsPage = () => {
   const { t } = useText();
-  const { token } = useAuth();
+  const { token, childId } = useAuth();
   const queryClient = useQueryClient();
   const { data: categories = [] } = useCategories();
   const [newCategory, setNewCategory] = useState({
@@ -636,7 +636,7 @@ export const CategoriesSettingsPage = () => {
           name: newCategory.name,
           sortOrder: nextSortOrder,
           kind: newCategory.kind,
-        });
+        }, childId);
       });
       toast.success(t("toastCategoryAdded"));
       setNewCategory({ name: "", kind: "expense" });
@@ -653,7 +653,7 @@ export const CategoriesSettingsPage = () => {
     }
     try {
       await runSaving(async () => {
-        await api.updateCategory(token, id, { isActive: value });
+        await api.updateCategory(token, id, { isActive: value }, childId);
       });
       queryClient.invalidateQueries({ queryKey: ["categories"] });
     } catch (error) {
@@ -672,7 +672,7 @@ export const CategoriesSettingsPage = () => {
           list.map((category, index) =>
             api.updateCategory(token, category.id, {
               sortOrder: index + 1,
-            })
+            }, childId)
           )
         );
       });
@@ -693,7 +693,7 @@ export const CategoriesSettingsPage = () => {
     }
     try {
       await runSaving(async () => {
-        await api.deleteCategory(token, id);
+        await api.deleteCategory(token, id, childId);
       });
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       if (editingCategoryId === id) {
@@ -734,9 +734,9 @@ export const CategoriesSettingsPage = () => {
     }
     try {
       await runSaving(async () => {
-        await api.updateCategory(token, id, { name: nextName });
+        await api.updateCategory(token, id, { name: nextName }, childId);
         if (conflicts.length > 0) {
-          await Promise.all(conflicts.map((item) => api.deleteCategory(token, item.id)));
+          await Promise.all(conflicts.map((item) => api.deleteCategory(token, item.id, childId)));
         }
       });
       queryClient.invalidateQueries({ queryKey: ["categories"] });
@@ -787,12 +787,12 @@ export const CategoriesSettingsPage = () => {
           api.updateCategory(token, dragId, {
             kind: toKind,
             sortOrder: clampedIndex + 1,
-          }),
+          }, childId),
           ...nextTarget.map((category, index) =>
-            api.updateCategory(token, category.id, { sortOrder: index + 1 })
+            api.updateCategory(token, category.id, { sortOrder: index + 1 }, childId)
           ),
           ...nextSource.map((category, index) =>
-            api.updateCategory(token, category.id, { sortOrder: index + 1 })
+            api.updateCategory(token, category.id, { sortOrder: index + 1 }, childId)
           ),
         ]);
       });

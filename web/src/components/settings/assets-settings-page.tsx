@@ -578,7 +578,7 @@ const AssetRow = ({
 
 export const AssetsSettingsPage = () => {
   const { t } = useText();
-  const { token } = useAuth();
+  const { token, childId } = useAuth();
   const queryClient = useQueryClient();
   const { data: assets = [] } = useAssets();
   const [newAsset, setNewAsset] = useState({
@@ -736,7 +736,7 @@ export const AssetsSettingsPage = () => {
           initialBalance: Number(newAsset.initialBalance || 0),
           note: newAsset.note || undefined,
           sortOrder: nextSortOrder,
-        });
+        }, childId);
       });
       toast.success(t("toastAssetAdded"));
       setNewAsset({ name: "", type: "", initialBalance: "0", note: "" });
@@ -772,7 +772,7 @@ export const AssetsSettingsPage = () => {
           note: payload.note || undefined,
           initialBalance: payload.initialBalance,
           isActive: payload.isActive,
-        });
+        }, childId);
       });
       toast.success(t("toastAssetUpdated"));
       queryClient.invalidateQueries({ queryKey: ["assets"] });
@@ -788,7 +788,7 @@ export const AssetsSettingsPage = () => {
     }
     try {
       await runSaving(async () => {
-        await api.updateAsset(token, id, { isActive: value });
+        await api.updateAsset(token, id, { isActive: value }, childId);
       });
       queryClient.invalidateQueries({ queryKey: ["assets"] });
     } catch (error) {
@@ -808,7 +808,7 @@ export const AssetsSettingsPage = () => {
     }
     try {
       await runSaving(async () => {
-        await api.deleteAsset(token, id);
+        await api.deleteAsset(token, id, childId);
       });
       toast.success(t("toastAssetDeleted"));
       queryClient.invalidateQueries({ queryKey: ["assets"] });
@@ -829,7 +829,7 @@ export const AssetsSettingsPage = () => {
       await runSaving(async () => {
         await Promise.all(
           list.map((asset, index) =>
-            api.updateAsset(token, asset.id, { sortOrder: index + 1 })
+            api.updateAsset(token, asset.id, { sortOrder: index + 1 }, childId)
           )
         );
       });

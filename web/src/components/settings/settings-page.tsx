@@ -31,7 +31,7 @@ const SettingsLink = ({ to, label }: { to: string; label: string }) => (
 export const SettingsPage = () => {
   const { t, grade, setGrade } = useText();
   const gradeOptions = useGradeOptions();
-  const { token, logout } = useAuth();
+  const { token, logout, childId } = useAuth();
   const { data } = useBootstrap();
   const profile = data?.profile;
   const ageGroup = profile?.ageGroup;
@@ -136,7 +136,7 @@ export const SettingsPage = () => {
     if (!token) return;
     try {
       setIsExporting(true);
-      const data = await api.exportTransactions(token);
+      const data = await api.exportTransactions(token, childId);
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -201,7 +201,7 @@ export const SettingsPage = () => {
     if (!token) return;
     try {
       setIsExportingCsv(true);
-      const data = await api.exportTransactions(token);
+      const data = await api.exportTransactions(token, childId);
       const csv = jsonToCsv(data);
       const blob = new Blob([csv], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
@@ -238,7 +238,7 @@ export const SettingsPage = () => {
         json = JSON.parse(text);
       }
       if (!Array.isArray(json)) throw new Error("Invalid format: Root must be an array");
-      await api.importTransactions(token, json as any);
+      await api.importTransactions(token, json as any, childId);
       toast.success(t("toastImportSuccess"));
       invalidate();
     } catch (e) {
@@ -304,7 +304,7 @@ export const SettingsPage = () => {
     if (!window.confirm(t("dataResetConfirm"))) return;
     try {
       setIsDeletingData(true);
-      await api.deleteAllTransactions(token);
+      await api.deleteAllTransactions(token, childId);
       toast.success(t("toastResetSuccess"));
       invalidate();
     } catch (e) {
@@ -319,7 +319,7 @@ export const SettingsPage = () => {
     if (!window.confirm(t("dataDeleteAccountConfirm"))) return;
     try {
       setIsDeletingAccount(true);
-      await api.deleteAccount(token);
+      await api.deleteAccount(token, childId);
       toast.success(t("toastDeleteAccountSuccess"));
       logout();
       window.location.href = "/login";
