@@ -3,6 +3,7 @@ from google.cloud import firestore as fs
 from pydantic import BaseModel
 
 from app.core import firestore
+from app.api.deps import get_ready_user
 from app.core.auth import authenticate
 from app.core.errors import AppError
 from app.core.terms import (
@@ -37,6 +38,11 @@ class AgreeTermsRequest(BaseModel):
 
 class AcceptInviteRequest(BaseModel):
     parentEmail: str
+
+
+class ProfileUpdate(BaseModel):
+    grade: str | None = None
+    recalculate: bool | None = None
 
 
 @router.get("/status")
@@ -250,6 +256,22 @@ def accept_invite(body: AcceptInviteRequest, user=Depends(authenticate)):
         "agreedTerms": terms_payload(agreed_terms) if agreed_terms else None,
         "effectiveDeadline": deadline.isoformat() if deadline else None,
     }
+
+
+@router.patch("/profile")
+def update_profile(body: ProfileUpdate, user=Depends(get_ready_user)):
+    now = now_utc()
+    user_ref = firestore.user_doc(user.uid)
+    updates = {"updatedAt": now}
+    if body.grade is not None:
+        updates["grade"] = body.grade
+    if body.recalculate:
+        from datetime import datetime, timezone
+
+        updates["balanceDirtyFrom"] = datetime(2000, 1, 1, tzinfo=timezone.utc)
+        updates["transactionsUpdatedAt"] = now
+    user_ref.set(updates, merge=True)
+    return {"status": "ok"}
 
 
 @router.post("/withdraw-terms", status_code=204)

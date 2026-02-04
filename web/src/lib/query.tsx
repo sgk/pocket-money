@@ -4,10 +4,10 @@ import { useAuth } from "@/lib/auth";
 import type { TransactionType, TransactionsResponse } from "@/lib/types";
 
 export const useBootstrap = (enabled = true) => {
-  const { token } = useAuth();
+  const { token, childId } = useAuth();
   return useQuery({
-    queryKey: ["bootstrap"],
-    queryFn: () => api.bootstrap(token ?? ""),
+    queryKey: ["bootstrap", childId],
+    queryFn: () => api.bootstrap(token ?? "", childId),
     enabled: Boolean(token) && enabled,
     staleTime: 1000 * 60 * 5,
     retry: false,
@@ -35,19 +35,19 @@ export const useInvites = (enabled = true) => {
 };
 
 export const useAssets = () => {
-  const { token } = useAuth();
+  const { token, childId } = useAuth();
   return useQuery({
-    queryKey: ["assets"],
-    queryFn: () => api.getAssets(token ?? ""),
+    queryKey: ["assets", childId],
+    queryFn: () => api.getAssets(token ?? "", childId),
     enabled: Boolean(token),
   });
 };
 
 export const useCategories = () => {
-  const { token } = useAuth();
+  const { token, childId } = useAuth();
   return useQuery({
-    queryKey: ["categories"],
-    queryFn: () => api.getCategories(token ?? ""),
+    queryKey: ["categories", childId],
+    queryFn: () => api.getCategories(token ?? "", childId),
     enabled: Boolean(token),
   });
 };
@@ -63,19 +63,23 @@ type TransactionsFilters = {
 };
 
 export const useTransactions = (filters: TransactionsFilters) => {
-  const { token } = useAuth();
+  const { token, childId } = useAuth();
   return useQuery<TransactionsResponse>({
-    queryKey: ["transactions", filters],
+    queryKey: ["transactions", filters, childId],
     queryFn: () =>
-      api.getTransactions(token ?? "", {
-        from: filters.from,
-        to: filters.to,
-        type: filters.type,
-        assetId: filters.assetId,
-        categoryId: filters.categoryId,
-        includeOpeningBalances: filters.includeOpeningBalances,
-        limit: filters.limit ?? 200,
-      }),
+      api.getTransactions(
+        token ?? "",
+        {
+          from: filters.from,
+          to: filters.to,
+          type: filters.type,
+          assetId: filters.assetId,
+          categoryId: filters.categoryId,
+          includeOpeningBalances: filters.includeOpeningBalances,
+          limit: filters.limit ?? 200,
+        },
+        childId
+      ),
     enabled: Boolean(token),
     placeholderData: { items: [], nextCursor: null },
     staleTime: 1000 * 60,
@@ -84,10 +88,10 @@ export const useTransactions = (filters: TransactionsFilters) => {
 };
 
 export const useMonthlySummary = (year: number, month: number) => {
-  const { token } = useAuth();
+  const { token, childId } = useAuth();
   return useQuery({
-    queryKey: ["summary", year, month],
-    queryFn: () => api.getMonthlySummary(token ?? "", year, month),
+    queryKey: ["summary", year, month, childId],
+    queryFn: () => api.getMonthlySummary(token ?? "", year, month, childId),
     enabled: Boolean(token),
   });
 };
@@ -100,5 +104,7 @@ export const useInvalidateLedger = () => {
     queryClient.refetchQueries({ queryKey: ["transactions"] });
     queryClient.invalidateQueries({ queryKey: ["summary"] });
     queryClient.invalidateQueries({ queryKey: ["assets"] });
+    queryClient.invalidateQueries({ queryKey: ["categories"] });
+    queryClient.invalidateQueries({ queryKey: ["bootstrap"] });
   };
 };

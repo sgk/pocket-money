@@ -1,4 +1,4 @@
-import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from "react";
+import { type CSSProperties, type Dispatch, type ReactNode, type SetStateAction, useEffect, useRef, useState } from "react";
 import { Topbar } from "@/components/layout/topbar";
 import { Filters, type LedgerFiltersState } from "@/components/ledger/filters";
 import { LedgerTable } from "@/components/ledger/ledger-table";
@@ -9,7 +9,7 @@ type LedgerLayoutProps = {
   title: string;
   subtitle?: string;
   filters: LedgerFiltersState;
-  setFilters: (filters: LedgerFiltersState) => void;
+  setFilters: Dispatch<SetStateAction<LedgerFiltersState>>;
   transactions: Transaction[];
   assets: Asset[];
   categories: Category[];
@@ -122,7 +122,6 @@ export const LedgerLayout = ({
               order={filters.order}
               onEditingChange={setIsEditing}
               entryRow={entryRow}
-              entryPosition={filters.order === "desc" ? "top" : "bottom"}
             />
           </div>
         </div>

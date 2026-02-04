@@ -7,6 +7,9 @@ import React, {
   useState,
 } from "react";
 import { storage, STORAGE_KEYS } from "@/lib/storage";
+import { useAuth } from "@/lib/auth";
+import { useBootstrap } from "@/lib/query";
+import { api } from "@/lib/api";
 import {
   DEFAULT_GRADE,
   GRADE_OPTIONS,
@@ -55,13 +58,16 @@ type TextContextValue = {
 const TextContext = createContext<TextContextValue | undefined>(undefined);
 
 export const TextProvider = ({ children }: { children: React.ReactNode }) => {
+  const { token, childId } = useAuth();
+  const { data: bootstrap } = useBootstrap();
   const storedGradeRef = useRef<Grade | null | "unset">("unset");
   if (storedGradeRef.current === "unset") {
     const raw = storage.getGrade();
     storedGradeRef.current = isGrade(raw) ? raw : null;
   }
-  const storedGrade = storedGradeRef.current === "unset" ? null : storedGradeRef.current;
+  const storedGrade = storedGradeRef.current as Grade | null;
   const [grade, setGradeState] = useState<Grade>(storedGrade ?? DEFAULT_GRADE);
+  const lastSyncedProfileGradeRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     const now = new Date();
@@ -95,9 +101,32 @@ export const TextProvider = ({ children }: { children: React.ReactNode }) => {
   }, [grade]);
 
   const setGrade = (next: Grade) => {
-    storage.setGrade(next);
+    if (!childId) {
+      storage.setGrade(next);
+    }
     setGradeState(next);
+    if (token) {
+      void api.updateProfile(token, { grade: next }, childId);
+    }
   };
+
+  useEffect(() => {
+    const profileGrade = bootstrap?.profile?.grade;
+    if (profileGrade && isGrade(profileGrade)) {
+      if (profileGrade !== lastSyncedProfileGradeRef.current) {
+        lastSyncedProfileGradeRef.current = profileGrade;
+        setGradeState(profileGrade);
+        if (!childId) {
+          storage.setGrade(profileGrade);
+        }
+      }
+    } else if (!childId && !profileGrade) {
+      const stored = storage.getGrade();
+      if (isGrade(stored)) {
+        setGradeState(stored);
+      }
+    }
+  }, [childId, bootstrap]);
 
   const value = useMemo(
     () => ({

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { User } from "lucide-react";
+import { Check, User, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth";
-import { useBootstrap } from "@/lib/query";
+import { useBootstrap, useInvalidateLedger } from "@/lib/query";
 import { useText } from "@/lib/text";
 
 type UserMenuProps = {
@@ -13,8 +13,9 @@ type UserMenuProps = {
 
 export const UserMenu = ({ compact = false, isOpen, onOpenChange }: UserMenuProps) => {
   const { t } = useText();
-  const { logout } = useAuth();
+  const { childId, setChildId, logout } = useAuth();
   const { data } = useBootstrap();
+  const invalidate = useInvalidateLedger();
   const navigate = useNavigate();
   const [internalOpen, setInternalOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -23,11 +24,14 @@ export const UserMenu = ({ compact = false, isOpen, onOpenChange }: UserMenuProp
   const isControlled = isOpen !== undefined;
   const open = isControlled ? isOpen : internalOpen;
 
-  const email = data?.profile?.email?.trim();
-  const displayName = data?.profile?.displayName?.trim();
+  const profile = data?.profile;
+  const email = profile?.email?.trim();
+  const displayName = profile?.displayName?.trim();
   const label = email || t("noEmail");
   const menuLabel = displayName || label;
-  const photoUrl = data?.profile?.photoUrl;
+  const photoUrl = profile?.photoUrl;
+  const children = data?.children ?? [];
+  const isImpersonating = Boolean(childId);
 
   useEffect(() => {
     setImageError(false);
@@ -97,15 +101,63 @@ export const UserMenu = ({ compact = false, isOpen, onOpenChange }: UserMenuProp
         {compact ? null : null}
       </button>
       {open ? (
-        <div className="absolute right-0 z-50 mt-2 w-56 rounded-lg border bg-card p-2 text-sm shadow-lg">
-          <div className="px-2 py-1 text-xs text-muted-foreground">{menuLabel}</div>
-          <button
-            type="button"
-            className="w-full rounded-md px-3 py-2 text-left text-rose-600 hover:bg-rose-50"
-            onClick={handleLogout}
-          >
-            {t("logout")}
-          </button>
+        <div className="absolute right-0 z-50 mt-2 w-64 rounded-lg border bg-card p-2 text-sm shadow-lg">
+          <div className="px-3 py-2 border-b mb-1">
+            <div className="font-medium truncate">{menuLabel}</div>
+            {email && <div className="text-xs text-muted-foreground truncate">{email}</div>}
+          </div>
+
+          {(children.length > 0 || isImpersonating) && (
+            <div className="py-1">
+              <div className="px-3 py-1 text-xs font-semibold text-muted-foreground flex items-center gap-2">
+                <Users className="h-3 w-3" />
+                {t("userMenuChildren")}
+              </div>
+              <button
+                type="button"
+                className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left hover:bg-secondary"
+                onClick={() => {
+                  setChildId(null);
+                  invalidate();
+                  onOpenChange?.(false);
+                  setInternalOpen(false);
+                }}
+              >
+                <span className={!isImpersonating ? "font-bold text-sky-700" : ""}>
+                  {t("userMenuSelf")}
+                </span>
+                {!isImpersonating && <Check className="h-4 w-4 text-sky-700" />}
+              </button>
+              {children.map((child) => (
+                <button
+                  key={child.uid}
+                  type="button"
+                  className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left hover:bg-secondary"
+                  onClick={() => {
+                    setChildId(child.uid || null);
+                    invalidate();
+                    onOpenChange?.(false);
+                    setInternalOpen(false);
+                  }}
+                >
+                  <span className={childId === child.uid ? "font-bold text-sky-700" : ""}>
+                    {child.displayName}
+                  </span>
+                  {childId === child.uid && <Check className="h-4 w-4 text-sky-700" />}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="border-t mt-1 pt-1">
+            <button
+              type="button"
+              className="w-full rounded-md px-3 py-2 text-left text-rose-600 hover:bg-rose-50"
+              onClick={handleLogout}
+            >
+              {t("logout")}
+            </button>
+          </div>
         </div>
       ) : null}
     </div>

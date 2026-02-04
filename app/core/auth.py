@@ -131,7 +131,10 @@ def authenticate(authorization: Optional[str] = Header(None)) -> AuthResult:
     settings = get_settings()
     if settings.dev_user_id:
         return AuthResult(
-            uid=settings.dev_user_id, email=None, display_name=None, photo_url=None
+            uid=settings.dev_user_id,
+            email="dev@example.com",
+            display_name="Dev User",
+            photo_url=None,
         )
     if not authorization:
         raise AppError(401, "Authorization header required")

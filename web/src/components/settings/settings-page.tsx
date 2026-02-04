@@ -31,17 +31,19 @@ const SettingsLink = ({ to, label }: { to: string; label: string }) => (
 export const SettingsPage = () => {
   const { t, grade, setGrade } = useText();
   const gradeOptions = useGradeOptions();
-  const { token, logout } = useAuth();
+  const { token, logout, childId } = useAuth();
   const { data } = useBootstrap();
   const profile = data?.profile;
   const ageGroup = profile?.ageGroup;
   const isAdult = ageGroup === "adult";
+  const isParent = Boolean(data?.isParent);
   const invitesQuery = useInvites(isAdult);
   const invalidate = useInvalidateLedger();
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isDeletingData, setIsDeletingData] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [isRecalculating, setIsRecalculating] = useState(false);
   const [isExportingCsv, setIsExportingCsv] = useState(false);
   const [isDragActive, setIsDragActive] = useState(false);
   const [childEmail, setChildEmail] = useState("");
@@ -135,7 +137,7 @@ export const SettingsPage = () => {
     if (!token) return;
     try {
       setIsExporting(true);
-      const data = await api.exportTransactions(token);
+      const data = await api.exportTransactions(token, childId);
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -189,6 +191,7 @@ export const SettingsPage = () => {
     try {
       await api.cancelInvite(token, inviteId);
       toast.success(t("personalSettingsInviteCancelSuccess"));
+      invalidate();
       await invitesQuery.refetch();
     } catch (error) {
       toast.error(isNetworkError(error) ? t("toastNetworkError") : t("personalSettingsInviteCancelError"));
@@ -200,7 +203,7 @@ export const SettingsPage = () => {
     if (!token) return;
     try {
       setIsExportingCsv(true);
-      const data = await api.exportTransactions(token);
+      const data = await api.exportTransactions(token, childId);
       const csv = jsonToCsv(data);
       const blob = new Blob([csv], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
@@ -237,7 +240,7 @@ export const SettingsPage = () => {
         json = JSON.parse(text);
       }
       if (!Array.isArray(json)) throw new Error("Invalid format: Root must be an array");
-      await api.importTransactions(token, json as any);
+      await api.importTransactions(token, json as any, childId);
       toast.success(t("toastImportSuccess"));
       invalidate();
     } catch (e) {
@@ -300,11 +303,11 @@ export const SettingsPage = () => {
 
   const handleDeleteAll = async () => {
     if (!token) return;
-    if (!window.confirm(t("dataDeleteAllConfirm"))) return;
+    if (!window.confirm(t("dataResetConfirm"))) return;
     try {
       setIsDeletingData(true);
-      await api.deleteAllTransactions(token);
-      toast.success(t("toastDeleteAllSuccess"));
+      await api.deleteAllTransactions(token, childId);
+      toast.success(t("toastResetSuccess"));
       invalidate();
     } catch (e) {
       toast.error(isNetworkError(e) ? t("toastNetworkError") : t("toastUnexpectedError"));
@@ -318,7 +321,7 @@ export const SettingsPage = () => {
     if (!window.confirm(t("dataDeleteAccountConfirm"))) return;
     try {
       setIsDeletingAccount(true);
-      await api.deleteAccount(token);
+      await api.deleteAccount(token, childId);
       toast.success(t("toastDeleteAccountSuccess"));
       logout();
       window.location.href = "/login";
@@ -326,6 +329,21 @@ export const SettingsPage = () => {
       toast.error(isNetworkError(e) ? t("toastNetworkError") : t("toastUnexpectedError"));
     } finally {
       setIsDeletingAccount(false);
+    }
+  };
+
+  const handleRecalculate = async () => {
+    if (!token) return;
+    if (!window.confirm(t("dataRecalculateConfirm"))) return;
+    try {
+      setIsRecalculating(true);
+      await api.updateProfile(token, { recalculate: true }, childId);
+      toast.success(t("toastRecalculateSuccess"));
+      invalidate();
+    } catch (e) {
+      toast.error(isNetworkError(e) ? t("toastNetworkError") : t("toastUnexpectedError"));
+    } finally {
+      setIsRecalculating(false);
     }
   };
 
@@ -353,7 +371,10 @@ export const SettingsPage = () => {
                 <span className="text-sm text-muted-foreground">
                   {t("personalSettingsGradeDescription")}
                 </span>
-                <Select value={grade} onValueChange={(value) => setGrade(value as typeof grade)}>
+                <Select
+                  value={grade}
+                  onValueChange={(value) => setGrade(value as typeof grade)}
+                >
                   <SelectTrigger className="w-full md:w-64">
                     <SelectValue placeholder={t("personalSettingsGradeLabel")} />
                   </SelectTrigger>
@@ -371,7 +392,7 @@ export const SettingsPage = () => {
               </div>
             </CardContent>
           </Card>
-          {isAdult ? (
+          {isAdult && !isParent ? (
             <Card>
               <CardHeader>
                 <CardTitle>{t("settingsSectionLegal")}</CardTitle>
@@ -531,7 +552,25 @@ export const SettingsPage = () => {
             </CardContent>
           </Card>
 
-          {isAdult ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("dataRecalculateTitle")}</CardTitle>
+              <CardDescription>
+                {t("dataRecalculateDescription")}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                variant="outline"
+                onClick={handleRecalculate}
+                disabled={isRecalculating}
+              >
+                {isRecalculating ? t("dataRecalculating") : t("dataRecalculateButton")}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {isAdult || isParent ? (
             <Card className="border-destructive/50">
               <CardHeader>
                 <CardTitle className="text-destructive">{t("dataDangerTitle")}</CardTitle>

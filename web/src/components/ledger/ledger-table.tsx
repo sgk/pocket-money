@@ -49,7 +49,7 @@ const EditableRow = ({
   onCancel: () => void;
 }) => {
   const { t } = useText();
-  const { token } = useAuth();
+  const { token, childId } = useAuth();
   const invalidate = useInvalidateLedger();
   const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState<{
@@ -160,25 +160,28 @@ const EditableRow = ({
     if ((form.memo ?? "") !== initialMemo) {
       return true;
     }
-    if (form.type === "expense") {
+    if (form.type === "expense" && transaction.type === "expense") {
       return (
         (form.assetName ?? "") !== (transaction.assetName ?? "") ||
         (form.categoryName ?? "") !== (transaction.categoryName ?? "") ||
         (form.merchant ?? "") !== (transaction.merchant ?? "")
       );
     }
-    if (form.type === "income") {
+    if (form.type === "income" && transaction.type === "income") {
       return (
         (form.assetName ?? "") !== (transaction.assetName ?? "") ||
         (form.categoryName ?? "") !== (transaction.categoryName ?? "") ||
         (form.source ?? "") !== (transaction.source ?? "")
       );
     }
-    return (
-      (form.fromAssetName ?? "") !== (transaction.fromAssetName ?? "") ||
-      (form.toAssetName ?? "") !== (transaction.toAssetName ?? "") ||
-      (form.counterparty ?? "") !== (transaction.counterparty ?? "")
-    );
+    if (form.type === "transfer" && transaction.type === "transfer") {
+      return (
+        (form.fromAssetName ?? "") !== (transaction.fromAssetName ?? "") ||
+        (form.toAssetName ?? "") !== (transaction.toAssetName ?? "") ||
+        (form.counterparty ?? "") !== (transaction.counterparty ?? "")
+      );
+    }
+    return true;
   })();
   const isSaveDisabled =
     (form.type === "transfer"
@@ -301,7 +304,7 @@ const EditableRow = ({
           counterparty: form.counterparty || undefined,
         };
       }
-      await api.updateTransaction(token, transaction.id, payload);
+      await api.updateTransaction(token, transaction.id, payload, childId);
       toast.success(t("toastEntryUpdated"));
       invalidate();
       onCancel();
@@ -323,7 +326,7 @@ const EditableRow = ({
     }
     try {
       setIsSaving(true);
-      await api.deleteTransaction(token, transaction.id);
+      await api.deleteTransaction(token, transaction.id, childId);
       toast.success(t("toastEntryDeleted"));
       invalidate();
       onCancel();
@@ -356,11 +359,12 @@ const EditableRow = ({
     return () => window.removeEventListener("keydown", handler);
   }, [onCancel]);
 
-  const disableAsset =
+  const disableAsset = Boolean(
     Boolean(fixedAssetId || fixedAssetName) &&
-    form.type !== "transfer" &&
-    ((fixedAssetId && form.assetId === fixedAssetId) ||
-      (!form.assetId && fixedAssetName && form.assetName === fixedAssetName));
+      form.type !== "transfer" &&
+      ((fixedAssetId && form.assetId === fixedAssetId) ||
+        (!form.assetId && fixedAssetName && form.assetName === fixedAssetName))
+  );
   const disableTransferAsset = Boolean(fixedAssetId || fixedAssetName) && form.type === "transfer";
 
   const transferDirection = form.transferDirection ?? "out";
@@ -776,7 +780,7 @@ export const LedgerTable = ({
   onEditingChange,
   renderMode = "full",
   entryRow,
-  entryPosition = "top",
+  entryPosition,
 }: {
   transactions: Transaction[];
   assets: Asset[];
@@ -793,7 +797,7 @@ export const LedgerTable = ({
   entryPosition?: "top" | "bottom";
 }) => {
   const { t } = useText();
-  const { token } = useAuth();
+  const { token, childId } = useAuth();
   const invalidate = useInvalidateLedger();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -817,8 +821,10 @@ export const LedgerTable = ({
     openingBalanceValue === null ? "-" : formatJPYPlain(openingBalanceValue);
   const openingDateText = openingDate ? formatDateSlash(openingDate) : "-";
   const isDesc = order === "desc";
+  const actualEntryPosition = entryPosition ?? (isDesc ? "top" : "bottom");
 
   const isIncomingTransfer = (tx: Transaction) => {
+    if (tx.type !== "transfer") return false;
     if (fixedAssetId) {
       return tx.toAssetId === fixedAssetId;
     }
@@ -1161,7 +1167,7 @@ export const LedgerTable = ({
     try {
       await Promise.all(
         updates.map((update) =>
-          api.updateTransaction(token, update.id, update.payload)
+          api.updateTransaction(token, update.id, update.payload, childId)
         )
       );
       invalidate();
@@ -1283,7 +1289,7 @@ export const LedgerTable = ({
                 })}
               </tr>
             ))}
-            {isDesc ? entryRowNode : null}
+            {actualEntryPosition === "top" ? entryRowNode : null}
           </thead>
         ) : null}
         {renderMode !== "header-only" ? (
@@ -1531,7 +1537,7 @@ export const LedgerTable = ({
               </tr>
             );
           })}
-          {!isDesc ? entryRowNode : null}
+          {actualEntryPosition === "bottom" ? entryRowNode : null}
           {isDesc ? (
             <tr className="border-t bg-secondary/10 ledger-row ledger-row--opening">
               <td className="p-3" data-label={t("labelDate")} data-col="date">

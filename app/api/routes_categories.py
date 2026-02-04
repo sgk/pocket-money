@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 
 from app.api.deps import get_ready_user
 from app.models.categories import CategoryCreate, CategoryOut, CategoryUpdate
@@ -11,7 +11,8 @@ router = APIRouter(prefix="/api/categories", tags=["categories"])
 
 
 @router.get("", response_model=List[CategoryOut])
-def list_categories(user=Depends(get_ready_user)):
+def list_categories(response: Response, user=Depends(get_ready_user)):
+    response.headers["Vary"] = "X-Child-Id"
     return categories_service.list_categories(user.uid)
 
 

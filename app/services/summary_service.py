@@ -54,6 +54,8 @@ def get_month_summary(uid: str, year: int, month: int) -> dict:
                 bucket["income"] += amount
         elif tx_type == "transfer":
             transfer_total += amount
+            fee = int(tx.get("fee", 0) or 0)
+            expense_total += fee
 
         effect = tx_effect(tx)
         for asset_name, delta in effect.items():

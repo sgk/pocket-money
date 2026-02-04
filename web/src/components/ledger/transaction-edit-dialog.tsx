@@ -39,7 +39,7 @@ export const TransactionEditDialog = ({
   categories: Category[];
 }) => {
   const { t } = useText();
-  const { token } = useAuth();
+  const { token, childId } = useAuth();
   const invalidate = useInvalidateLedger();
   const [form, setForm] = useState<{
     occurredAt: string;
@@ -266,7 +266,7 @@ export const TransactionEditDialog = ({
           fee: Number(form.fee || 0),
         };
       }
-      await api.updateTransaction(token, transaction.id, payload);
+      await api.updateTransaction(token, transaction.id, payload, childId);
       toast.success(t("toastEntryUpdated"));
       invalidate();
       onOpenChange(false);
@@ -285,7 +285,7 @@ export const TransactionEditDialog = ({
       return;
     }
     try {
-      await api.deleteTransaction(token, transaction.id);
+      await api.deleteTransaction(token, transaction.id, childId);
       toast.success(t("toastEntryDeleted"));
       invalidate();
       onOpenChange(false);

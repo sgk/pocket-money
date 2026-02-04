@@ -12,6 +12,8 @@ export const grade1Texts = defineTexts<Record<TextKey, TextEntry>>({
   userAvatarAlt: text("ユーザー"),
   noEmail: text("メールなし"),
   logout: text("ログアウト"),
+  userMenuChildren: text("データのきりかえ"),
+  userMenuSelf: text("じぶんのデータ"),
 
   // ログイン
   loginTitle: text("ログイン"),
@@ -216,6 +218,12 @@ export const grade1Texts = defineTexts<Record<TextKey, TextEntry>>({
   dataResetButton: text("全データを削除"),
   toastResetSuccess: text("全てのデータを削除しました"),
   toastResetError: text("削除に失敗しました"),
+  dataRecalculateTitle: text("のこりの けいさん"),
+  dataRecalculateDescription: text("のこっている おかねが おかしいなと おもったら、これを おしてね。もういちど けいさんしなおすよ。"),
+  dataRecalculateConfirm: text("ぜんぶの おかねを けいさんしなおすよ。いいかな？"),
+  dataRecalculating: text("けいさんちゅう..."),
+  dataRecalculateButton: text("けいさんしなおす"),
+  toastRecalculateSuccess: text("けいさんしなおす じゅんびを したよ。すこし まっててね。"),
   dataDeleteAccountTitle: text("退会"),
   dataDeleteAccountDescription: text(
     "アカウントとすべてのデータを完全に削除します。"

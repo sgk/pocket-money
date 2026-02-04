@@ -349,7 +349,8 @@ def _seed_balances(uid: str, as_of: datetime) -> Dict[str, int]:
         created_at = data.get("createdAt")
         include = True
         if created_at:
-            include = _to_utc(created_at) <= as_of
+            # 常に「その時刻より前」を対象にする。境界（as_ofちょうど）は次の月のループで処理される
+            include = _to_utc(created_at) < as_of
         balances[name] = int(data.get("initialBalance", 0)) if include else 0
     return balances
 
@@ -424,6 +425,10 @@ def _save_snapshot(uid: str, month_start: datetime, balances: Dict[str, int]):
 
 def _ensure_snapshots(uid: str, target_month: datetime):
     target_month = _month_start(target_month)
+    now_month = _month_start(_now())
+    # Ensure update at least until target_month or current month
+    end_month = target_month if target_month > now_month else now_month
+
     user_ref = firestore.user_doc(uid)
     user_snap = user_ref.get()
     dirty_from = None
@@ -434,7 +439,7 @@ def _ensure_snapshots(uid: str, target_month: datetime):
 
     snapshot = _get_snapshot(uid, target_month)
     start_month = None
-    if dirty_from and dirty_from <= target_month:
+    if dirty_from and dirty_from <= end_month:
         start_month = dirty_from
     elif not snapshot:
         start_month = target_month
@@ -443,6 +448,14 @@ def _ensure_snapshots(uid: str, target_month: datetime):
         return
 
     asset_name_by_id = _build_asset_name_by_id(uid)
+
+    # 全資産を取得して、ループ内で作成月を判定して初期残高を加算する
+    all_assets = []
+    for doc in firestore.assets_collection(uid).stream():
+        data = doc.to_dict()
+        if data.get("name"):
+            all_assets.append(data)
+
     prev_snapshot = _get_snapshot(uid, _prev_month(start_month))
     if prev_snapshot:
         balances = _normalize_balance_keys(
@@ -452,13 +465,23 @@ def _ensure_snapshots(uid: str, target_month: datetime):
         balances = _compute_balances_until(uid, start_month)
 
     month = start_month
-    while month <= target_month:
+    while month <= end_month:
         month_end = _next_month(month)
+
+        # この月に作成された資産の初期残高を加算する
+        for asset in all_assets:
+            created_at = asset.get("createdAt")
+            if created_at:
+                created_at_utc = _to_utc(created_at)
+                if month <= created_at_utc < month_end:
+                    name = asset["name"]
+                    balances[name] = balances.get(name, 0) + int(asset.get("initialBalance", 0))
+
         balances = _apply_transactions_between(uid, month, month_end, balances)
         _save_snapshot(uid, month, balances)
         month = month_end
 
-    if dirty_from and dirty_from <= target_month:
+    if dirty_from:
         user_ref.update({"balanceDirtyFrom": fs.DELETE_FIELD})
 
 
@@ -1095,7 +1118,11 @@ def rename_asset_in_transactions(uid: str, asset_id: str, old_name: str, new_nam
         updated += _bulk_update_transactions_field(uid, "fromAssetName", old_name, new_name, now)
         updated += _bulk_update_transactions_field(uid, "toAssetName", old_name, new_name, now)
     if updated:
-        firestore.user_doc(uid).set({"transactionsUpdatedAt": now}, merge=True)
+        # Renaming asset affects all snapshots
+        dirty_from = datetime(2000, 1, 1, tzinfo=timezone.utc)
+        firestore.user_doc(uid).set(
+            {"transactionsUpdatedAt": now, "balanceDirtyFrom": dirty_from}, merge=True
+        )
     return updated
 
 

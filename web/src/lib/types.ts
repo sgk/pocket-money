@@ -19,12 +19,14 @@ export type Category = {
 };
 
 export type UserProfile = {
+  uid?: string;
   displayName?: string;
   email?: string;
   photoUrl?: string;
   ageGroup?: "adult" | "child";
   parent?: ParentInfo;
   termsAgreement?: TermsAgreement;
+  grade?: string;
 };
 
 export type ParentInfo = {
@@ -75,6 +77,8 @@ export type BootstrapResponse = {
   profile?: UserProfile;
   assets?: Asset[];
   categories?: Category[];
+  children?: UserProfile[];
+  isParent?: boolean;
 };
 
 export type TxBase = {

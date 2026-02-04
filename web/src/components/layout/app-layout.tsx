@@ -68,7 +68,7 @@ export const AppLayout = () => {
           sidebarOpen ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
         aria-hidden={!sidebarOpen}
-        inert={sidebarOpen ? undefined : ""}
+        {...({ inert: sidebarOpen ? undefined : "" } as any)}
       >
         <button
           type="button"

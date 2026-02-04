@@ -3,11 +3,9 @@ import { Check, Trash2, X } from "lucide-react";
 import { api, isNetworkError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Link } from "react-router-dom";
-import { useAssets } from "@/lib/query";
-import { useQueryClient } from "@tanstack/react-query";
+import { useAssets, useInvalidateLedger } from "@/lib/query";
 import { Topbar } from "@/components/layout/topbar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
 import { formatJPY } from "@/lib/money";
@@ -579,8 +577,8 @@ const AssetRow = ({
 
 export const AssetsSettingsPage = () => {
   const { t } = useText();
-  const { token } = useAuth();
-  const queryClient = useQueryClient();
+  const { token, childId } = useAuth();
+  const invalidate = useInvalidateLedger();
   const { data: assets = [] } = useAssets();
   const [newAsset, setNewAsset] = useState({
     name: "",
@@ -737,11 +735,11 @@ export const AssetsSettingsPage = () => {
           initialBalance: Number(newAsset.initialBalance || 0),
           note: newAsset.note || undefined,
           sortOrder: nextSortOrder,
-        });
+        }, childId);
       });
       toast.success(t("toastAssetAdded"));
       setNewAsset({ name: "", type: "", initialBalance: "0", note: "" });
-      queryClient.invalidateQueries({ queryKey: ["assets"] });
+      invalidate();
     } catch (error) {
       toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
     }
@@ -773,10 +771,10 @@ export const AssetsSettingsPage = () => {
           note: payload.note || undefined,
           initialBalance: payload.initialBalance,
           isActive: payload.isActive,
-        });
+        }, childId);
       });
       toast.success(t("toastAssetUpdated"));
-      queryClient.invalidateQueries({ queryKey: ["assets"] });
+      invalidate();
     } catch (error) {
       toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
     }
@@ -789,12 +787,12 @@ export const AssetsSettingsPage = () => {
     }
     try {
       await runSaving(async () => {
-        await api.updateAsset(token, id, { isActive: value });
+        await api.updateAsset(token, id, { isActive: value }, childId);
       });
-      queryClient.invalidateQueries({ queryKey: ["assets"] });
+      invalidate();
     } catch (error) {
       toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
-      queryClient.invalidateQueries({ queryKey: ["assets"] });
+      invalidate();
     }
   };
 
@@ -809,10 +807,10 @@ export const AssetsSettingsPage = () => {
     }
     try {
       await runSaving(async () => {
-        await api.deleteAsset(token, id);
+        await api.deleteAsset(token, id, childId);
       });
       toast.success(t("toastAssetDeleted"));
-      queryClient.invalidateQueries({ queryKey: ["assets"] });
+      invalidate();
       if (editingAssetId === id) {
         setEditingAssetId(null);
       }
@@ -830,11 +828,11 @@ export const AssetsSettingsPage = () => {
       await runSaving(async () => {
         await Promise.all(
           list.map((asset, index) =>
-            api.updateAsset(token, asset.id, { sortOrder: index + 1 })
+            api.updateAsset(token, asset.id, { sortOrder: index + 1 }, childId)
           )
         );
       });
-      queryClient.invalidateQueries({ queryKey: ["assets"] });
+      invalidate();
     } catch (error) {
       toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
     }

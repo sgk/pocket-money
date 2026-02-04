@@ -95,6 +95,11 @@ def spa_asset_ledger(asset_id: str):
     return serve_index()
 
 
+@app.get("/settings")
+def spa_settings():
+    return serve_index()
+
+
 @app.get("/settings/assets")
 def spa_settings_assets():
     return serve_index()

@@ -2,11 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Trash2, X } from "lucide-react";
 import { api, isNetworkError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { useCategories } from "@/lib/query";
-import { useQueryClient } from "@tanstack/react-query";
+import { useCategories, useInvalidateLedger } from "@/lib/query";
 import { Topbar } from "@/components/layout/topbar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
 import type { Category } from "@/lib/types";
@@ -552,8 +550,8 @@ const CategoryList = ({
 
 export const CategoriesSettingsPage = () => {
   const { t } = useText();
-  const { token } = useAuth();
-  const queryClient = useQueryClient();
+  const { token, childId } = useAuth();
+  const invalidate = useInvalidateLedger();
   const { data: categories = [] } = useCategories();
   const [newCategory, setNewCategory] = useState({
     name: "",
@@ -637,11 +635,11 @@ export const CategoriesSettingsPage = () => {
           name: newCategory.name,
           sortOrder: nextSortOrder,
           kind: newCategory.kind,
-        });
+        }, childId);
       });
       toast.success(t("toastCategoryAdded"));
       setNewCategory({ name: "", kind: "expense" });
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      invalidate();
     } catch (error) {
       toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
     }
@@ -654,9 +652,9 @@ export const CategoriesSettingsPage = () => {
     }
     try {
       await runSaving(async () => {
-        await api.updateCategory(token, id, { isActive: value });
+        await api.updateCategory(token, id, { isActive: value }, childId);
       });
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      invalidate();
     } catch (error) {
       toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
     }
@@ -673,11 +671,11 @@ export const CategoriesSettingsPage = () => {
           list.map((category, index) =>
             api.updateCategory(token, category.id, {
               sortOrder: index + 1,
-            })
+            }, childId)
           )
         );
       });
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      invalidate();
     } catch (error) {
       toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
     }
@@ -694,9 +692,9 @@ export const CategoriesSettingsPage = () => {
     }
     try {
       await runSaving(async () => {
-        await api.deleteCategory(token, id);
+        await api.deleteCategory(token, id, childId);
       });
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      invalidate();
       if (editingCategoryId === id) {
         setEditingCategoryId(null);
       }
@@ -720,7 +718,7 @@ export const CategoriesSettingsPage = () => {
     }
     if (nextName === OTHER_CATEGORY_NAME) {
       toast.error(t("toastOtherNotAllowed"));
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      invalidate();
       return false;
     }
     const conflicts = categories.filter(
@@ -729,18 +727,18 @@ export const CategoriesSettingsPage = () => {
     if (conflicts.length > 0) {
       const ok = window.confirm(t("confirmCategoryMerge"));
       if (!ok) {
-        queryClient.invalidateQueries({ queryKey: ["categories"] });
+        invalidate();
         return false;
       }
     }
     try {
       await runSaving(async () => {
-        await api.updateCategory(token, id, { name: nextName });
+        await api.updateCategory(token, id, { name: nextName }, childId);
         if (conflicts.length > 0) {
-          await Promise.all(conflicts.map((item) => api.deleteCategory(token, item.id)));
+          await Promise.all(conflicts.map((item) => api.deleteCategory(token, item.id, childId)));
         }
       });
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      invalidate();
       return true;
     } catch (error) {
       toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
@@ -788,16 +786,16 @@ export const CategoriesSettingsPage = () => {
           api.updateCategory(token, dragId, {
             kind: toKind,
             sortOrder: clampedIndex + 1,
-          }),
+          }, childId),
           ...nextTarget.map((category, index) =>
-            api.updateCategory(token, category.id, { sortOrder: index + 1 })
+            api.updateCategory(token, category.id, { sortOrder: index + 1 }, childId)
           ),
           ...nextSource.map((category, index) =>
-            api.updateCategory(token, category.id, { sortOrder: index + 1 })
+            api.updateCategory(token, category.id, { sortOrder: index + 1 }, childId)
           ),
         ]);
       });
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      invalidate();
     } catch (error) {
       toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
     }
