@@ -433,36 +433,16 @@ export const SettingsPage = () => {
                 <div className="grid gap-2 text-sm">
                   {profile?.parents && profile.parents.length > 0 ? (
                     profile.parents.map((p, idx) => (
-                      <div key={p.uid || idx} className="space-y-1 border-b pb-2 last:border-0 last:pb-0">
-                        <div className="flex items-center justify-between">
-                          <span className="text-muted-foreground">
-                            {t("personalSettingsParentName")}
-                          </span>
-                          <span>{p.displayName ?? "-"}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-muted-foreground">
-                            {t("personalSettingsParentEmail")}
-                          </span>
-                          <span>{p.email ?? "-"}</span>
-                        </div>
+                      <div key={p.uid || idx} className="flex items-center justify-between gap-4 border-b pb-2 last:border-0 last:pb-0">
+                        <span className="truncate font-medium">{p.displayName ?? "-"}</span>
+                        <span className="shrink-0 text-muted-foreground">{p.email ?? "-"}</span>
                       </div>
                     ))
                   ) : parent ? (
-                    <>
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">
-                          {t("personalSettingsParentName")}
-                        </span>
-                        <span>{parent.displayName ?? "-"}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">
-                          {t("personalSettingsParentEmail")}
-                        </span>
-                        <span>{parent.email ?? "-"}</span>
-                      </div>
-                    </>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="truncate font-medium">{parent.displayName ?? "-"}</span>
+                      <span className="shrink-0 text-muted-foreground">{parent.email ?? "-"}</span>
+                    </div>
                   ) : (
                     <span className="text-muted-foreground">
                       {t("personalSettingsParentEmpty")}
