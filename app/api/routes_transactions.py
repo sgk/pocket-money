@@ -4,7 +4,7 @@ from typing import Optional, List
 
 from fastapi import APIRouter, Depends, Header, Query, Response
 
-from app.api.deps import get_ready_user
+from app.api.deps import get_current_user, get_ready_user
 from app.core.errors import AppError
 from app.models.transactions import (
     ExpenseCreate,
