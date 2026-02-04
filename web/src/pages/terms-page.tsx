@@ -7,6 +7,7 @@ import { formatDateSlash } from "@/lib/date";
 import { Topbar } from "@/components/layout/topbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Markdown } from "@/components/ui/markdown";
 import { toast } from "@/components/ui/toast";
 
 export const TermsPage = () => {
@@ -81,8 +82,8 @@ export const TermsPage = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <div className="max-h-80 overflow-y-auto rounded-md border bg-muted/30 p-4 text-sm whitespace-pre-wrap">
-                      {currentTerms.body}
+                    <div className="max-h-80 overflow-y-auto rounded-md border bg-muted/30 p-4">
+                      <Markdown content={currentTerms.body} />
                     </div>
                     {ageGroup === "adult" ? (
                       <Button type="button" onClick={handleAgree} disabled={isSubmitting || isLoading}>
@@ -113,8 +114,8 @@ export const TermsPage = () => {
                         <span>{t("termsAgreedAtLabel")}</span>
                         <span>{agreedAt ? formatDateSlash(agreedAt) : "-"}</span>
                       </div>
-                      <div className="max-h-80 overflow-y-auto rounded-md border bg-muted/30 p-4 text-sm whitespace-pre-wrap">
-                        {agreedTerms.body}
+                      <div className="max-h-80 overflow-y-auto rounded-md border bg-muted/30 p-4">
+                        <Markdown content={agreedTerms.body} />
                       </div>
                       <div className="flex justify-end">
                         <Button

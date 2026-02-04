@@ -7,6 +7,7 @@ import { formatDateSlash } from "@/lib/date";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Markdown } from "@/components/ui/markdown";
 import { toast } from "@/components/ui/toast";
 
 export const OnboardingPage = () => {
@@ -239,9 +240,9 @@ export const OnboardingPage = () => {
                   graceEnd: termsMeta.graceEnd,
                 })}
               </div>
-              <div className="max-h-64 overflow-y-auto rounded-md border bg-muted/30 p-4 text-sm whitespace-pre-wrap">
-                {data?.terms?.body}
-              </div>
+                <div className="max-h-64 overflow-y-auto rounded-md border bg-muted/30 p-4">
+                  <Markdown content={data?.terms?.body ?? ""} />
+                </div>
               <Button type="button" onClick={handleAgreeTerms} disabled={isSubmitting || isLoading}>
                 {t("onboardingAgree")}
               </Button>
