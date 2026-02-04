@@ -134,6 +134,7 @@ export const grade1Texts = defineTexts<Record<TextKey, TextEntry>>({
   personalSettingsGradeDescription: text("学年にあわせて ことばが かわるよ"),
   personalSettingsGradeLabel: text("いまの学年"),
   personalSettingsGradeNote: text("4月1日をすぎて はじめて ひらいたときに ひとつ すすむよ"),
+  personalSettingsParentLimitReached: text("これいじょう 保護者のひとを ふやせないよ。"),
   gradeOptionKinder: text("幼稚園以下"),
   gradeOptionGrade1: text("小学校1年生"),
   gradeOptionGrade2: text("小学校2年生"),

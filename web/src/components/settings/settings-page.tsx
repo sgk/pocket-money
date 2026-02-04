@@ -53,6 +53,9 @@ export const SettingsPage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounter = useRef(0);
   const parent = profile?.parent;
+  const parents = profile?.parents ?? [];
+  const parentCount = parents.length > 0 ? parents.length : (parent ? 1 : 0);
+  const parentLimitReached = parentCount >= 10;
   const invites = invitesQuery.data?.items ?? [];
   const inviteLimit = invitesQuery.data?.limit ?? 10;
 
@@ -458,15 +461,21 @@ export const SettingsPage = () => {
                       value={parentEmail}
                       onChange={(event) => setParentEmail(event.target.value)}
                       placeholder={t("onboardingParentEmailPlaceholder")}
+                      disabled={isAcceptingInvite || parentLimitReached}
                     />
                     <Button
                       type="button"
                       onClick={handleAcceptInvite}
-                      disabled={isAcceptingInvite}
+                      disabled={isAcceptingInvite || parentLimitReached}
                     >
                       {t("onboardingInviteSubmit")}
                     </Button>
                   </div>
+                  {parentLimitReached && (
+                    <p className="text-xs text-destructive">
+                      {t("personalSettingsParentLimitReached")}
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -485,11 +494,21 @@ export const SettingsPage = () => {
                       value={childEmail}
                       onChange={(event) => setChildEmail(event.target.value)}
                       placeholder={t("personalSettingsInviteEmailLabel")}
+                      disabled={isInviting || invites.length >= inviteLimit}
                     />
-                    <Button type="button" onClick={handleInvite} disabled={isInviting}>
+                    <Button
+                      type="button"
+                      onClick={handleInvite}
+                      disabled={isInviting || invites.length >= inviteLimit}
+                    >
                       {t("personalSettingsInviteSubmit")}
                     </Button>
                   </div>
+                  {invites.length >= inviteLimit && (
+                    <p className="text-xs text-destructive">
+                      {t("personalSettingsInviteLimitReached")}
+                    </p>
+                  )}
                 </div>
                 <div className="grid gap-2 text-sm">
                   <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
