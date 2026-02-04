@@ -96,7 +96,7 @@ def agree_terms(body: AgreeTermsRequest, user=Depends(authenticate)):
             require_user_email(user)
             profile = build_profile(user, now, "adult", agreement, None)
             transaction.set(user_ref, profile)
-            seed_defaults(transaction, user.uid, now)
+            seed_defaults(transaction, user.uid, now, age_group="adult")
             return profile
 
         age_group = profile.get("ageGroup") or body.ageGroup
@@ -246,7 +246,7 @@ def accept_invite(body: AcceptInviteRequest, user=Depends(authenticate)):
         else:
             profile = build_profile(user, now, "child", None, parent_info)
             transaction.set(user_ref, profile)
-            seed_defaults(transaction, user.uid, now)
+            seed_defaults(transaction, user.uid, now, age_group="child")
 
         transaction.set(
             invite_ref,

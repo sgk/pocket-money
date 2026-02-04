@@ -1,6 +1,6 @@
 from datetime import datetime, timezone, timedelta
 import pytest
-from app.services.onboarding_service import check_child_access, build_profile
+from app.services.onboarding_service import check_child_access, build_profile, seed_defaults
 from app.services.account_state import resolve_account_state, ACCOUNT_STATE_READY
 from app.core.terms import TermsSnapshot, Terms
 from unittest.mock import MagicMock, patch
@@ -73,3 +73,32 @@ def test_build_profile_initializes_lists():
     assert profile["parentUids"] == ["p1"]
     assert profile["parent"] == parent_info
     assert profile["parents"] == [parent_info]
+    assert profile["grade"] == "grade1"
+
+def test_build_profile_adult():
+    class MockUser:
+        uid = "adult1"
+        display_name = "Adult"
+        email = "adult@example.com"
+        photo_url = None
+
+    profile = build_profile(MockUser(), NOW, "adult", None, None)
+    assert profile["grade"] == "upper"
+
+def test_seed_defaults_names():
+    mock_transaction = MagicMock()
+
+    with patch("app.core.firestore.assets_collection") as mock_assets_coll, \
+         patch("app.core.firestore.categories_collection") as mock_categories_coll:
+
+        # Test Adult
+        seed_defaults(mock_transaction, "u1", NOW, age_group="adult")
+        args, kwargs = mock_transaction.set.call_args_list[0]
+        assert args[1]["name"] == "お財布"
+
+        mock_transaction.set.reset_mock()
+
+        # Test Child
+        seed_defaults(mock_transaction, "u2", NOW, age_group="child")
+        args, kwargs = mock_transaction.set.call_args_list[0]
+        assert args[1]["name"] == "おさいふ"

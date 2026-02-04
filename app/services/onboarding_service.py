@@ -56,6 +56,7 @@ def build_profile(
         "currency": "JPY",
         "settings": {"timezone": "Asia/Tokyo"},
         "ageGroup": age_group,
+        "grade": "upper" if age_group == "adult" else "grade1",
     }
     if terms_agreement:
         profile["termsAgreement"] = terms_agreement
@@ -69,12 +70,15 @@ def build_profile(
     return profile
 
 
-def seed_defaults(transaction: fs.Transaction, uid: str, now: datetime) -> None:
+def seed_defaults(
+    transaction: fs.Transaction, uid: str, now: datetime, age_group: str = "child"
+) -> None:
     asset_ref = firestore.assets_collection(uid).document()
+    asset_name = "お財布" if age_group == "adult" else "おさいふ"
     transaction.set(
         asset_ref,
         {
-            "name": "\u304a\u3055\u3044\u3075",
+            "name": asset_name,
             "type": "\u3052\u3093\u304d\u3093",
             "currency": "JPY",
             "isActive": True,
