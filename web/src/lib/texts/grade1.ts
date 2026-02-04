@@ -12,7 +12,7 @@ export const grade1Texts = defineTexts<Record<TextKey, TextEntry>>({
   userAvatarAlt: text("ユーザー"),
   noEmail: text("メールなし"),
   logout: text("ログアウト"),
-  userMenuChildren: text("こどものデータ"),
+  userMenuChildren: text("データのきりかえ"),
   userMenuSelf: text("じぶんのデータ"),
 
   // ログイン
