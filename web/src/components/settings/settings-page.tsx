@@ -432,35 +432,17 @@ export const SettingsPage = () => {
               <CardHeader>
                 <CardTitle className="text-base">{t("personalSettingsParentTitle")}</CardTitle>
               </CardHeader>
-              <CardContent className="grid gap-6">
-                <div className="grid gap-2 text-sm">
-                  {profile?.parents && profile.parents.length > 0 ? (
-                    profile.parents.map((p, idx) => (
-                      <div key={p.uid || idx} className="flex items-center justify-between gap-4 border-b pb-2 last:border-0 last:pb-0">
-                        <span className="truncate font-medium">{p.displayName ?? "-"}</span>
-                        <span className="shrink-0 text-muted-foreground">{p.email ?? "-"}</span>
-                      </div>
-                    ))
-                  ) : parent ? (
-                    <div className="flex items-center justify-between gap-4">
-                      <span className="truncate font-medium">{parent.displayName ?? "-"}</span>
-                      <span className="shrink-0 text-muted-foreground">{parent.email ?? "-"}</span>
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground">
-                      {t("personalSettingsParentEmpty")}
-                    </span>
-                  )}
-                </div>
-
-                <div className="space-y-3 pt-2">
-                  <div className="text-sm font-medium">{t("onboardingStepChildLabel")}</div>
-                  <div className="flex flex-col gap-2 sm:flex-row">
+              <CardContent className="grid gap-4">
+                <div className="grid gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    保護者から招待が来ているかどうか確認します。
+                  </span>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <Input
                       type="email"
                       value={parentEmail}
                       onChange={(event) => setParentEmail(event.target.value)}
-                      placeholder={t("onboardingParentEmailPlaceholder")}
+                      placeholder="保護者のGoogleアカウント"
                       disabled={isAcceptingInvite || parentLimitReached}
                     />
                     <Button
@@ -468,13 +450,45 @@ export const SettingsPage = () => {
                       onClick={handleAcceptInvite}
                       disabled={isAcceptingInvite || parentLimitReached}
                     >
-                      {t("onboardingInviteSubmit")}
+                      招待を確認する
                     </Button>
                   </div>
                   {parentLimitReached && (
                     <p className="text-xs text-destructive">
                       {t("personalSettingsParentLimitReached")}
                     </p>
+                  )}
+                </div>
+
+                <div className="grid gap-2 text-sm">
+                  <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+                    <span>確認済みの保護者</span>
+                  </div>
+                  {profile?.parents && profile.parents.length > 0 ? (
+                    <div className="grid gap-2">
+                      {profile.parents.map((p, idx) => (
+                        <div
+                          key={p.uid || idx}
+                          className="flex flex-col gap-2 rounded-md border px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                        >
+                          <span className="truncate font-medium">
+                            {p.email ?? "-"}
+                            {p.displayName ? ` (${p.displayName})` : ""}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : parent ? (
+                    <div className="flex flex-col gap-2 rounded-md border px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+                      <span className="truncate font-medium">
+                        {parent.email ?? "-"}
+                        {parent.displayName ? ` (${parent.displayName})` : ""}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      {t("personalSettingsParentEmpty")}
+                    </span>
                   )}
                 </div>
               </CardContent>
