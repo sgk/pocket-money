@@ -32,6 +32,7 @@ export const UserMenu = ({ compact = false, isOpen, onOpenChange }: UserMenuProp
   const photoUrl = profile?.photoUrl;
   const children = data?.children ?? [];
   const isImpersonating = Boolean(childId);
+  const hasChildrenSection = children.length > 0 || isImpersonating;
 
   useEffect(() => {
     setImageError(false);
@@ -107,7 +108,7 @@ export const UserMenu = ({ compact = false, isOpen, onOpenChange }: UserMenuProp
             {email && <div className="text-xs text-muted-foreground truncate">{email}</div>}
           </div>
 
-          {(children.length > 0 || isImpersonating) && (
+          {hasChildrenSection && (
             <div className="py-1">
               <div className="px-3 py-1 text-xs font-semibold text-muted-foreground flex items-center gap-2">
                 <Users className="h-3 w-3" />
@@ -149,7 +150,7 @@ export const UserMenu = ({ compact = false, isOpen, onOpenChange }: UserMenuProp
             </div>
           )}
 
-          <div className="border-t mt-1 pt-1">
+          <div className={hasChildrenSection ? "border-t mt-1 pt-1" : "pt-1"}>
             <button
               type="button"
               className="w-full rounded-md px-3 py-2 text-left text-rose-600 hover:bg-rose-50"
