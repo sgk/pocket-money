@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response
 from google.cloud.firestore_v1 import FieldFilter
 
 from app.api.deps import get_ready_user
@@ -12,7 +12,8 @@ router = APIRouter(prefix="/api", tags=["bootstrap"])
 
 
 @router.post("/bootstrap")
-def bootstrap(request: Request, user=Depends(get_ready_user)):
+def bootstrap(request: Request, response: Response, user=Depends(get_ready_user)):
+    response.headers["Vary"] = "X-Child-Id"
     uid = user.uid
     profile_snap = firestore.user_doc(uid).get()
     if not profile_snap.exists:
