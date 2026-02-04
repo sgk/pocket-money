@@ -107,7 +107,7 @@ export const UserMenu = ({ compact = false, isOpen, onOpenChange }: UserMenuProp
             {email && <div className="text-xs text-muted-foreground truncate">{email}</div>}
           </div>
 
-          {children.length > 0 && (
+          {(children.length > 0 || isImpersonating) && (
             <div className="py-1">
               <div className="px-3 py-1 text-xs font-semibold text-muted-foreground flex items-center gap-2">
                 <Users className="h-3 w-3" />

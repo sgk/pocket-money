@@ -191,6 +191,7 @@ export const SettingsPage = () => {
     try {
       await api.cancelInvite(token, inviteId);
       toast.success(t("personalSettingsInviteCancelSuccess"));
+      invalidate();
       await invitesQuery.refetch();
     } catch (error) {
       toast.error(isNetworkError(error) ? t("toastNetworkError") : t("personalSettingsInviteCancelError"));

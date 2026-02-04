@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { LedgerLayout } from "@/components/ledger/ledger-layout";
 import { type LedgerFiltersState } from "@/components/ledger/filters";
 import { formatDate, startOfCurrentMonth, toDateKey } from "@/lib/date";
@@ -12,11 +12,20 @@ import { useText } from "@/lib/text";
 export const AssetLedgerPage = () => {
   const { t } = useText();
   const { assetId } = useParams();
-  const { data: assets = [] } = useAssets();
+  const navigate = useNavigate();
+  const { data: assets = [], isLoading: isAssetsLoading } = useAssets();
   const { data: categories = [] } = useCategories();
   const asset = assets.find((item) => item.id === assetId);
   const assetName = asset?.name;
   const resolvedAssetId = asset?.id;
+
+  useEffect(() => {
+    console.log("AssetLedgerPage state:", { isAssetsLoading, assetsCount: assets.length, assetFound: !!asset, assetId });
+    if (!isAssetsLoading && !asset && assetId) {
+      console.log("Redirecting to dashboard...");
+      navigate("/", { replace: true });
+    }
+  }, [isAssetsLoading, assets, asset, assetId, navigate]);
 
   const [filters, setFilters] = useState<LedgerFiltersState>({
     from: formatDate(startOfCurrentMonth()),
