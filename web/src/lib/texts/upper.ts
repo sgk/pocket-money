@@ -37,6 +37,7 @@ export const upperTexts = defineTexts({
   onboardingInviteSubmit: text("招待を確認する"),
   onboardingAgreeError: text("同意の処理に失敗しました。"),
   onboardingInviteError: text("招待の確認に失敗しました。"),
+  onboardingInviteSuccess: text("招待を確認しました。"),
   onboardingParentEmailRequired: text("親のメールアドレスを入力してください。"),
   onboardingIntroExportTitle: text("データのエクスポート"),
   onboardingIntroExportDescription: text(

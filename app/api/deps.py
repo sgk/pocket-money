@@ -27,7 +27,8 @@ def get_ready_user(request: Request, user=Depends(authenticate)):
         if not child_profile_snap.exists:
             raise AppError(404, "Child profile not found")
         profile = child_profile_snap.to_dict()
-        if profile.get("parentUid") != user.uid:
+        parent_uids = profile.get("parentUids") or []
+        if user.uid != profile.get("parentUid") and user.uid not in parent_uids:
             raise AppError(403, "Not authorized to access this child data")
         uid = child_id
         is_parent_viewing_child = True

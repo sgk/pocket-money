@@ -28,7 +28,7 @@ def resolve_account_state(
     if age_group not in ("adult", "child"):
         raise AppError(500, "Invalid age group")
 
-    if age_group == "child" and not profile.get("parent"):
+    if age_group == "child" and not profile.get("parent") and not profile.get("parents"):
         raise AppError(500, "Parent info missing")
 
     if age_group == "child":

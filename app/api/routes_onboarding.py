@@ -196,15 +196,37 @@ def accept_invite(body: AcceptInviteRequest, user=Depends(authenticate)):
             existing = user_snap.to_dict()
             if existing.get("ageGroup") and existing.get("ageGroup") != "child":
                 raise AppError(400, "Invalid age group")
+
+            parents = existing.get("parents") or []
+            parent_uids = existing.get("parentUids") or []
+
+            # Legacy fallback
+            if not parent_uids and existing.get("parentUid"):
+                parent_uids = [existing.get("parentUid")]
+                parents = [existing.get("parent")]
+
+            if parent_uid in parent_uids:
+                raise AppError(409, "Parent already connected")
+            if len(parent_uids) >= 10:
+                raise AppError(400, "Parent limit reached")
+
+            parents.append(parent_info)
+            parent_uids.append(parent_uid)
+
             if existing.get("termsAgreement"):
                 existing_terms = resolve_agreed_terms(existing.get("termsAgreement"), snapshot)
                 ensure_terms_can_agree(existing_terms, agreed_terms, now)
             updates = {
                 "ageGroup": "child",
-                "parent": parent_info,
-                "parentUid": parent_uid,
+                "parents": parents,
+                "parentUids": parent_uids,
                 "updatedAt": now,
             }
+            # Update legacy fields if not present
+            if not existing.get("parentUid"):
+                updates["parentUid"] = parent_uid
+                updates["parent"] = parent_info
+
             if user.display_name:
                 updates["displayName"] = user.display_name
             if user.email:
@@ -288,6 +310,8 @@ def withdraw_terms(user=Depends(authenticate)):
             "termsAgreement": fs.DELETE_FIELD,
             "parent": fs.DELETE_FIELD,
             "parentUid": fs.DELETE_FIELD,
+            "parents": fs.DELETE_FIELD,
+            "parentUids": fs.DELETE_FIELD,
             "updatedAt": now,
         }
         transaction.set(user_ref, updates, merge=True)

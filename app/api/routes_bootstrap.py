@@ -47,22 +47,43 @@ def bootstrap(request: Request, response: Response, user=Depends(get_ready_user)
 
     children = []
     if auth_profile.get("ageGroup") == "adult":
-        child_docs = (
+        # Legacy query
+        child_docs_legacy = (
             firestore.users_collection()
             .where(filter=FieldFilter("parentUid", "==", auth_user.uid))
             .stream()
         )
-        for doc in child_docs:
+        # New query
+        child_docs_new = (
+            firestore.users_collection()
+            .where(filter=FieldFilter("parentUids", "array_contains", auth_user.uid))
+            .stream()
+        )
+
+        seen_uids = set()
+        for doc in child_docs_legacy:
+            if doc.id in seen_uids: continue
             child_data = doc.to_dict()
             if child_data.get("ageGroup") == "child":
-                children.append(
-                    {
-                        "uid": doc.id,
-                        "displayName": child_data.get("displayName"),
-                        "photoUrl": child_data.get("photoUrl"),
-                        "grade": child_data.get("grade"),
-                    }
-                )
+                children.append({
+                    "uid": doc.id,
+                    "displayName": child_data.get("displayName"),
+                    "photoUrl": child_data.get("photoUrl"),
+                    "grade": child_data.get("grade"),
+                })
+                seen_uids.add(doc.id)
+
+        for doc in child_docs_new:
+            if doc.id in seen_uids: continue
+            child_data = doc.to_dict()
+            if child_data.get("ageGroup") == "child":
+                children.append({
+                    "uid": doc.id,
+                    "displayName": child_data.get("displayName"),
+                    "photoUrl": child_data.get("photoUrl"),
+                    "grade": child_data.get("grade"),
+                })
+                seen_uids.add(doc.id)
 
     return {
         "profile": profile,

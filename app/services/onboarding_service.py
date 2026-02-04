@@ -61,9 +61,11 @@ def build_profile(
         profile["termsAgreement"] = terms_agreement
     if parent:
         profile["parent"] = parent
+        profile["parents"] = [parent]
         parent_uid = parent.get("uid")
         if parent_uid:
             profile["parentUid"] = parent_uid
+            profile["parentUids"] = [parent_uid]
     return profile
 
 
@@ -114,21 +116,29 @@ def check_child_access(
     if not profile or profile.get("ageGroup") != "child":
         return True
 
-    parent_uid = profile.get("parentUid")
-    if not parent_uid:
+    parent_uids = profile.get("parentUids") or []
+    if not parent_uids and profile.get("parentUid"):
+        parent_uids = [profile.get("parentUid")]
+
+    if not parent_uids:
         return False
-    parent_snap = firestore.user_doc(parent_uid).get()
-    if not parent_snap.exists:
-        return False
-    parent_profile = parent_snap.to_dict() or {}
-    if parent_profile.get("ageGroup") != "adult":
-        return False
-    parent_terms = parent_profile.get("termsAgreement")
-    if not parent_terms:
-        return False
-    try:
-        agreed_terms = resolve_agreed_terms(parent_terms, snapshot)
-    except AppError:
-        return False
-    deadline = resolve_effective_deadline(snapshot.terms, agreed_terms, now)
-    return not deadline or now < deadline
+
+    for parent_uid in parent_uids:
+        parent_snap = firestore.user_doc(parent_uid).get()
+        if not parent_snap.exists:
+            continue
+        parent_profile = parent_snap.to_dict() or {}
+        if parent_profile.get("ageGroup") != "adult":
+            continue
+        parent_terms = parent_profile.get("termsAgreement")
+        if not parent_terms:
+            continue
+        try:
+            agreed_terms = resolve_agreed_terms(parent_terms, snapshot)
+        except AppError:
+            continue
+        deadline = resolve_effective_deadline(snapshot.terms, agreed_terms, now)
+        if not deadline or now < deadline:
+            return True
+
+    return False

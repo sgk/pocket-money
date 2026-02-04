@@ -38,16 +38,33 @@ def _collect_child_keys(parent_uid: str):
         if key:
             keys.add(key)
 
-    child_docs = firestore.users_collection().where(
+    child_docs_legacy = firestore.users_collection().where(
         filter=FieldFilter("parentUid", "==", parent_uid)
     ).stream()
-    for doc in child_docs:
+    child_docs_new = firestore.users_collection().where(
+        filter=FieldFilter("parentUids", "array_contains", parent_uid)
+    ).stream()
+
+    seen_ids = set()
+    for doc in child_docs_legacy:
+        if doc.id in seen_ids: continue
         data = doc.to_dict()
         if data.get("ageGroup") != "child":
             continue
         key = data.get("email") or doc.id
         if key:
             keys.add(key)
+        seen_ids.add(doc.id)
+
+    for doc in child_docs_new:
+        if doc.id in seen_ids: continue
+        data = doc.to_dict()
+        if data.get("ageGroup") != "child":
+            continue
+        key = data.get("email") or doc.id
+        if key:
+            keys.add(key)
+        seen_ids.add(doc.id)
     return keys, invites
 
 
@@ -155,21 +172,30 @@ def cancel_invite(invite_id: str, user=Depends(get_parent_user)):
             child_snap = child_ref.get(transaction=transaction)
             if child_snap.exists:
                 child_profile = child_snap.to_dict()
-                if (
-                    child_profile.get("parentUid") == user.uid
-                    and child_profile.get("ageGroup") == "child"
-                ):
-                    transaction.set(
-                        child_ref,
-                        {
-                            "ageGroup": fs.DELETE_FIELD,
-                            "parent": fs.DELETE_FIELD,
-                            "parentUid": fs.DELETE_FIELD,
-                            "termsAgreement": fs.DELETE_FIELD,
-                            "updatedAt": now,
-                        },
-                        merge=True,
-                    )
+                if child_profile.get("ageGroup") == "child":
+                    parents = child_profile.get("parents") or []
+                    parent_uids = child_profile.get("parentUids") or []
+
+                    new_parents = [p for p in parents if p.get("uid") != user.uid]
+                    new_parent_uids = [u for u in parent_uids if u != user.uid]
+
+                    updates = {
+                        "parents": new_parents,
+                        "parentUids": new_parent_uids,
+                        "updatedAt": now,
+                    }
+
+                    # Also handle legacy fields if they match the user
+                    if child_profile.get("parentUid") == user.uid:
+                        updates["parentUid"] = fs.DELETE_FIELD
+                        updates["parent"] = fs.DELETE_FIELD
+
+                    # If no parents left, reset age group
+                    if not new_parent_uids and (child_profile.get("parentUid") == user.uid or not child_profile.get("parentUid")):
+                        updates["ageGroup"] = fs.DELETE_FIELD
+                        updates["termsAgreement"] = fs.DELETE_FIELD
+
+                    transaction.set(child_ref, updates, merge=True)
 
         transaction.set(invite_ref, {"revokedAt": now}, merge=True)
         return True

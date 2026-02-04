@@ -25,6 +25,9 @@ export type UserProfile = {
   photoUrl?: string;
   ageGroup?: "adult" | "child";
   parent?: ParentInfo;
+  parents?: ParentInfo[];
+  parentUid?: string;
+  parentUids?: string[];
   termsAgreement?: TermsAgreement;
   grade?: string;
 };

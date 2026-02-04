@@ -47,7 +47,9 @@ export const SettingsPage = () => {
   const [isExportingCsv, setIsExportingCsv] = useState(false);
   const [isDragActive, setIsDragActive] = useState(false);
   const [childEmail, setChildEmail] = useState("");
+  const [parentEmail, setParentEmail] = useState("");
   const [isInviting, setIsInviting] = useState(false);
+  const [isAcceptingInvite, setIsAcceptingInvite] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounter = useRef(0);
   const parent = profile?.parent;
@@ -347,6 +349,26 @@ export const SettingsPage = () => {
     }
   };
 
+  const handleAcceptInvite = async () => {
+    if (!token) return;
+    if (!parentEmail.trim()) {
+      toast.error(t("onboardingParentEmailRequired"));
+      return;
+    }
+    setIsAcceptingInvite(true);
+    try {
+      await api.acceptInvite(token, { parentEmail: parentEmail.trim() });
+      toast.success(t("onboardingInviteSuccess"));
+      setParentEmail("");
+      invalidate();
+    } catch (error) {
+      toast.error(isNetworkError(error) ? t("toastNetworkError") : t("onboardingInviteError"));
+      console.error(error);
+    } finally {
+      setIsAcceptingInvite(false);
+    }
+  };
+
   return (
     <div className="flex h-full flex-col bg-background">
       <Topbar title={t("settingsTitle")} subtitle={t("settingsSubtitle")} />
@@ -407,27 +429,65 @@ export const SettingsPage = () => {
               <CardHeader>
                 <CardTitle className="text-base">{t("personalSettingsParentTitle")}</CardTitle>
               </CardHeader>
-              <CardContent className="grid gap-2 text-sm">
-                {parent ? (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">
-                        {t("personalSettingsParentName")}
-                      </span>
-                      <span>{parent.displayName ?? "-"}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">
-                        {t("personalSettingsParentEmail")}
-                      </span>
-                      <span>{parent.email ?? "-"}</span>
-                    </div>
-                  </>
-                ) : (
-                  <span className="text-muted-foreground">
-                    {t("personalSettingsParentEmpty")}
-                  </span>
-                )}
+              <CardContent className="grid gap-6">
+                <div className="grid gap-2 text-sm">
+                  {profile?.parents && profile.parents.length > 0 ? (
+                    profile.parents.map((p, idx) => (
+                      <div key={p.uid || idx} className="space-y-1 border-b pb-2 last:border-0 last:pb-0">
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">
+                            {t("personalSettingsParentName")}
+                          </span>
+                          <span>{p.displayName ?? "-"}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">
+                            {t("personalSettingsParentEmail")}
+                          </span>
+                          <span>{p.email ?? "-"}</span>
+                        </div>
+                      </div>
+                    ))
+                  ) : parent ? (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">
+                          {t("personalSettingsParentName")}
+                        </span>
+                        <span>{parent.displayName ?? "-"}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">
+                          {t("personalSettingsParentEmail")}
+                        </span>
+                        <span>{parent.email ?? "-"}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      {t("personalSettingsParentEmpty")}
+                    </span>
+                  )}
+                </div>
+
+                <div className="space-y-3 pt-2">
+                  <div className="text-sm font-medium">{t("onboardingStepChildLabel")}</div>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Input
+                      type="email"
+                      value={parentEmail}
+                      onChange={(event) => setParentEmail(event.target.value)}
+                      placeholder={t("onboardingParentEmailPlaceholder")}
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleAcceptInvite}
+                      disabled={isAcceptingInvite}
+                    >
+                      {t("onboardingInviteSubmit")}
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           ) : null}
