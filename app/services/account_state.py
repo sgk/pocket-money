@@ -34,11 +34,12 @@ def resolve_account_state(
     if age_group == "child":
         return ACCOUNT_STATE_READY
 
+    agreement = profile.get("termsAgreement")
     agreed_terms = (
-        resolve_agreed_terms(profile.get("termsAgreement"), snapshot)
-        if profile.get("termsAgreement")
-        else None
+        resolve_agreed_terms(agreement, snapshot, allow_missing=True) if agreement else None
     )
+    if agreement and not agreed_terms:
+        return ACCOUNT_STATE_NEEDS_AGE
     if not agreed_terms:
         return ACCOUNT_STATE_NEEDS_TERMS
 

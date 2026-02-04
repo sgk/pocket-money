@@ -8,7 +8,7 @@ import React, {
 } from "react";
 import { storage, STORAGE_KEYS } from "@/lib/storage";
 import { useAuth } from "@/lib/auth";
-import { useBootstrap } from "@/lib/query";
+import { useBootstrap, useOnboardingStatus } from "@/lib/query";
 import { api } from "@/lib/api";
 import {
   DEFAULT_GRADE,
@@ -59,7 +59,9 @@ const TextContext = createContext<TextContextValue | undefined>(undefined);
 
 export const TextProvider = ({ children }: { children: React.ReactNode }) => {
   const { token, childId } = useAuth();
-  const { data: bootstrap } = useBootstrap();
+  const onboarding = useOnboardingStatus();
+  const isReady = onboarding.data?.state === "ready";
+  const { data: bootstrap } = useBootstrap(isReady);
   const storedGradeRef = useRef<Grade | null | "unset">("unset");
   if (storedGradeRef.current === "unset") {
     const raw = storage.getGrade();

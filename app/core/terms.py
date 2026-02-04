@@ -88,7 +88,11 @@ def get_terms_by_id(term_id: str) -> Terms | None:
     return _parse_terms(snap.id, data)
 
 
-def resolve_agreed_terms(agreement: dict | None, snapshot: TermsSnapshot) -> Terms | None:
+def resolve_agreed_terms(
+    agreement: dict | None,
+    snapshot: TermsSnapshot,
+    allow_missing: bool = False,
+) -> Terms | None:
     if not agreement:
         return None
     term_id = agreement.get("termId")
@@ -96,6 +100,8 @@ def resolve_agreed_terms(agreement: dict | None, snapshot: TermsSnapshot) -> Ter
         raise AppError(500, "Terms id missing")
     agreed = snapshot.terms_by_id.get(term_id)
     if not agreed:
+        if allow_missing:
+            return None
         raise AppError(500, "Terms id not found")
     return agreed
 

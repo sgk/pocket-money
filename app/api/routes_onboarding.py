@@ -84,7 +84,9 @@ def agree_terms(body: AgreeTermsRequest, user=Depends(authenticate)):
         snap = user_ref.get(transaction=transaction)
         profile = snap.to_dict() if snap.exists else None
         agreement = profile.get("termsAgreement") if profile else None
-        agreed_terms = resolve_agreed_terms(agreement, snapshot) if agreement else None
+        agreed_terms = (
+            resolve_agreed_terms(agreement, snapshot, allow_missing=True) if agreement else None
+        )
         pending_terms = select_pending_terms(snapshot.terms, agreed_terms, now)
         if not pending_terms:
             raise AppError(400, "No terms to agree")
@@ -118,7 +120,7 @@ def agree_terms(body: AgreeTermsRequest, user=Depends(authenticate)):
     profile = firestore.run_in_transaction(_work)
     state = resolve_account_state(profile, snapshot, now)
     agreed_terms = (
-        resolve_agreed_terms(profile.get("termsAgreement"), snapshot)
+        resolve_agreed_terms(profile.get("termsAgreement"), snapshot, allow_missing=True)
         if profile and profile.get("termsAgreement")
         else None
     )
@@ -258,7 +260,7 @@ def accept_invite(body: AcceptInviteRequest, user=Depends(authenticate)):
     profile = firestore.run_in_transaction(_work)
     state = resolve_account_state(profile, snapshot, now)
     agreed_terms = (
-        resolve_agreed_terms(profile.get("termsAgreement"), snapshot)
+        resolve_agreed_terms(profile.get("termsAgreement"), snapshot, allow_missing=True)
         if profile and profile.get("termsAgreement")
         else None
     )
@@ -326,4 +328,4 @@ def _resolve_agreed_terms(profile: dict | None, snapshot: TermsSnapshot) -> obje
     agreement = profile.get("termsAgreement")
     if not agreement:
         return None
-    return resolve_agreed_terms(agreement, snapshot)
+    return resolve_agreed_terms(agreement, snapshot, allow_missing=True)
