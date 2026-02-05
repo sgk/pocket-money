@@ -122,7 +122,7 @@ export const upperTexts = defineTexts({
   // フィルタ
   filterPresetThisMonth: text("今月"),
   filterPresetLastMonth: text("先月"),
-  filterPresetLast30: text("30日間"),
+  filterPresetLastYear: text("1年間"),
   filterPresetCustom: text("その他"),
   filterPeriodPlaceholder: text("きかん"),
   filterSearchPlaceholder: text("検索（相手/メモ）"),

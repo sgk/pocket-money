@@ -1,5 +1,5 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
-import { addDays } from "date-fns";
+import { endOfMonth, startOfMonth, subMonths } from "date-fns";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -9,7 +9,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatDate, startOfCurrentMonth, startOfPrevMonth } from "@/lib/date";
-import { endOfMonth } from "date-fns";
 import { useText } from "@/lib/text";
 export type LedgerFiltersState = {
   from: string;
@@ -18,7 +17,7 @@ export type LedgerFiltersState = {
   order: "desc" | "asc";
 };
 
-type PresetValue = "this-month" | "last-month" | "last-30" | "custom";
+type PresetValue = "this-month" | "last-month" | "last-year" | "custom";
 
 export const Filters = ({
   filters,
@@ -31,11 +30,13 @@ export const Filters = ({
   const presets = [
     { value: "this-month", label: t("filterPresetThisMonth") },
     { value: "last-month", label: t("filterPresetLastMonth") },
-    { value: "last-30", label: t("filterPresetLast30") },
+    { value: "last-year", label: t("filterPresetLastYear") },
     { value: "custom", label: t("filterPresetCustom") },
   ] as const;
   const [preset, setPreset] = useState<PresetValue>("this-month");
   const [isInitialized, setIsInitialized] = useState(false);
+  const fromMonthValue = filters.from ? filters.from.slice(0, 7) : "";
+  const toMonthValue = filters.to ? filters.to.slice(0, 7) : "";
 
   useEffect(() => {
     if (isInitialized) {
@@ -62,9 +63,10 @@ export const Filters = ({
       nextFrom = formatDate(startOfPrevMonth());
       nextTo = formatDate(endOfMonth(startOfPrevMonth()));
     }
-    if (preset === "last-30") {
-      nextFrom = formatDate(addDays(new Date(), -30));
-      nextTo = formatDate(new Date());
+    if (preset === "last-year") {
+      const start = startOfMonth(subMonths(new Date(), 11));
+      nextFrom = formatDate(start);
+      nextTo = formatDate(endOfMonth(new Date()));
     }
     if (nextFrom === filters.from && nextTo === filters.to) {
       return;
@@ -96,10 +98,17 @@ export const Filters = ({
           </Select>
           <div className="flex flex-1 min-w-0 items-center gap-1 max-[360px]:basis-full">
             <Input
-              type="date"
-              value={filters.from}
+              type="month"
+              value={fromMonthValue}
               onChange={(event) => {
-                setFilters({ ...filters, from: event.target.value });
+                const value = event.target.value;
+                if (!value) {
+                  setFilters({ ...filters, from: "" });
+                  setPreset("custom");
+                  return;
+                }
+                const monthStart = startOfMonth(new Date(`${value}-01T00:00:00`));
+                setFilters({ ...filters, from: formatDate(monthStart) });
                 setPreset("custom");
               }}
               className="flex-1 min-w-0 h-8 px-2 text-xs"
@@ -108,10 +117,17 @@ export const Filters = ({
               {t("filterRangeSeparator")}
             </span>
             <Input
-              type="date"
-              value={filters.to}
+              type="month"
+              value={toMonthValue}
               onChange={(event) => {
-                setFilters({ ...filters, to: event.target.value });
+                const value = event.target.value;
+                if (!value) {
+                  setFilters({ ...filters, to: "" });
+                  setPreset("custom");
+                  return;
+                }
+                const monthEnd = endOfMonth(new Date(`${value}-01T00:00:00`));
+                setFilters({ ...filters, to: formatDate(monthEnd) });
                 setPreset("custom");
               }}
               className="flex-1 min-w-0 h-8 px-2 text-xs"
@@ -156,10 +172,17 @@ export const Filters = ({
             </SelectContent>
           </Select>
           <Input
-            type="date"
-            value={filters.from}
+            type="month"
+            value={fromMonthValue}
             onChange={(event) => {
-              setFilters({ ...filters, from: event.target.value });
+              const value = event.target.value;
+              if (!value) {
+                setFilters({ ...filters, from: "" });
+                setPreset("custom");
+                return;
+              }
+              const monthStart = startOfMonth(new Date(`${value}-01T00:00:00`));
+              setFilters({ ...filters, from: formatDate(monthStart) });
               setPreset("custom");
             }}
             className="w-32 md:w-36"
@@ -168,10 +191,17 @@ export const Filters = ({
             {t("filterRangeSeparator")}
           </span>
           <Input
-            type="date"
-            value={filters.to}
+            type="month"
+            value={toMonthValue}
             onChange={(event) => {
-              setFilters({ ...filters, to: event.target.value });
+              const value = event.target.value;
+              if (!value) {
+                setFilters({ ...filters, to: "" });
+                setPreset("custom");
+                return;
+              }
+              const monthEnd = endOfMonth(new Date(`${value}-01T00:00:00`));
+              setFilters({ ...filters, to: formatDate(monthEnd) });
               setPreset("custom");
             }}
             className="w-32 md:w-36"

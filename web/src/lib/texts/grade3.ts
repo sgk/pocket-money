@@ -66,7 +66,7 @@ export const grade3Texts = defineTexts<Record<TextKey, TextEntry>>({
   // フィルタ
   filterPresetThisMonth: text("今月"),
   filterPresetLastMonth: text("先月"),
-  filterPresetLast30: text("30日"),
+  filterPresetLastYear: text("1ねんかん"),
   filterPresetCustom: text("その他"),
   filterPeriodPlaceholder: text("きかん"),
   filterSearchPlaceholder: text("さがす（あいて/メモ）"),
