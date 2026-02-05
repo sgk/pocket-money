@@ -6,6 +6,7 @@ from google.cloud.firestore_v1.base_query import FieldFilter
 
 from app.core import firestore
 from app.core.errors import AppError
+from app.core.limits import MAX_AMOUNT, MIN_AMOUNT, MAX_MEMO_LENGTH, MAX_NAME_LENGTH
 from app.models.transactions import ExpenseCreate, IncomeCreate, TransferCreate, TransactionUpdate
 
 
@@ -490,15 +491,30 @@ def _require(value, message: str):
         raise AppError(400, message)
 
 
+def _validate_text_length(value: Optional[str], max_length: int, field: str):
+    if value is None:
+        return
+    if not isinstance(value, str):
+        raise AppError(400, f"{field} must be a string")
+    if len(value) > max_length:
+        raise AppError(400, f"{field} is too long")
+
+
+def _validate_amount_range(value: int, field: str):
+    if value < MIN_AMOUNT or value > MAX_AMOUNT:
+        raise AppError(400, f"{field} out of range")
+
+
 def _validate_common(tx: dict):
     if tx.get("occurredAt") is None:
         raise AppError(400, "occurredAt is required")
     amount = tx.get("amount")
     if amount is None:
         raise AppError(400, "amount is required")
-    fee = int(tx.get("fee", 0) or 0)
-    if fee < 0:
-        raise AppError(400, "fee must be >= 0")
+    _validate_amount_range(int(amount), "amount")
+    fee = tx.get("fee")
+    if fee is not None:
+        _validate_amount_range(int(fee), "fee")
 
 
 def _validate_tx_payload(tx: dict):
@@ -1219,8 +1235,22 @@ def import_transactions(uid: str, transactions: List[dict]):
 
         if "amount" in tx:
             tx["amount"] = int(tx["amount"])
+            _validate_amount_range(tx["amount"], "amount")
+        if "fee" in tx and tx["fee"] is not None:
+            tx["fee"] = int(tx["fee"])
+            _validate_amount_range(tx["fee"], "fee")
 
         normalized = _normalize_tx_names(tx, asset_name_by_id, category_name_by_id)
+
+        _validate_text_length(normalized.get("assetName"), MAX_NAME_LENGTH, "assetName")
+        _validate_text_length(normalized.get("fromAssetName"), MAX_NAME_LENGTH, "fromAssetName")
+        _validate_text_length(normalized.get("toAssetName"), MAX_NAME_LENGTH, "toAssetName")
+        _validate_text_length(normalized.get("categoryName"), MAX_NAME_LENGTH, "categoryName")
+        _validate_text_length(normalized.get("feeCategoryName"), MAX_NAME_LENGTH, "feeCategoryName")
+        _validate_text_length(normalized.get("merchant"), MAX_NAME_LENGTH, "merchant")
+        _validate_text_length(normalized.get("source"), MAX_NAME_LENGTH, "source")
+        _validate_text_length(normalized.get("counterparty"), MAX_NAME_LENGTH, "counterparty")
+        _validate_text_length(normalized.get("memo"), MAX_MEMO_LENGTH, "memo")
 
         asset_name = normalized.get("assetName") or normalized.get("assetId")
         if asset_name:

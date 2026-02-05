@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends
 from google.cloud import firestore as fs
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core import firestore
+from app.core.limits import MAX_EMAIL_LENGTH
 from app.api.deps import get_ready_user
 from app.core.auth import authenticate
 from app.core.errors import AppError
@@ -37,7 +38,7 @@ class AgreeTermsRequest(BaseModel):
 
 
 class AcceptInviteRequest(BaseModel):
-    parentEmail: str
+    parentEmail: str = Field(..., max_length=MAX_EMAIL_LENGTH)
 
 
 class ProfileUpdate(BaseModel):

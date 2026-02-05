@@ -109,6 +109,7 @@ export const grade3Texts = defineTexts<Record<TextKey, TextEntry>>({
   // トースト・確認
   toastLoginRequired: text("ログインしてね"),
   toastAmountRequired: text("きんがくを いれてね"),
+  toastAmountRange: text("きんがくが おおきすぎるよ"),
   toastAssetRequired: text("いれものを えらんでね"),
   toastCategoryRequired: text("うごきを えらんでね"),
   toastTransferAssetRequired: text("うつす いれものを えらんでね"),

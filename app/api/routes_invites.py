@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends
 from google.cloud import firestore as fs
 from google.cloud.firestore_v1 import FieldFilter
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.api.deps import get_parent_user, get_ready_user
 from app.core import firestore
 from app.core.errors import AppError
+from app.core.limits import MAX_EMAIL_LENGTH
 from app.core.terms import load_terms_snapshot, resolve_agreed_terms, resolve_effective_deadline
 from app.services.onboarding_service import invite_doc_id, normalize_email, now_utc, require_user_email
 
@@ -14,7 +15,7 @@ router = APIRouter(prefix="/api", tags=["invites"])
 
 
 class InviteCreateRequest(BaseModel):
-    childEmail: str
+    childEmail: str = Field(..., max_length=MAX_EMAIL_LENGTH)
 
 
 def _active_invites(parent_uid: str):

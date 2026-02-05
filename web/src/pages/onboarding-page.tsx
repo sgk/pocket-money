@@ -3,6 +3,7 @@ import { useAuth } from "@/lib/auth";
 import { api, isNetworkError } from "@/lib/api";
 import { useOnboardingStatus } from "@/lib/query";
 import { useText } from "@/lib/text";
+import { MAX_EMAIL_LENGTH } from "@/lib/limits";
 import { formatDateSlash } from "@/lib/date";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -258,6 +259,7 @@ export const OnboardingPage = () => {
                   value={parentEmail}
                   onChange={(event) => setParentEmail(event.target.value)}
                   placeholder={t("onboardingParentEmailPlaceholder")}
+                  maxLength={MAX_EMAIL_LENGTH}
                 />
                 <Button type="button" onClick={handleAcceptInvite} disabled={isSubmitting || isLoading}>
                   {t("onboardingInviteSubmit")}

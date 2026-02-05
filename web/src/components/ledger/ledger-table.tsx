@@ -23,6 +23,12 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
 import { useText } from "@/lib/text";
+import {
+  MAX_AMOUNT,
+  MAX_MEMO_LENGTH,
+  MAX_NAME_LENGTH,
+  MIN_AMOUNT,
+} from "@/lib/limits";
 
 type ColumnMeta = {
   label?: string;
@@ -147,6 +153,8 @@ const EditableRow = ({
   const initialMemo = transaction.memo ?? "";
   const initialAmount = transaction.amount;
   const normalizedAmount = Number(form.amount);
+  const isAmountInRange =
+    hasAmount && normalizedAmount >= MIN_AMOUNT && normalizedAmount <= MAX_AMOUNT;
   const isDirty = (() => {
     if (form.type !== transaction.type) {
       return true;
@@ -185,8 +193,8 @@ const EditableRow = ({
   })();
   const isSaveDisabled =
     (form.type === "transfer"
-      ? !form.fromAssetName?.trim() || !form.toAssetName?.trim() || !hasAmount
-      : !form.assetName?.trim() || !form.categoryName?.trim() || !hasAmount) ||
+      ? !form.fromAssetName?.trim() || !form.toAssetName?.trim() || !isAmountInRange
+      : !form.assetName?.trim() || !form.categoryName?.trim() || !isAmountInRange) ||
     !isDirty;
   const isSaveButtonDisabled = isSaving || isSaveDisabled;
   const saveIconClass = isSaveButtonDisabled ? "text-muted-foreground/40" : "text-emerald-600";
@@ -227,6 +235,10 @@ const EditableRow = ({
     }
     if (form.amount === "" || Number.isNaN(Number(form.amount))) {
       toast.error(t("toastAmountRequired"));
+      return;
+    }
+    if (normalizedAmount < MIN_AMOUNT || normalizedAmount > MAX_AMOUNT) {
+      toast.error(t("toastAmountRange"));
       return;
     }
     if (form.type === "expense" || form.type === "income") {
@@ -479,6 +491,7 @@ const EditableRow = ({
             placeholder={t("placeholderCounterparty")}
             value={form.merchant ?? ""}
             onChange={(event) => setForm({ ...form, merchant: event.target.value })}
+            maxLength={MAX_NAME_LENGTH}
           />
         ) : form.type === "income" ? (
           <Input
@@ -486,6 +499,7 @@ const EditableRow = ({
             placeholder={t("placeholderCounterparty")}
             value={form.source ?? ""}
             onChange={(event) => setForm({ ...form, source: event.target.value })}
+            maxLength={MAX_NAME_LENGTH}
           />
         ) : (
           <Input
@@ -494,6 +508,7 @@ const EditableRow = ({
             onChange={(event) =>
               setForm({ ...form, counterparty: event.target.value })
             }
+            maxLength={MAX_NAME_LENGTH}
           />
         )}
       </td>
@@ -652,6 +667,7 @@ const EditableRow = ({
           placeholder={t("placeholderMemo")}
           value={form.memo}
           onChange={(event) => setForm({ ...form, memo: event.target.value })}
+          maxLength={MAX_MEMO_LENGTH}
         />
       </td>
       <td className="p-2" data-label={t("labelAmount")} data-col="amount">
@@ -661,6 +677,8 @@ const EditableRow = ({
             placeholder={t("placeholderAmount")}
             value={form.amount}
             onChange={(event) => setForm({ ...form, amount: event.target.value })}
+            min={MIN_AMOUNT}
+            max={MAX_AMOUNT}
           />
           <div className="ledger-inline-actions">
             <Button

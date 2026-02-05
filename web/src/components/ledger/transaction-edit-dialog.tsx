@@ -22,6 +22,12 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
 import { useText } from "@/lib/text";
+import {
+  MAX_AMOUNT,
+  MAX_MEMO_LENGTH,
+  MAX_NAME_LENGTH,
+  MIN_AMOUNT,
+} from "@/lib/limits";
 
 const OTHER_CATEGORY_NAME = "その他";
 
@@ -147,6 +153,13 @@ export const TransactionEditDialog = ({
   const initialMemo = transaction.memo ?? "";
   const initialAmount = transaction.amount;
   const normalizedAmount = Number(form.amount);
+  const normalizedFee = Number(form.fee ?? 0);
+  const isAmountInRange =
+    hasAmount && normalizedAmount >= MIN_AMOUNT && normalizedAmount <= MAX_AMOUNT;
+  const isFeeInRange =
+    !Number.isNaN(normalizedFee) &&
+    normalizedFee >= MIN_AMOUNT &&
+    normalizedFee <= MAX_AMOUNT;
   const isDirty = (() => {
     if (form.occurredAt !== initialDate) {
       return true;
@@ -179,8 +192,11 @@ export const TransactionEditDialog = ({
   })();
   const isSaveDisabled =
     (transaction.type === "transfer"
-      ? !form.fromAssetName?.trim() || !form.toAssetName?.trim() || !hasAmount
-      : !form.assetName?.trim() || !form.categoryName?.trim() || !hasAmount) ||
+      ? !form.fromAssetName?.trim() ||
+        !form.toAssetName?.trim() ||
+        !isAmountInRange ||
+        !isFeeInRange
+      : !form.assetName?.trim() || !form.categoryName?.trim() || !isAmountInRange) ||
     !isDirty;
 
   const handleSave = async () => {
@@ -194,6 +210,20 @@ export const TransactionEditDialog = ({
     if (form.amount === "" || Number.isNaN(Number(form.amount))) {
       toast.error(t("toastAmountRequired"));
       return;
+    }
+    if (normalizedAmount < MIN_AMOUNT || normalizedAmount > MAX_AMOUNT) {
+      toast.error(t("toastAmountRange"));
+      return;
+    }
+    if (transaction.type === "transfer") {
+      if (Number.isNaN(normalizedFee)) {
+        toast.error(t("toastAmountRange"));
+        return;
+      }
+      if (normalizedFee < MIN_AMOUNT || normalizedFee > MAX_AMOUNT) {
+        toast.error(t("toastAmountRange"));
+        return;
+      }
     }
     if (transaction.type === "expense" || transaction.type === "income") {
       if (!form.assetName) {
@@ -310,6 +340,8 @@ export const TransactionEditDialog = ({
             type="number"
             value={form.amount}
             onChange={(event) => setForm({ ...form, amount: event.target.value })}
+            min={MIN_AMOUNT}
+            max={MAX_AMOUNT}
           />
           {transaction.type === "expense" || transaction.type === "income" ? (
             <div className="grid gap-4 md:grid-cols-2">
@@ -409,6 +441,7 @@ export const TransactionEditDialog = ({
               placeholder={t("placeholderCounterparty")}
               value={form.merchant ?? ""}
               onChange={(event) => setForm({ ...form, merchant: event.target.value })}
+              maxLength={MAX_NAME_LENGTH}
             />
           ) : null}
           {transaction.type === "income" ? (
@@ -416,21 +449,24 @@ export const TransactionEditDialog = ({
               placeholder={t("placeholderCounterparty")}
               value={form.source ?? ""}
               onChange={(event) => setForm({ ...form, source: event.target.value })}
+              maxLength={MAX_NAME_LENGTH}
             />
           ) : null}
           {transaction.type === "transfer" ? (
             <Input
               type="number"
-              min={0}
               placeholder={t("placeholderTransferFee")}
               value={form.fee ?? "0"}
               onChange={(event) => setForm({ ...form, fee: event.target.value })}
+              min={MIN_AMOUNT}
+              max={MAX_AMOUNT}
             />
           ) : null}
           <Textarea
             placeholder={t("placeholderMemo")}
             value={form.memo}
             onChange={(event) => setForm({ ...form, memo: event.target.value })}
+            maxLength={MAX_MEMO_LENGTH}
           />
         </div>
         <DialogFooter>

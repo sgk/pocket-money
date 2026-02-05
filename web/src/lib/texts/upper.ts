@@ -165,6 +165,7 @@ export const upperTexts = defineTexts({
   // トースト・確認
   toastLoginRequired: text("ログインしてね"),
   toastAmountRequired: text("金額を入力してね"),
+  toastAmountRange: text("金額が大きすぎるよ"),
   toastAssetRequired: text("資産を選んでね"),
   toastCategoryRequired: text("カテゴリを選んでね"),
   toastTransferAssetRequired: text("移動先の資産を選んでね"),

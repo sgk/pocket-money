@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
 import type { Category } from "@/lib/types";
 import { useText } from "@/lib/text";
+import { MAX_NAME_LENGTH } from "@/lib/limits";
 
 type CategoryKind = "expense" | "income";
 
@@ -204,6 +205,7 @@ const CategoryRow = ({
           <Input
             value={name}
             onChange={(event) => setName(event.target.value)}
+            maxLength={MAX_NAME_LENGTH}
             className="h-8 min-w-0 flex-1"
             onKeyDown={(event) => {
               if (event.key === "Enter") {
@@ -867,6 +869,7 @@ export const CategoriesSettingsPage = () => {
             placeholder={t("assetsSettingsName")}
             value={newCategory.name}
             onChange={(event) => setNewCategory({ ...newCategory, name: event.target.value })}
+            maxLength={MAX_NAME_LENGTH}
           />
           <div className="flex justify-end">
             <Button onClick={handleCreate} disabled={!canCreate || isSaving}>

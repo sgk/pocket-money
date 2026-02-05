@@ -16,6 +16,12 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
 import { useText } from "@/lib/text";
+import {
+  MAX_AMOUNT,
+  MAX_MEMO_LENGTH,
+  MAX_NAME_LENGTH,
+  MIN_AMOUNT,
+} from "@/lib/limits";
 
 const emptyEntry = () => ({
   date: todayISO(),
@@ -187,6 +193,10 @@ export const NewEntryRow = ({
     const amount = Number(entry.amount);
     if (Number.isNaN(amount) || entry.amount === "") {
       toast.error(t("toastAmountRequired"));
+      return false;
+    }
+    if (amount < MIN_AMOUNT || amount > MAX_AMOUNT) {
+      toast.error(t("toastAmountRange"));
       return false;
     }
     if (entry.type === "expense" || entry.type === "income") {
@@ -435,6 +445,7 @@ export const NewEntryRow = ({
             placeholder={t("placeholderCounterparty")}
             value={entry.merchant}
             onChange={(event) => setEntry({ ...entry, merchant: event.target.value })}
+            maxLength={MAX_NAME_LENGTH}
             disabled={isDisabled}
           />
         ) : entry.type === "income" ? (
@@ -443,6 +454,7 @@ export const NewEntryRow = ({
             placeholder={t("placeholderCounterparty")}
             value={entry.source}
             onChange={(event) => setEntry({ ...entry, source: event.target.value })}
+            maxLength={MAX_NAME_LENGTH}
             disabled={isDisabled}
           />
         ) : (
@@ -452,6 +464,7 @@ export const NewEntryRow = ({
             onChange={(event) =>
               setEntry({ ...entry, counterparty: event.target.value })
             }
+            maxLength={MAX_NAME_LENGTH}
             disabled={isDisabled}
           />
         )}
@@ -616,6 +629,7 @@ export const NewEntryRow = ({
           placeholder={t("placeholderMemo")}
           value={entry.memo}
           onChange={(event) => setEntry({ ...entry, memo: event.target.value })}
+          maxLength={MAX_MEMO_LENGTH}
           disabled={isDisabled}
         />
       </td>
@@ -630,6 +644,8 @@ export const NewEntryRow = ({
             placeholder={t("placeholderAmount")}
             value={entry.amount}
             onChange={(event) => setEntry({ ...entry, amount: event.target.value })}
+            min={MIN_AMOUNT}
+            max={MAX_AMOUNT}
             disabled={isDisabled}
           />
           <Button

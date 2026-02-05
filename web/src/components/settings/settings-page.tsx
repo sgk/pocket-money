@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
 import { useGradeOptions, useText } from "@/lib/text";
+import { MAX_EMAIL_LENGTH } from "@/lib/limits";
 
 const SettingsLink = ({ to, label }: { to: string; label: string }) => (
   <Link
@@ -443,6 +444,7 @@ export const SettingsPage = () => {
                       value={parentEmail}
                       onChange={(event) => setParentEmail(event.target.value)}
                       placeholder="保護者のGoogleアカウント"
+                      maxLength={MAX_EMAIL_LENGTH}
                       disabled={isAcceptingInvite || parentLimitReached}
                     />
                     <Button
@@ -508,6 +510,7 @@ export const SettingsPage = () => {
                       value={childEmail}
                       onChange={(event) => setChildEmail(event.target.value)}
                       placeholder={t("personalSettingsInviteEmailLabel")}
+                      maxLength={MAX_EMAIL_LENGTH}
                       disabled={isInviting || invites.length >= inviteLimit}
                     />
                     <Button

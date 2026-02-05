@@ -11,6 +11,15 @@ import { toast } from "@/components/ui/toast";
 import { formatJPY } from "@/lib/money";
 import type { Asset } from "@/lib/types";
 import { useText } from "@/lib/text";
+import {
+  MAX_AMOUNT,
+  MAX_MEMO_LENGTH,
+  MAX_NAME_LENGTH,
+  MIN_AMOUNT,
+} from "@/lib/limits";
+
+const isAmountInRange = (value: number) =>
+  value >= MIN_AMOUNT && value <= MAX_AMOUNT;
 
 const AssetRow = ({
   asset,
@@ -132,6 +141,10 @@ const AssetRow = ({
       toast.error(t("toastInitialBalanceRequired"));
       return false;
     }
+    if (!isAmountInRange(parsedInitial)) {
+      toast.error(t("toastAmountRange"));
+      return false;
+    }
     await onSave(asset.id, {
       name: form.name.trim(),
       type: form.type.trim(),
@@ -240,6 +253,7 @@ const AssetRow = ({
             placeholder={t("assetsSettingsName")}
             value={form.name}
             onChange={(event) => handleChange({ name: event.target.value })}
+            maxLength={MAX_NAME_LENGTH}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
                 event.preventDefault();
@@ -256,6 +270,7 @@ const AssetRow = ({
             placeholder={t("assetsSettingsType")}
             value={form.type}
             onChange={(event) => handleChange({ type: event.target.value })}
+            maxLength={MAX_NAME_LENGTH}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
                 event.preventDefault();
@@ -272,6 +287,7 @@ const AssetRow = ({
             placeholder={t("assetsSettingsMemo")}
             value={form.note}
             onChange={(event) => handleChange({ note: event.target.value })}
+            maxLength={MAX_MEMO_LENGTH}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
                 event.preventDefault();
@@ -289,6 +305,8 @@ const AssetRow = ({
             placeholder={t("assetsSettingsInitialBalance")}
             value={form.initialBalance}
             onChange={(event) => handleChange({ initialBalance: event.target.value })}
+            min={MIN_AMOUNT}
+            max={MAX_AMOUNT}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
                 event.preventDefault();
@@ -725,6 +743,15 @@ export const AssetsSettingsPage = () => {
       toast.error(t("toastNameRequired"));
       return;
     }
+    const parsedInitial = Number(newAsset.initialBalance || 0);
+    if (Number.isNaN(parsedInitial)) {
+      toast.error(t("toastInitialBalanceRequired"));
+      return;
+    }
+    if (!isAmountInRange(parsedInitial)) {
+      toast.error(t("toastAmountRange"));
+      return;
+    }
     try {
       const nextSortOrder =
         Math.max(0, ...assets.map((asset) => asset.sortOrder ?? 0)) + 1;
@@ -732,7 +759,7 @@ export const AssetsSettingsPage = () => {
         await api.createAsset(token, {
           name: newAsset.name,
           type: newAsset.type || undefined,
-          initialBalance: Number(newAsset.initialBalance || 0),
+          initialBalance: parsedInitial,
           note: newAsset.note || undefined,
           sortOrder: nextSortOrder,
         }, childId);
@@ -761,6 +788,10 @@ export const AssetsSettingsPage = () => {
     }
     if (!payload.name.trim()) {
       toast.error(t("toastNameRequired"));
+      return;
+    }
+    if (!isAmountInRange(payload.initialBalance)) {
+      toast.error(t("toastAmountRange"));
       return;
     }
     try {
@@ -877,12 +908,14 @@ export const AssetsSettingsPage = () => {
                 placeholder={t("assetsSettingsName")}
                 value={newAsset.name}
                 onChange={(event) => setNewAsset({ ...newAsset, name: event.target.value })}
+                maxLength={MAX_NAME_LENGTH}
                 className="flex-[3] md:flex-[3]"
               />
               <Input
                 placeholder={t("assetsSettingsType")}
                 value={newAsset.type}
                 onChange={(event) => setNewAsset({ ...newAsset, type: event.target.value })}
+                maxLength={MAX_NAME_LENGTH}
                 className="flex-[2] md:flex-[2]"
               />
           </div>
@@ -890,6 +923,7 @@ export const AssetsSettingsPage = () => {
             placeholder={t("assetsSettingsMemo")}
             value={newAsset.note}
             onChange={(event) => setNewAsset({ ...newAsset, note: event.target.value })}
+            maxLength={MAX_MEMO_LENGTH}
             className="md:flex-[3]"
           />
           <div className="flex items-center gap-2">
@@ -903,6 +937,8 @@ export const AssetsSettingsPage = () => {
               onChange={(event) =>
                 setNewAsset({ ...newAsset, initialBalance: event.target.value })
               }
+              min={MIN_AMOUNT}
+              max={MAX_AMOUNT}
               className="w-24 text-right"
             />
             <Button onClick={handleCreate} className="w-auto" disabled={!canCreate || isSaving}>
