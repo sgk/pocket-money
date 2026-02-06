@@ -81,6 +81,7 @@ export type InvitesResponse = {
 
 export type BootstrapResponse = {
   profile?: UserProfile;
+  authProfile?: UserProfile;
   assets?: Asset[];
   categories?: Category[];
   children?: UserProfile[];

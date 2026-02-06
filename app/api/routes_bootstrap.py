@@ -112,6 +112,12 @@ def bootstrap(request: Request, response: Response, user=Depends(get_ready_user)
     auth_user = getattr(request.state, "auth_user", user)
     auth_profile_snap = firestore.user_doc(auth_user.uid).get()
     auth_profile = auth_profile_snap.to_dict() if auth_profile_snap.exists else {}
+    auth_profile_response = {
+        "uid": auth_user.uid,
+        "displayName": auth_profile.get("displayName") or auth_user.display_name,
+        "email": auth_profile.get("email") or auth_user.email,
+        "photoUrl": auth_profile.get("photoUrl") or auth_user.photo_url,
+    }
 
     children = []
     if auth_profile.get("ageGroup") == "adult":
@@ -155,6 +161,7 @@ def bootstrap(request: Request, response: Response, user=Depends(get_ready_user)
 
     return {
         "profile": profile,
+        "authProfile": auth_profile_response,
         "assets": assets,
         "categories": categories,
         "children": children,

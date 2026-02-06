@@ -12,6 +12,28 @@ type UserMenuProps = {
   onOpenChange?: (open: boolean) => void;
 };
 
+const SwitchAvatar = ({ photoUrl, alt }: { photoUrl?: string; alt: string }) => {
+  const [imageError, setImageError] = useState(false);
+  const showImage = Boolean(photoUrl) && !imageError;
+
+  if (showImage) {
+    return (
+      <img
+        src={photoUrl}
+        alt={alt}
+        className="h-6 w-6 shrink-0 rounded-full object-cover"
+        onError={() => setImageError(true)}
+      />
+    );
+  }
+
+  return (
+    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
+      <User className="h-3.5 w-3.5" />
+    </span>
+  );
+};
+
 export const UserMenu = ({ compact = false, isOpen, onOpenChange }: UserMenuProps) => {
   const { t } = useText();
   const { childId, setChildId, logout } = useAuth();
@@ -26,12 +48,12 @@ export const UserMenu = ({ compact = false, isOpen, onOpenChange }: UserMenuProp
   const isControlled = isOpen !== undefined;
   const open = isControlled ? isOpen : internalOpen;
 
-  const profile = data?.profile;
-  const email = profile?.email?.trim();
-  const displayName = profile?.displayName?.trim();
+  const authProfile = data?.authProfile;
+  const email = authProfile?.email?.trim();
+  const displayName = authProfile?.displayName?.trim();
   const label = email || t("noEmail");
   const menuLabel = displayName || label;
-  const photoUrl = profile?.photoUrl;
+  const photoUrl = authProfile?.photoUrl;
   const children = data?.children ?? [];
   const isImpersonating = Boolean(childId);
   const hasChildrenSection = children.length > 0 || isImpersonating;
@@ -127,9 +149,12 @@ export const UserMenu = ({ compact = false, isOpen, onOpenChange }: UserMenuProp
                   setInternalOpen(false);
                 }}
               >
-                <span className={!isImpersonating ? "font-bold text-sky-700" : ""}>
-                  {t("userMenuSelf")}
-                </span>
+                <div className="min-w-0 flex items-center gap-2">
+                  <SwitchAvatar photoUrl={authProfile?.photoUrl} alt={t("userAvatarAlt")} />
+                  <span className={`truncate ${!isImpersonating ? "font-bold text-sky-700" : ""}`}>
+                    {t("userMenuSelf")}
+                  </span>
+                </div>
                 {!isImpersonating && <Check className="h-4 w-4 text-sky-700" />}
               </button>
               {children.map((child) => (
@@ -144,10 +169,13 @@ export const UserMenu = ({ compact = false, isOpen, onOpenChange }: UserMenuProp
                     onOpenChange?.(false);
                     setInternalOpen(false);
                   }}
-                >
-                  <span className={childId === child.uid ? "font-bold text-sky-700" : ""}>
-                    {child.displayName}
-                  </span>
+                  >
+                  <div className="min-w-0 flex items-center gap-2">
+                    <SwitchAvatar photoUrl={child.photoUrl} alt={t("userAvatarAlt")} />
+                    <span className={`truncate ${childId === child.uid ? "font-bold text-sky-700" : ""}`}>
+                      {child.displayName}
+                    </span>
+                  </div>
                   {childId === child.uid && <Check className="h-4 w-4 text-sky-700" />}
                 </button>
               ))}
