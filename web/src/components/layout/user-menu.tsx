@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Check, User, Users } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { useBootstrap, useInvalidateLedger } from "@/lib/query";
 import { useText } from "@/lib/text";
@@ -14,6 +15,7 @@ type UserMenuProps = {
 export const UserMenu = ({ compact = false, isOpen, onOpenChange }: UserMenuProps) => {
   const { t } = useText();
   const { childId, setChildId, logout } = useAuth();
+  const queryClient = useQueryClient();
   const { data } = useBootstrap();
   const invalidate = useInvalidateLedger();
   const navigate = useNavigate();
@@ -120,6 +122,7 @@ export const UserMenu = ({ compact = false, isOpen, onOpenChange }: UserMenuProp
                 onClick={() => {
                   setChildId(null);
                   invalidate();
+                  void queryClient.invalidateQueries({ queryKey: ["bootstrap"] });
                   onOpenChange?.(false);
                   setInternalOpen(false);
                 }}
@@ -137,6 +140,7 @@ export const UserMenu = ({ compact = false, isOpen, onOpenChange }: UserMenuProp
                   onClick={() => {
                     setChildId(child.uid || null);
                     invalidate();
+                    void queryClient.invalidateQueries({ queryKey: ["bootstrap"] });
                     onOpenChange?.(false);
                     setInternalOpen(false);
                   }}

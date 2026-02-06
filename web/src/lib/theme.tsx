@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useBootstrap, useOnboardingStatus } from "@/lib/query";
+import type { BootstrapResponse } from "@/lib/types";
 
 const COLOR_THEME_VALUES = ["cream", "mint", "sky", "pink"] as const;
 
@@ -53,6 +55,7 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const { token, childId } = useAuth();
+  const queryClient = useQueryClient();
   const onboarding = useOnboardingStatus();
   const isReady = onboarding.data?.state === "ready";
   const { data: bootstrap } = useBootstrap(isReady);
@@ -73,6 +76,21 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
   const setColorTheme = (next: ColorTheme) => {
     setColorThemeState(next);
+    queryClient.setQueryData<BootstrapResponse | undefined>(
+      ["bootstrap", childId],
+      (current) => {
+        if (!current) {
+          return current;
+        }
+        return {
+          ...current,
+          profile: {
+            ...current.profile,
+            colorTheme: next,
+          },
+        };
+      }
+    );
     if (token) {
       void api.updateProfile(token, { colorTheme: next }, childId);
     }
