@@ -1,4 +1,4 @@
-import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
+import { useEffect, type Dispatch, type SetStateAction } from "react";
 import { endOfMonth, startOfMonth, subMonths } from "date-fns";
 import { Input } from "@/components/ui/input";
 import {
@@ -26,6 +26,40 @@ export type LedgerFiltersState = {
   to: string;
   search: string;
   order: "desc" | "asc";
+};
+
+export const getInitialLedgerFilters = (): LedgerFiltersState => {
+  const base: LedgerFiltersState = {
+    from: formatDate(startOfCurrentMonth()),
+    to: formatDate(endOfMonth(new Date())),
+    search: "",
+    order: "desc",
+  };
+  if (typeof window === "undefined") {
+    return base;
+  }
+
+  const storedOrder = localStorage.getItem(LEDGER_ORDER_STORAGE_KEY);
+  const order = storedOrder === "asc" || storedOrder === "desc" ? storedOrder : base.order;
+
+  const storedPeriod = localStorage.getItem(LEDGER_PERIOD_STORAGE_KEY);
+  if (!storedPeriod) {
+    return { ...base, order };
+  }
+  try {
+    const parsed = JSON.parse(storedPeriod) as { from?: unknown; to?: unknown };
+    if (isValidDateString(parsed.from) && isValidDateString(parsed.to)) {
+      return {
+        from: parsed.from,
+        to: parsed.to,
+        search: "",
+        order,
+      };
+    }
+  } catch {
+    // 保存データが壊れている場合は無視する
+  }
+  return { ...base, order };
 };
 
 type PresetValue = "this-month" | "last-month" | "last-year" | "custom";
@@ -79,32 +113,9 @@ export const Filters = ({
     { value: "last-year", label: t("filterPresetLastYear") },
     { value: "custom", label: t("filterPresetCustom") },
   ] as const;
-  const [isInitialized, setIsInitialized] = useState(false);
   const fromMonthValue = filters.from ? filters.from.slice(0, 7) : "";
   const toMonthValue = filters.to ? filters.to.slice(0, 7) : "";
   const preset = detectPreset(filters.from, filters.to);
-
-  useEffect(() => {
-    if (isInitialized) {
-      return;
-    }
-    const stored = localStorage.getItem(LEDGER_ORDER_STORAGE_KEY);
-    if (stored === "asc" || stored === "desc") {
-      setFilters((prev) => ({ ...prev, order: stored }));
-    }
-    const storedPeriod = localStorage.getItem(LEDGER_PERIOD_STORAGE_KEY);
-    if (storedPeriod) {
-      try {
-        const parsed = JSON.parse(storedPeriod) as { from?: unknown; to?: unknown };
-        if (isValidDateString(parsed.from) && isValidDateString(parsed.to)) {
-          setFilters((prev) => ({ ...prev, from: parsed.from, to: parsed.to }));
-        }
-      } catch {
-        // 保存データが壊れている場合は無視する
-      }
-    }
-    setIsInitialized(true);
-  }, [isInitialized, setFilters]);
 
   useEffect(() => {
     localStorage.setItem(LEDGER_ORDER_STORAGE_KEY, filters.order);

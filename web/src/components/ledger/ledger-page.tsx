@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react";
 import { LedgerLayout } from "@/components/ledger/ledger-layout";
-import { type LedgerFiltersState } from "@/components/ledger/filters";
-import { formatDate, startOfCurrentMonth, toDateKey } from "@/lib/date";
-import { endOfMonth } from "date-fns";
+import { getInitialLedgerFilters } from "@/components/ledger/filters";
+import { toDateKey } from "@/lib/date";
 import { computeEndingBalance, computeRunningBalances } from "@/lib/balance";
 import { formatJPY } from "@/lib/money";
 import { useAssets, useCategories, useMonthlySummary, useTransactions } from "@/lib/query";
@@ -12,12 +11,7 @@ export const LedgerPage = () => {
   const { t } = useText();
   const { data: assets = [] } = useAssets();
   const { data: categories = [] } = useCategories();
-  const [filters, setFilters] = useState<LedgerFiltersState>({
-    from: formatDate(startOfCurrentMonth()),
-    to: formatDate(endOfMonth(new Date())),
-    search: "",
-    order: "desc",
-  });
+  const [filters, setFilters] = useState(getInitialLedgerFilters);
 
   const { data } = useTransactions({
     from: filters.from,

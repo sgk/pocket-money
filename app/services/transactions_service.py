@@ -347,12 +347,8 @@ def _seed_balances(uid: str, as_of: datetime) -> Dict[str, int]:
         name = data.get("name")
         if not name:
             continue
-        created_at = data.get("createdAt")
-        include = True
-        if created_at:
-            # 常に「その時刻より前」を対象にする。境界（as_ofちょうど）は次の月のループで処理される
-            include = _to_utc(created_at) < as_of
-        balances[name] = int(data.get("initialBalance", 0)) if include else 0
+        # 初期残高は資産の作成時刻に依存させず、元帳の期首に常に含める。
+        balances[name] = int(data.get("initialBalance", 0))
     return balances
 
 
@@ -1051,16 +1047,7 @@ def list_transactions(
     if include_opening_balances and from_dt:
         from_dt = _to_utc(from_dt)
         month_start = _month_start(from_dt)
-        prev_month = _prev_month(month_start)
-        _ensure_snapshots(uid, prev_month)
-        snapshot = _get_snapshot(uid, prev_month)
-        balances = (
-            _normalize_balance_keys(
-                snapshot.get("byAsset", {}), asset_name_by_id
-            )
-            if snapshot
-            else _compute_balances_until(uid, month_start)
-        )
+        balances = _compute_balances_until(uid, month_start)
         if from_dt > month_start:
             balances = _apply_transactions_between(uid, month_start, from_dt, balances)
         result["openingBalances"] = balances

@@ -46,6 +46,7 @@ const EditableRow = ({
   fixedAssetId,
   fixedAssetName,
   onCancel,
+  onDeleted,
 }: {
   transaction: Transaction;
   assets: Asset[];
@@ -53,6 +54,7 @@ const EditableRow = ({
   fixedAssetId?: string;
   fixedAssetName?: string;
   onCancel: () => void;
+  onDeleted?: (txId: string) => void;
 }) => {
   const { t } = useText();
   const { token, childId } = useAuth();
@@ -340,7 +342,8 @@ const EditableRow = ({
       setIsSaving(true);
       await api.deleteTransaction(token, transaction.id, childId);
       toast.success(t("toastEntryDeleted"));
-      invalidate();
+      onDeleted?.(transaction.id);
+      invalidate(transaction.id);
       onCancel();
     } catch (error) {
       toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
@@ -820,6 +823,7 @@ export const LedgerTable = ({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(() => new Set());
   const [indicator, setIndicator] = useState<{ dateKey: string; index: number } | null>(
     null
   );
@@ -863,11 +867,16 @@ export const LedgerTable = ({
     onEditingChange?.(editingId !== null);
   }, [editingId, onEditingChange]);
 
+  const visibleTransactions = useMemo(
+    () => transactions.filter((tx) => !deletedIds.has(tx.id)),
+    [transactions, deletedIds]
+  );
+
   const suggestions = useMemo(() => {
     const merchants = new Set<string>();
     const sources = new Set<string>();
     const memos = new Set<string>();
-    transactions.forEach((tx) => {
+    visibleTransactions.forEach((tx) => {
       if (tx.type === "expense" && tx.merchant) {
         merchants.add(tx.merchant);
       }
@@ -883,7 +892,7 @@ export const LedgerTable = ({
       sources: Array.from(sources),
       memos: Array.from(memos),
     };
-  }, [transactions]);
+  }, [visibleTransactions]);
 
   const columns = useMemo<ColumnDef<Transaction>[]>(
     () => [
@@ -1018,7 +1027,7 @@ export const LedgerTable = ({
   );
 
   const sorted = useMemo(() => {
-    const withIndex = transactions.map((tx, index) => ({ tx, index }));
+    const withIndex = visibleTransactions.map((tx, index) => ({ tx, index }));
     withIndex.sort((a, b) => {
       const dateA = toDateKey(a.tx.occurredAt);
       const dateB = toDateKey(b.tx.occurredAt);
@@ -1035,7 +1044,7 @@ export const LedgerTable = ({
       return a.index - b.index;
     });
     return withIndex.map((item) => item.tx);
-  }, [transactions, order]);
+  }, [visibleTransactions, order]);
 
   const groupData = useMemo(() => {
     const groups: Array<{ dateKey: string; items: Transaction[] }> = [];
@@ -1058,6 +1067,7 @@ export const LedgerTable = ({
   const table = useReactTable({
     data: sorted,
     columns,
+    getRowId: (row) => row.id,
     getCoreRowModel: getCoreRowModel(),
   });
 
@@ -1359,6 +1369,14 @@ export const LedgerTable = ({
                   categories={categories}
                   fixedAssetId={fixedAssetId}
                   fixedAssetName={fixedAssetName}
+                  onDeleted={(txId) => {
+                    setDeletedIds((prev) => {
+                      const next = new Set(prev);
+                      next.add(txId);
+                      return next;
+                    });
+                    setSelectedId((prev) => (prev === txId ? null : prev));
+                  }}
                   onCancel={() => setEditingId(null)}
                 />
               );

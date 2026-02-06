@@ -98,13 +98,26 @@ export const useMonthlySummary = (year: number, month: number) => {
 
 export const useInvalidateLedger = () => {
   const queryClient = useQueryClient();
-  return () => {
+  return (deletedTxId?: string) => {
     api.clearTransactionsCache();
-    queryClient.invalidateQueries({ queryKey: ["transactions"] });
-    queryClient.refetchQueries({ queryKey: ["transactions"] });
-    queryClient.invalidateQueries({ queryKey: ["summary"] });
-    queryClient.invalidateQueries({ queryKey: ["assets"] });
-    queryClient.invalidateQueries({ queryKey: ["categories"] });
-    queryClient.invalidateQueries({ queryKey: ["bootstrap"] });
+    if (deletedTxId) {
+      queryClient.setQueriesData<TransactionsResponse>(
+        { queryKey: ["transactions"] },
+        (current) =>
+          current
+            ? {
+                ...current,
+                items: current.items.filter((tx) => tx.id !== deletedTxId),
+              }
+            : current
+      );
+    }
+    void queryClient.invalidateQueries({
+      queryKey: ["transactions"],
+      exact: false,
+      refetchType: "active",
+    });
+    void queryClient.invalidateQueries({ queryKey: ["summary"] });
+    void queryClient.invalidateQueries({ queryKey: ["assets"] });
   };
 };

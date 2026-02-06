@@ -8,6 +8,8 @@ from app.core.errors import AppError
 from app.models.assets import AssetCreate, AssetUpdate
 from app.services import transactions_service
 
+DIRTY_FROM_BASELINE = datetime(2000, 1, 1, tzinfo=timezone.utc)
+
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
@@ -22,6 +24,18 @@ def _to_utc(dt: datetime) -> datetime:
 def _month_start(dt: datetime) -> datetime:
     dt = _to_utc(dt)
     return datetime(dt.year, dt.month, 1, tzinfo=timezone.utc)
+
+
+def _coerce_datetime(value) -> datetime | None:
+    if isinstance(value, datetime):
+        return _to_utc(value)
+    if isinstance(value, str):
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+        return _to_utc(parsed)
+    return None
 
 
 def _merge_dirty_from(existing: datetime | None, candidate: datetime) -> datetime:
@@ -108,11 +122,9 @@ def update_asset(uid: str, asset_id: str, payload: AssetUpdate) -> dict:
             old_current = int(data.get("currentBalance", 0))
             new_initial = int(updates["initialBalance"])
             updates["currentBalance"] = old_current + (new_initial - old_initial)
-            created_at = data.get("createdAt")
-            if isinstance(created_at, datetime):
-                _queue_balance_dirty(
-                    transaction, user_ref, existing_dirty, _month_start(created_at)
-                )
+            created_at = _coerce_datetime(data.get("createdAt"))
+            dirty_from = _month_start(created_at) if created_at else DIRTY_FROM_BASELINE
+            _queue_balance_dirty(transaction, user_ref, existing_dirty, dirty_from)
 
         updates["updatedAt"] = now
         transaction.update(doc_ref, updates)

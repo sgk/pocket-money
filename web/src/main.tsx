@@ -7,7 +7,6 @@ import { TextProvider } from "@/lib/text";
 import { Toaster } from "@/components/ui/toast";
 import { App } from "@/app";
 import "@/styles.css";
-import { registerSW } from "virtual:pwa-register";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,7 +18,13 @@ const queryClient = new QueryClient({
   },
 });
 
-registerSW({ immediate: true });
+if ("serviceWorker" in navigator) {
+  void navigator.serviceWorker.getRegistrations().then((registrations) => {
+    registrations.forEach((registration) => {
+      void registration.unregister();
+    });
+  });
+}
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
