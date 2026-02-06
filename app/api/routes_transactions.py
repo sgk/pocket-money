@@ -52,6 +52,13 @@ def _parse_if_modified_since(value: Optional[str]) -> Optional[datetime]:
     return _to_utc(parsed).replace(microsecond=0)
 
 
+def _is_not_modified(last_modified: datetime, if_modified_since: Optional[datetime]) -> bool:
+    if not if_modified_since:
+        return False
+    # If-Modified-Since は秒精度のため、同一秒は更新ありとして 200 を返す
+    return _to_utc(last_modified).replace(microsecond=0) < if_modified_since
+
+
 @router.get("", response_model=dict)
 def list_transactions(
     response: Response,
@@ -72,7 +79,7 @@ def list_transactions(
     response.headers["Vary"] = "X-Child-Id"
 
     ims_dt = _parse_if_modified_since(if_modified_since)
-    if ims_dt and _to_utc(last_modified).replace(microsecond=0) <= ims_dt:
+    if _is_not_modified(last_modified, ims_dt):
         return Response(
             status_code=304,
             headers={"Last-Modified": last_modified_http, "Vary": "X-Child-Id"},
