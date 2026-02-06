@@ -37,6 +37,7 @@ export type ParentInfo = {
   uid?: string;
   email?: string;
   displayName?: string;
+  photoUrl?: string;
 };
 
 export type TermsAgreement = {
@@ -70,6 +71,7 @@ export type InviteItem = {
   usedAt?: string | null;
   childUid?: string;
   childName?: string;
+  childPhotoUrl?: string;
 };
 
 export type InvitesResponse = {

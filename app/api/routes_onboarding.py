@@ -196,6 +196,7 @@ def accept_invite(body: AcceptInviteRequest, user=Depends(authenticate)):
             "uid": parent_uid,
             "email": parent_profile.get("email"),
             "displayName": parent_profile.get("displayName"),
+            "photoUrl": parent_profile.get("photoUrl"),
         }
         user_ref = firestore.user_doc(user.uid)
         user_snap = user_ref.get(transaction=transaction)

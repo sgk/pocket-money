@@ -67,7 +67,10 @@ index_file = dist_dir / "index.html"
 
 
 def serve_index():
-    return FileResponse(index_file)
+    return FileResponse(
+        index_file,
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
 
 
 @app.get("/")

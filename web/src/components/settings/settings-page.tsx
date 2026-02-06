@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Check, Trash2 } from "lucide-react";
+import { Check, Trash2, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import { api, isNetworkError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -29,6 +29,28 @@ const SettingsLink = ({ to, label }: { to: string; label: string }) => (
     <span className="text-muted-foreground">›</span>
   </Link>
 );
+
+const AccountIcon = ({ photoUrl, alt }: { photoUrl?: string; alt: string }) => {
+  const [imageError, setImageError] = useState(false);
+  const showImage = Boolean(photoUrl) && !imageError;
+
+  if (showImage) {
+    return (
+      <img
+        src={photoUrl}
+        alt={alt}
+        className="h-8 w-8 shrink-0 rounded-full object-cover"
+        onError={() => setImageError(true)}
+      />
+    );
+  }
+
+  return (
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
+      <User className="h-4 w-4" />
+    </span>
+  );
+};
 
 export const SettingsPage = () => {
   const { t, grade, setGrade } = useText();
@@ -512,9 +534,10 @@ export const SettingsPage = () => {
                       {profile.parents.map((p, idx) => (
                         <div
                           key={p.uid || idx}
-                          className="flex flex-col gap-2 rounded-md border px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                          className="flex items-center gap-3 rounded-md border px-3 py-2"
                         >
-                          <span className="truncate font-medium">
+                          <AccountIcon photoUrl={p.photoUrl} alt="保護者アイコン" />
+                          <span className="min-w-0 truncate font-medium">
                             {p.email ?? "-"}
                             {p.displayName ? ` (${p.displayName})` : ""}
                           </span>
@@ -522,8 +545,9 @@ export const SettingsPage = () => {
                       ))}
                     </div>
                   ) : parent ? (
-                    <div className="flex flex-col gap-2 rounded-md border px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
-                      <span className="truncate font-medium">
+                    <div className="flex items-center gap-3 rounded-md border px-3 py-2">
+                      <AccountIcon photoUrl={parent.photoUrl} alt="保護者アイコン" />
+                      <span className="min-w-0 truncate font-medium">
                         {parent.email ?? "-"}
                         {parent.displayName ? ` (${parent.displayName})` : ""}
                       </span>
@@ -587,9 +611,12 @@ export const SettingsPage = () => {
                       {invites.map((invite) => (
                         <div
                           key={invite.id}
-                          className="flex flex-col gap-2 rounded-md border px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                          className="flex items-start gap-3 rounded-md border px-3 py-2"
                         >
-                          <div className="min-w-0">
+                          <div className="mt-0.5">
+                            <AccountIcon photoUrl={invite.childPhotoUrl} alt="子どもアイコン" />
+                          </div>
+                          <div className="min-w-0 flex-1">
                             <div className="truncate font-medium">
                               {invite.childEmail ?? "-"}
                               {invite.usedAt && invite.childName
@@ -608,6 +635,7 @@ export const SettingsPage = () => {
                             size="sm"
                             onClick={() => handleCancelInvite(invite.id, Boolean(invite.usedAt))}
                             aria-label={t("personalSettingsInviteCancel")}
+                            className="shrink-0"
                           >
                             <Trash2 className="h-4 w-4 text-rose-600" />
                             <span className="sr-only">{t("personalSettingsInviteCancel")}</span>

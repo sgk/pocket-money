@@ -27,6 +27,72 @@ def bootstrap(request: Request, response: Response, user=Depends(get_ready_user)
     if user.photo_url:
         updates["photoUrl"] = user.photo_url
     profile = profile_snap.to_dict()
+    parent_uids: set[str] = set()
+    parents = profile.get("parents")
+    if isinstance(parents, list):
+        for parent in parents:
+            if isinstance(parent, dict) and parent.get("uid"):
+                parent_uids.add(parent["uid"])
+    legacy_parent = profile.get("parent")
+    if isinstance(legacy_parent, dict) and legacy_parent.get("uid"):
+        parent_uids.add(legacy_parent["uid"])
+    if profile.get("parentUid"):
+        parent_uids.add(profile["parentUid"])
+
+    parent_profiles: dict[str, dict] = {}
+    if parent_uids:
+        refs = [firestore.user_doc(parent_uid) for parent_uid in parent_uids]
+        for snap in firestore.get_client().get_all(refs):
+            if not snap.exists:
+                continue
+            parent_data = snap.to_dict() or {}
+            parent_profiles[snap.id] = {
+                "email": parent_data.get("email"),
+                "displayName": parent_data.get("displayName"),
+                "photoUrl": parent_data.get("photoUrl"),
+            }
+
+    parents_changed = False
+    if isinstance(parents, list):
+        enriched_parents = []
+        for parent in parents:
+            if not isinstance(parent, dict):
+                enriched_parents.append(parent)
+                continue
+            parent_uid = parent.get("uid")
+            source = parent_profiles.get(parent_uid) if parent_uid else None
+            if not source:
+                enriched_parents.append(parent)
+                continue
+            enriched_parent = dict(parent)
+            if source.get("email") is not None:
+                enriched_parent["email"] = source["email"]
+            if source.get("displayName") is not None:
+                enriched_parent["displayName"] = source["displayName"]
+            if source.get("photoUrl") is not None:
+                enriched_parent["photoUrl"] = source["photoUrl"]
+            if enriched_parent != parent:
+                parents_changed = True
+            enriched_parents.append(enriched_parent)
+        if parents_changed:
+            profile["parents"] = enriched_parents
+            updates["parents"] = enriched_parents
+
+    if isinstance(legacy_parent, dict):
+        parent_uid = legacy_parent.get("uid")
+        source = parent_profiles.get(parent_uid) if parent_uid else None
+        if source:
+            enriched_parent = dict(legacy_parent)
+            if source.get("email") is not None:
+                enriched_parent["email"] = source["email"]
+            if source.get("displayName") is not None:
+                enriched_parent["displayName"] = source["displayName"]
+            if source.get("photoUrl") is not None:
+                enriched_parent["photoUrl"] = source["photoUrl"]
+            if enriched_parent != legacy_parent:
+                profile["parent"] = enriched_parent
+                updates["parent"] = enriched_parent
+
     if not profile.get("colorTheme"):
         updates["colorTheme"] = "cream"
     if len(updates) > 1:

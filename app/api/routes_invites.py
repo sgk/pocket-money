@@ -73,7 +73,7 @@ def _collect_child_keys(parent_uid: str):
 def list_invites(user=Depends(get_parent_user)):
     _, invites = _collect_child_keys(user.uid)
     child_uids = [data.get("childUid") for _, data in invites if data.get("childUid")]
-    child_names = {}
+    child_profiles = {}
     if child_uids:
         refs = [firestore.user_doc(uid) for uid in child_uids]
         for snap in firestore.get_client().get_all(refs):
@@ -81,11 +81,14 @@ def list_invites(user=Depends(get_parent_user)):
                 continue
             data = snap.to_dict() or {}
             name = data.get("displayName")
-            if isinstance(name, str) and name.strip():
-                child_names[snap.id] = name.strip()
+            child_profiles[snap.id] = {
+                "name": name.strip() if isinstance(name, str) and name.strip() else None,
+                "photoUrl": data.get("photoUrl"),
+            }
     items = []
     for doc, data in invites:
         child_uid = data.get("childUid")
+        child_profile = child_profiles.get(child_uid) if child_uid else None
         items.append(
             {
                 "id": doc.id,
@@ -93,7 +96,8 @@ def list_invites(user=Depends(get_parent_user)):
                 "createdAt": data.get("createdAt"),
                 "usedAt": data.get("usedAt"),
                 "childUid": child_uid,
-                "childName": child_names.get(child_uid) if child_uid else None,
+                "childName": child_profile.get("name") if child_profile else None,
+                "childPhotoUrl": child_profile.get("photoUrl") if child_profile else None,
             }
         )
     items.sort(key=lambda item: item.get("createdAt") or "")
