@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { api, isNetworkError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useBootstrap, useInvalidateLedger, useInvites } from "@/lib/query";
+import { COLOR_THEME_OPTIONS, useTheme } from "@/lib/theme";
 import { Topbar } from "@/components/layout/topbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +32,7 @@ const SettingsLink = ({ to, label }: { to: string; label: string }) => (
 
 export const SettingsPage = () => {
   const { t, grade, setGrade } = useText();
+  const { colorTheme, setColorTheme } = useTheme();
   const gradeOptions = useGradeOptions();
   const { token, logout, childId } = useAuth();
   const { data } = useBootstrap();
@@ -416,6 +418,45 @@ export const SettingsPage = () => {
                   {t("personalSettingsGradeNote")}
                 </p>
               </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">配色テーマ</CardTitle>
+              <CardDescription>かわいい色あいを選べます。</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-2 sm:grid-cols-2">
+              {COLOR_THEME_OPTIONS.map((option) => {
+                const selected = option.value === colorTheme;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setColorTheme(option.value)}
+                    className={`rounded-lg border p-3 text-left transition ${
+                      selected
+                        ? "border-primary bg-primary/10 ring-2 ring-primary/40"
+                        : "border-border bg-card hover:bg-secondary"
+                    }`}
+                    aria-pressed={selected}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold">{option.label}</span>
+                      {selected ? <Check className="h-4 w-4 text-primary" /> : null}
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">{option.description}</p>
+                    <div className="mt-3 flex items-center gap-1">
+                      {option.swatches.map((swatch) => (
+                        <span
+                          key={`${option.value}-${swatch}`}
+                          className="h-4 w-4 rounded-full border"
+                          style={{ backgroundColor: swatch }}
+                        />
+                      ))}
+                    </div>
+                  </button>
+                );
+              })}
             </CardContent>
           </Card>
           {isAdult && !isParent ? (

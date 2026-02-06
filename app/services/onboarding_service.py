@@ -57,6 +57,7 @@ def build_profile(
         "settings": {"timezone": "Asia/Tokyo"},
         "ageGroup": age_group,
         "grade": "upper" if age_group == "adult" else "grade1",
+        "colorTheme": "cream",
     }
     if terms_agreement:
         profile["termsAgreement"] = terms_agreement

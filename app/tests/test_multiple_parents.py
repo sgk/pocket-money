@@ -74,6 +74,7 @@ def test_build_profile_initializes_lists():
     assert profile["parent"] == parent_info
     assert profile["parents"] == [parent_info]
     assert profile["grade"] == "grade1"
+    assert profile["colorTheme"] == "cream"
 
 def test_build_profile_adult():
     class MockUser:
@@ -84,6 +85,7 @@ def test_build_profile_adult():
 
     profile = build_profile(MockUser(), NOW, "adult", None, None)
     assert profile["grade"] == "upper"
+    assert profile["colorTheme"] == "cream"
 
 def test_seed_defaults_names():
     mock_transaction = MagicMock()

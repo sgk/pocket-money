@@ -30,6 +30,7 @@ export type UserProfile = {
   parentUids?: string[];
   termsAgreement?: TermsAgreement;
   grade?: string;
+  colorTheme?: "cream" | "mint" | "sky" | "pink";
 };
 
 export type ParentInfo = {

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from google.cloud import firestore as fs
 from pydantic import BaseModel, Field
+from typing import Literal
 
 from app.core import firestore
 from app.core.limits import MAX_EMAIL_LENGTH
@@ -43,6 +44,7 @@ class AcceptInviteRequest(BaseModel):
 
 class ProfileUpdate(BaseModel):
     grade: str | None = None
+    colorTheme: Literal["cream", "mint", "sky", "pink"] | None = None
     recalculate: bool | None = None
 
 
@@ -108,6 +110,8 @@ def agree_terms(body: AgreeTermsRequest, user=Depends(authenticate)):
         updates = {"termsAgreement": agreement, "updatedAt": now}
         if not profile.get("ageGroup"):
             updates["ageGroup"] = "adult"
+        if not profile.get("colorTheme"):
+            updates["colorTheme"] = "cream"
         if user.display_name:
             updates["displayName"] = user.display_name
         if user.email:
@@ -244,6 +248,8 @@ def accept_invite(body: AcceptInviteRequest, user=Depends(authenticate)):
                 updates["currency"] = "JPY"
             if not existing.get("settings"):
                 updates["settings"] = {"timezone": "Asia/Tokyo"}
+            if not existing.get("colorTheme"):
+                updates["colorTheme"] = "cream"
             transaction.set(user_ref, updates, merge=True)
             profile = {**existing, **updates}
         else:
@@ -290,6 +296,8 @@ def update_profile(body: ProfileUpdate, user=Depends(get_ready_user)):
     updates = {"updatedAt": now}
     if body.grade is not None:
         updates["grade"] = body.grade
+    if body.colorTheme is not None:
+        updates["colorTheme"] = body.colorTheme
     if body.recalculate:
         from datetime import datetime, timezone
 

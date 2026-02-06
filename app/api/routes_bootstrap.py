@@ -27,6 +27,8 @@ def bootstrap(request: Request, response: Response, user=Depends(get_ready_user)
     if user.photo_url:
         updates["photoUrl"] = user.photo_url
     profile = profile_snap.to_dict()
+    if not profile.get("colorTheme"):
+        updates["colorTheme"] = "cream"
     if len(updates) > 1:
         firestore.user_doc(uid).set(updates, merge=True)
         profile.update(updates)
