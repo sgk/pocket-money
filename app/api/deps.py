@@ -75,3 +75,32 @@ def get_parent_user(user=Depends(authenticate)):
     if profile.get("ageGroup") != "adult":
         raise AppError(403, "Only adult can perform this action")
     return user
+
+
+def get_export_user(request: Request, user=Depends(authenticate)):
+    request.state.user = user
+    request.state.auth_user = user
+
+    child_id = request.headers.get("X-Child-Id")
+    if not child_id or child_id == user.uid:
+        return user
+
+    child_profile_snap = firestore.user_doc(child_id).get()
+    if not child_profile_snap.exists:
+        raise AppError(404, "Child profile not found")
+    profile = child_profile_snap.to_dict() or {}
+    parent_uids = profile.get("parentUids") or []
+    if user.uid != profile.get("parentUid") and user.uid not in parent_uids:
+        raise AppError(403, "Not authorized to access this child data")
+
+    request.state.profile = profile
+    request.state.is_parent_viewing_child = True
+
+    from app.core.auth import AuthResult
+
+    return AuthResult(
+        uid=child_id,
+        email=profile.get("email"),
+        display_name=profile.get("displayName"),
+        photo_url=profile.get("photoUrl"),
+    )

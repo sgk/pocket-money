@@ -178,6 +178,12 @@ export const OnboardingPage = () => {
           {isIntro ? (
             <section className="space-y-4">
               <div className="space-y-2">
+                <div className="text-sm font-medium">{t("onboardingIntroNextDescription")}</div>
+                <Button type="button" onClick={() => setStep("form")}>
+                  {t("onboardingIntroNextButton")}
+                </Button>
+              </div>
+              <div className="space-y-2">
                 <div className="text-sm font-medium">{t("onboardingIntroExportTitle")}</div>
                 <div className="text-sm text-muted-foreground">
                   {t("onboardingIntroExportDescription")}
@@ -190,12 +196,6 @@ export const OnboardingPage = () => {
                     {isExportingCsv ? t("onboardingExporting") : t("onboardingExportCsv")}
                   </Button>
                 </div>
-              </div>
-              <div className="space-y-2">
-                <div className="text-sm font-medium">{t("onboardingIntroNextDescription")}</div>
-                <Button type="button" onClick={() => setStep("form")}>
-                  {t("onboardingIntroNextButton")}
-                </Button>
               </div>
               <div className="flex justify-end">
                 <Button type="button" variant="ghost" onClick={logout}>

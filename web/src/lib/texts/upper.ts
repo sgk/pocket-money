@@ -41,7 +41,7 @@ export const upperTexts = defineTexts({
   onboardingParentEmailRequired: text("親のメールアドレスを入力してください。"),
   onboardingIntroExportTitle: text("データのエクスポート"),
   onboardingIntroExportDescription: text(
-    "利用許諾条件に同意しなくても、以前のデータをダウンロードできます。"
+    "アプリの利用を開始しなくても、以前に使っていた人はその時のデータをダウンロードできます。"
   ),
   onboardingIntroNextDescription: text(
     "このアプリの利用を開始するには次の画面に進んでください。"
