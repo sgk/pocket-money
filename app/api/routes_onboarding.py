@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from google.cloud import firestore as fs
 from pydantic import BaseModel, Field
 from typing import Literal
@@ -148,10 +148,10 @@ def agree_terms(body: AgreeTermsRequest, user=Depends(authenticate)):
 
 
 @router.post("/accept-invite")
-def accept_invite(body: AcceptInviteRequest, user=Depends(authenticate)):
+def accept_invite(body: AcceptInviteRequest, request: Request, user=Depends(authenticate)):
     now = now_utc()
     snapshot = load_terms_snapshot(now)
-    child_email = require_user_email(user)
+    child_uid, child_email, acting_as_child = _resolve_accept_invite_target(request, user)
     parent_email = normalize_email(body.parentEmail)
     if not parent_email:
         raise AppError(400, "Parent email is required")
@@ -198,7 +198,7 @@ def accept_invite(body: AcceptInviteRequest, user=Depends(authenticate)):
             "displayName": parent_profile.get("displayName"),
             "photoUrl": parent_profile.get("photoUrl"),
         }
-        user_ref = firestore.user_doc(user.uid)
+        user_ref = firestore.user_doc(child_uid)
         user_snap = user_ref.get(transaction=transaction)
         if user_snap.exists:
             existing = user_snap.to_dict()
@@ -235,12 +235,13 @@ def accept_invite(body: AcceptInviteRequest, user=Depends(authenticate)):
                 updates["parentUid"] = parent_uid
                 updates["parent"] = parent_info
 
-            if user.display_name:
-                updates["displayName"] = user.display_name
-            if user.email:
-                updates["email"] = user.email
-            if user.photo_url:
-                updates["photoUrl"] = user.photo_url
+            if not acting_as_child:
+                if user.display_name:
+                    updates["displayName"] = user.display_name
+                if user.email:
+                    updates["email"] = user.email
+                if user.photo_url:
+                    updates["photoUrl"] = user.photo_url
             if not existing.get("createdAt"):
                 updates["createdAt"] = now
             if not existing.get("transactionsUpdatedAt"):
@@ -254,13 +255,15 @@ def accept_invite(body: AcceptInviteRequest, user=Depends(authenticate)):
             transaction.set(user_ref, updates, merge=True)
             profile = {**existing, **updates}
         else:
+            if acting_as_child:
+                raise AppError(404, "Child profile not found")
             profile = build_profile(user, now, "child", None, parent_info)
             transaction.set(user_ref, profile)
-            seed_defaults(transaction, user.uid, now, age_group="child")
+            seed_defaults(transaction, child_uid, now, age_group="child")
 
         transaction.set(
             invite_ref,
-            {"usedAt": now, "childUid": user.uid},
+            {"usedAt": now, "childUid": child_uid},
             merge=True,
         )
         return profile
@@ -339,3 +342,26 @@ def _resolve_agreed_terms(profile: dict | None, snapshot: TermsSnapshot) -> obje
     if not agreement:
         return None
     return resolve_agreed_terms(agreement, snapshot, allow_missing=True)
+
+
+def _resolve_accept_invite_target(request: Request, user) -> tuple[str, str, bool]:
+    child_id = request.headers.get("X-Child-Id")
+    if not child_id or child_id == user.uid:
+        return user.uid, require_user_email(user), False
+
+    child_snap = firestore.user_doc(child_id).get()
+    if not child_snap.exists:
+        raise AppError(404, "Child profile not found")
+
+    child_profile = child_snap.to_dict() or {}
+    parent_uids = child_profile.get("parentUids") or []
+    if not parent_uids and child_profile.get("parentUid"):
+        parent_uids = [child_profile.get("parentUid")]
+    if user.uid != child_profile.get("parentUid") and user.uid not in parent_uids:
+        raise AppError(403, "Not authorized to access this child data")
+
+    child_email = normalize_email(child_profile.get("email") or "")
+    if not child_email:
+        raise AppError(400, "Child email is required")
+
+    return child_id, child_email, True

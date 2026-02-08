@@ -165,11 +165,11 @@ export const api = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
-  acceptInvite: (token: string, payload: { parentEmail: string }) =>
+  acceptInvite: (token: string, payload: { parentEmail: string }, childId?: string | null) =>
     fetchJson<OnboardingStatus>(token, "/api/onboarding/accept-invite", {
       method: "POST",
       body: JSON.stringify(payload),
-    }),
+    }, {}, childId),
   withdrawTerms: (token: string) =>
     fetchJson<void>(token, "/api/onboarding/withdraw-terms", { method: "POST" }),
   getInvites: (token: string) => fetchJson<InvitesResponse>(token, "/api/invites"),

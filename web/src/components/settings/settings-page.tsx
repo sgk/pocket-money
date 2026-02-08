@@ -385,7 +385,7 @@ export const SettingsPage = () => {
     }
     setIsAcceptingInvite(true);
     try {
-      await api.acceptInvite(token, { parentEmail: parentEmail.trim() });
+      await api.acceptInvite(token, { parentEmail: parentEmail.trim() }, childId);
       toast.success(t("onboardingInviteSuccess"));
       setParentEmail("");
       invalidate();
