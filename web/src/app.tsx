@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useBootstrap, useOnboardingStatus } from "@/lib/query";
 import { RoutesConfig } from "@/routes";
@@ -18,7 +19,7 @@ const LoadingScreen = () => {
 };
 
 export const App = () => {
-  const { token, logout } = useAuth();
+  const { token, childId, setChildId, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const onboarding = useOnboardingStatus();
@@ -34,10 +35,22 @@ export const App = () => {
 
   useEffect(() => {
     if (bootstrap.isError) {
+      const error = bootstrap.error;
+      const isStaleChildContextError =
+        childId &&
+        error instanceof ApiError &&
+        error.code === "http" &&
+        (error.message === "Not authorized to access this child data" ||
+          error.message === "Child profile not found");
+      if (isStaleChildContextError) {
+        setChildId(null);
+        navigate("/", { replace: true });
+        return;
+      }
       logout();
       navigate("/login", { replace: true });
     }
-  }, [bootstrap.isError, logout, navigate]);
+  }, [bootstrap.error, bootstrap.isError, childId, setChildId, logout, navigate]);
 
   if (token && onboarding.isLoading) {
     return <LoadingScreen />;

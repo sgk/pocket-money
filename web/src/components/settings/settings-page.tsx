@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Check, Trash2, User } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { api, isNetworkError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useBootstrap, useInvalidateLedger, useInvites } from "@/lib/query";
@@ -57,6 +58,7 @@ export const SettingsPage = () => {
   const { colorTheme, setColorTheme } = useTheme();
   const gradeOptions = useGradeOptions();
   const { token, logout, childId } = useAuth();
+  const queryClient = useQueryClient();
   const { data } = useBootstrap();
   const profile = data?.profile;
   const ageGroup = profile?.ageGroup;
@@ -83,6 +85,14 @@ export const SettingsPage = () => {
   const parentLimitReached = parentCount >= 10;
   const invites = invitesQuery.data?.items ?? [];
   const inviteLimit = invitesQuery.data?.limit ?? 10;
+
+  const refreshBootstrap = async () => {
+    await queryClient.invalidateQueries({
+      queryKey: ["bootstrap"],
+      exact: false,
+      refetchType: "active",
+    });
+  };
 
   const jsonToCsv = (items: any[]) => {
     if (items.length === 0) return "";
@@ -223,6 +233,7 @@ export const SettingsPage = () => {
       toast.success(t("personalSettingsInviteCancelSuccess"));
       invalidate();
       await invitesQuery.refetch();
+      await refreshBootstrap();
     } catch (error) {
       toast.error(isNetworkError(error) ? t("toastNetworkError") : t("personalSettingsInviteCancelError"));
       console.error(error);
@@ -389,6 +400,7 @@ export const SettingsPage = () => {
       toast.success(t("onboardingInviteSuccess"));
       setParentEmail("");
       invalidate();
+      await refreshBootstrap();
     } catch (error) {
       toast.error(isNetworkError(error) ? t("toastNetworkError") : t("onboardingInviteError"));
       console.error(error);
