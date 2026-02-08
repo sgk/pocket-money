@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from google.cloud import firestore as fs
+from google.cloud.firestore_v1 import FieldFilter
 
 from app.core import firestore
 from app.core.auth import AuthResult
@@ -147,3 +148,105 @@ def check_child_access(
             return True
 
     return False
+
+
+def is_parent_access_revoked(
+    profile: dict | None,
+    snapshot: TermsSnapshot,
+    now: datetime,
+) -> bool:
+    if not profile or profile.get("ageGroup") != "adult":
+        return False
+
+    agreement = profile.get("termsAgreement")
+    if not agreement:
+        return True
+
+    agreed_terms = resolve_agreed_terms(agreement, snapshot, allow_missing=True)
+    if not agreed_terms:
+        return True
+
+    deadline = resolve_effective_deadline(snapshot.terms, agreed_terms, now)
+    if deadline and now >= deadline:
+        return True
+
+    return False
+
+
+def _detach_parent_from_child_profile(
+    child_profile: dict,
+    parent_uid: str,
+    now: datetime,
+) -> dict | None:
+    if child_profile.get("ageGroup") != "child":
+        return None
+
+    parents = child_profile.get("parents")
+    parent_uids = child_profile.get("parentUids")
+    if not isinstance(parents, list):
+        parents = []
+    if not isinstance(parent_uids, list):
+        parent_uids = []
+
+    legacy_parent_uid = child_profile.get("parentUid")
+    legacy_parent = child_profile.get("parent")
+    if not parent_uids and legacy_parent_uid:
+        parent_uids = [legacy_parent_uid]
+    if not parents and isinstance(legacy_parent, dict):
+        parents = [legacy_parent]
+
+    new_parent_uids = [uid for uid in parent_uids if uid and uid != parent_uid]
+    new_parents = [
+        parent
+        for parent in parents
+        if not (isinstance(parent, dict) and parent.get("uid") == parent_uid)
+    ]
+
+    parent_uid_changed = new_parent_uids != parent_uids
+    parents_changed = new_parents != parents
+    legacy_changed = legacy_parent_uid == parent_uid
+    if not parent_uid_changed and not parents_changed and not legacy_changed:
+        return None
+
+    updates = {
+        "parents": new_parents,
+        "parentUids": new_parent_uids,
+        "updatedAt": now,
+    }
+    if legacy_changed:
+        updates["parentUid"] = fs.DELETE_FIELD
+        updates["parent"] = fs.DELETE_FIELD
+
+    if not new_parent_uids:
+        # 保護者が0名になった子は利用不可とする。
+        updates["ageGroup"] = fs.DELETE_FIELD
+        updates["termsAgreement"] = fs.DELETE_FIELD
+
+    return updates
+
+
+def detach_parent_from_children(parent_uid: str, now: datetime) -> int:
+    if not parent_uid:
+        return 0
+
+    children_legacy = firestore.users_collection().where(
+        filter=FieldFilter("parentUid", "==", parent_uid)
+    ).stream()
+    children_new = firestore.users_collection().where(
+        filter=FieldFilter("parentUids", "array_contains", parent_uid)
+    ).stream()
+
+    updated_count = 0
+    seen_ids = set()
+    for doc in list(children_legacy) + list(children_new):
+        if doc.id in seen_ids:
+            continue
+        seen_ids.add(doc.id)
+        profile = doc.to_dict() or {}
+        updates = _detach_parent_from_child_profile(profile, parent_uid, now)
+        if not updates:
+            continue
+        doc.reference.set(updates, merge=True)
+        updated_count += 1
+
+    return updated_count

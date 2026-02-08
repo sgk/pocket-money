@@ -23,7 +23,9 @@ from app.services.onboarding_service import (
     build_profile,
     build_terms_agreement,
     check_child_access,
+    detach_parent_from_children,
     invite_doc_id,
+    is_parent_access_revoked,
     normalize_email,
     now_utc,
     require_user_email,
@@ -54,6 +56,8 @@ def onboarding_status(user=Depends(authenticate)):
     profile = profile_snap.to_dict() if profile_snap.exists else None
     now = now_utc()
     snapshot = load_terms_snapshot(now)
+    if is_parent_access_revoked(profile, snapshot, now):
+        detach_parent_from_children(user.uid, now)
     if profile and profile.get("ageGroup") == "child":
         if not check_child_access(profile, snapshot, now):
             profile = None
@@ -333,6 +337,7 @@ def withdraw_terms(user=Depends(authenticate)):
         return True
 
     firestore.run_in_transaction(_work)
+    detach_parent_from_children(user.uid, now)
 
 
 def _resolve_agreed_terms(profile: dict | None, snapshot: TermsSnapshot) -> object | None:

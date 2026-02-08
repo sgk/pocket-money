@@ -7,7 +7,11 @@ from app.core import firestore
 from app.core.errors import AppError
 from app.core.terms import load_terms_snapshot
 from app.services.account_state import ACCOUNT_STATE_READY, resolve_account_state
-from app.services.onboarding_service import check_child_access
+from app.services.onboarding_service import (
+    check_child_access,
+    detach_parent_from_children,
+    is_parent_access_revoked,
+)
 
 
 def get_current_user(request: Request, user=Depends(authenticate)):
@@ -21,8 +25,11 @@ def get_ready_user(request: Request, user=Depends(authenticate)):
     uid = user.uid
     child_id = request.headers.get("X-Child-Id")
     is_parent_viewing_child = False
+    auth_profile = None
 
     if child_id:
+        auth_profile_snap = firestore.user_doc(user.uid).get()
+        auth_profile = auth_profile_snap.to_dict() if auth_profile_snap.exists else None
         child_profile_snap = firestore.user_doc(child_id).get()
         if not child_profile_snap.exists:
             raise AppError(404, "Child profile not found")
@@ -35,9 +42,14 @@ def get_ready_user(request: Request, user=Depends(authenticate)):
     else:
         profile_snap = firestore.user_doc(uid).get()
         profile = profile_snap.to_dict() if profile_snap.exists else None
+        auth_profile = profile
 
     now = datetime.now(timezone.utc)
     terms_snapshot = load_terms_snapshot(now)
+    if is_parent_access_revoked(auth_profile, terms_snapshot, now):
+        detach_parent_from_children(user.uid, now)
+        parent_state = resolve_account_state(auth_profile, terms_snapshot, now)
+        raise AppError(403, "Account not ready", {"state": parent_state})
     if not check_child_access(profile, terms_snapshot, now):
         raise AppError(403, "Child access revoked", {"state": "needsAge"})
     state = resolve_account_state(profile, terms_snapshot, now)
