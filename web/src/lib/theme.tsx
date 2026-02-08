@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { useBootstrap, useOnboardingStatus } from "@/lib/query";
 import type { BootstrapResponse } from "@/lib/types";
 
-const COLOR_THEME_VALUES = ["cream", "mint", "sky", "pink"] as const;
+const COLOR_THEME_VALUES = ["cream", "mint", "sky", "pink", "sunset", "forest"] as const;
 
 export type ColorTheme = (typeof COLOR_THEME_VALUES)[number];
 
@@ -40,6 +40,18 @@ export const COLOR_THEME_OPTIONS: ReadonlyArray<{
     label: "ピンク",
     description: "あまいキャンディカラー",
     swatches: ["#fff1f7", "#e5679a", "#ffb07a", "#ffffff"],
+  },
+  {
+    value: "sunset",
+    label: "サンセット",
+    description: "夕焼けみたいなあたたかさ",
+    swatches: ["#FFF4EC", "#CC5A2A", "#F3C7A7", "#3A2A22"],
+  },
+  {
+    value: "forest",
+    label: "フォレスト",
+    description: "深い森の落ち着きカラー",
+    swatches: ["#EEF8F1", "#1F7A4C", "#B8DEC8", "#1F2E24"],
   },
 ];
 

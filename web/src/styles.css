@@ -97,6 +97,42 @@
   --ring: 333 66% 56%;
 }
 
+:root[data-color-theme="sunset"] {
+  --background: 24 100% 96%;
+  --foreground: 22 26% 18%;
+  --card: 0 0% 100%;
+  --card-foreground: 22 26% 18%;
+  --primary: 18 66% 48%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 24 74% 86%;
+  --secondary-foreground: 22 26% 18%;
+  --muted: 24 40% 92%;
+  --muted-foreground: 22 14% 38%;
+  --accent: 22 73% 60%;
+  --accent-foreground: 0 0% 100%;
+  --border: 24 37% 82%;
+  --input: 24 37% 82%;
+  --ring: 18 66% 48%;
+}
+
+:root[data-color-theme="forest"] {
+  --background: 136 35% 95%;
+  --foreground: 140 19% 15%;
+  --card: 0 0% 100%;
+  --card-foreground: 140 19% 15%;
+  --primary: 150 59% 30%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 145 35% 80%;
+  --secondary-foreground: 140 19% 15%;
+  --muted: 140 24% 92%;
+  --muted-foreground: 142 12% 36%;
+  --accent: 134 40% 43%;
+  --accent-foreground: 0 0% 100%;
+  --border: 142 27% 82%;
+  --input: 142 27% 82%;
+  --ring: 150 59% 30%;
+}
+
 *,
 *::before,
 *::after {

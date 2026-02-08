@@ -270,7 +270,7 @@ export const api = {
     token: string,
     payload: {
       grade?: string;
-      colorTheme?: "cream" | "mint" | "sky" | "pink";
+      colorTheme?: "cream" | "mint" | "sky" | "pink" | "sunset" | "forest";
       recalculate?: boolean;
     },
     childId?: string | null

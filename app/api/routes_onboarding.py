@@ -46,7 +46,7 @@ class AcceptInviteRequest(BaseModel):
 
 class ProfileUpdate(BaseModel):
     grade: str | None = None
-    colorTheme: Literal["cream", "mint", "sky", "pink"] | None = None
+    colorTheme: Literal["cream", "mint", "sky", "pink", "sunset", "forest"] | None = None
     recalculate: bool | None = None
 
 
