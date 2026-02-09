@@ -1287,7 +1287,7 @@ export const LedgerTable = ({
       className="ledger-table-wrap flex flex-col bg-transparent shadow-none min-w-0 max-w-full"
       data-order={isDesc ? "desc" : "asc"}
     >
-      <div className="overflow-x-hidden max-[900px]:overflow-x-visible p-0 max-w-full">
+      <div className="overflow-x-visible p-0 max-w-full">
         <table className="ledger-table w-full border-collapse text-sm m-0">
         <colgroup>
           <col style={{ width: '160px' }} />
