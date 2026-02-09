@@ -677,6 +677,7 @@ h1, h2, h3, .font-display {
   }
 
   .ledger-table tr.ledger-row--opening {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
     padding: 0.4rem 0;
   }
 
@@ -686,9 +687,21 @@ h1, h2, h3, .font-display {
     padding: 1px 0;
   }
 
-  .ledger-table tr.ledger-row--opening td[data-col="balance"] {
+  .ledger-table tr.ledger-row--opening td.ledger-spacer {
+    display: block;
     grid-row: 1;
     grid-column: 2 / 3;
+    padding: 0;
+  }
+
+  .ledger-table tr.ledger-row--opening td.ledger-spacer::before {
+    content: "";
+    display: none;
+  }
+
+  .ledger-table tr.ledger-row--opening td[data-col="balance"] {
+    grid-row: 1;
+    grid-column: 3 / 4;
     justify-content: flex-end;
     text-align: right;
   }
@@ -762,7 +775,11 @@ h1, h2, h3, .font-display {
     display: none;
   }
 
-  .ledger-table tr.ledger-row--opening td[data-col="date"]::before,
+  .ledger-table tr.ledger-row--opening td[data-col="date"]::before {
+    content: "";
+    display: none;
+  }
+
   .ledger-table tr.ledger-row--opening td[data-col="balance"]::before {
     content: attr(data-label);
     display: block;
