@@ -1,5 +1,6 @@
 import type { Transaction } from "@/lib/types";
 import { toDateKey } from "@/lib/date";
+import { compareTransactionsInDay } from "@/lib/transaction-order";
 
 type BalanceMode =
   | { type: "all" }
@@ -13,10 +14,9 @@ const sortAsc = (transactions: Transaction[]) => {
     if (dateA !== dateB) {
       return dateA.localeCompare(dateB);
     }
-    const orderA = a.tx.dayOrder ?? 0;
-    const orderB = b.tx.dayOrder ?? 0;
-    if (orderA !== orderB) {
-      return orderA - orderB;
+    const sameDayCmp = compareTransactionsInDay(a.tx, b.tx, "asc");
+    if (sameDayCmp !== 0) {
+      return sameDayCmp;
     }
     return a.index - b.index;
   });

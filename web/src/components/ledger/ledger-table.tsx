@@ -5,10 +5,11 @@ import {
   useReactTable,
   type ColumnDef,
 } from "@tanstack/react-table";
-import { Check, Trash2, X } from "lucide-react";
+import { Check, RefreshCw, Trash2, X } from "lucide-react";
 import type { Asset, Category, Transaction } from "@/lib/types";
 import { formatDateSlash, toDateKey } from "@/lib/date";
 import { formatJPYPlain } from "@/lib/money";
+import { compareTransactionsInDay } from "@/lib/transaction-order";
 import { api, isNetworkError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useInvalidateLedger } from "@/lib/query";
@@ -1013,7 +1014,22 @@ export const LedgerTable = ({
           if (value === undefined) {
             return "-";
           }
-          return formatJPYPlain(value);
+          const isPending =
+            Boolean(row.original.pendingSync || row.original.pendingOperation);
+          return (
+            <span className="inline-flex w-full items-center justify-end gap-1.5">
+              {isPending ? (
+                <span
+                  className="inline-flex items-center text-amber-700"
+                  title="同期待ち"
+                  aria-label="同期待ち"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                </span>
+              ) : null}
+              <span>{formatJPYPlain(value)}</span>
+            </span>
+          );
         },
         meta: {
           label: t("labelBalance"),
@@ -1036,10 +1052,9 @@ export const LedgerTable = ({
           ? dateB.localeCompare(dateA)
           : dateA.localeCompare(dateB);
       }
-      const orderA = a.tx.dayOrder ?? 0;
-      const orderB = b.tx.dayOrder ?? 0;
-      if (orderA !== orderB) {
-        return order === "desc" ? orderB - orderA : orderA - orderB;
+      const sameDayCmp = compareTransactionsInDay(a.tx, b.tx, order);
+      if (sameDayCmp !== 0) {
+        return sameDayCmp;
       }
       return a.index - b.index;
     });
@@ -1441,9 +1456,11 @@ export const LedgerTable = ({
                           >
                             ≡
                           </span>
-                          <span className="ledger-mobile-value ledger-mobile-value--date ledger-mobile-value--nowrap">
-                            {dateValue}
-                          </span>
+                          <div className="flex flex-col">
+                            <span className="ledger-mobile-value ledger-mobile-value--date ledger-mobile-value--nowrap">
+                              {dateValue}
+                            </span>
+                          </div>
                         </div>
                         <div className="ledger-mobile-item">
                           <span className="ledger-mobile-label">{t("labelAsset")}</span>

@@ -8,6 +8,7 @@ import type {
   Transaction,
   TransactionsResponse,
 } from "@/lib/types";
+import { compareTransactionsInDay } from "@/lib/transaction-order";
 import {
   addOperation,
   countOperations,
@@ -57,6 +58,9 @@ const fetchJson = async <T>(
   params?: Record<string, string | number | boolean | undefined>,
   childId?: string | null
 ): Promise<T> => {
+  if (navigator.onLine) {
+    void syncOfflineOperations();
+  }
   let res: Response;
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -170,6 +174,23 @@ const readOfflineOnly = async <T>(key: string): Promise<T> => {
   throw new ApiError("network", "NETWORK_ERROR");
 };
 
+const readOfflineTransactionsOrEmpty = async (
+  key: string
+): Promise<TransactionsResponse> => {
+  try {
+    const cached = await readCache<TransactionsResponse>(key);
+    if (cached !== null) {
+      return cached;
+    }
+  } catch (error) {
+    throw new ApiError("network", "NETWORK_ERROR");
+  }
+  return {
+    items: [],
+    nextCursor: null,
+  };
+};
+
 const cacheResponse = async (key: string, payload: unknown) => {
   try {
     await writeCache(key, payload);
@@ -188,7 +209,15 @@ const fetchReadModel = async <T>(
   if (!navigator.onLine) {
     return readOfflineOnly<T>(cacheKey);
   }
-  const payload = await fetchJson<T>(token, path, {}, params, childId);
+  let payload: T;
+  try {
+    payload = await fetchJson<T>(token, path, {}, params, childId);
+  } catch (error) {
+    if (isNetworkError(error)) {
+      return readOfflineOnly<T>(cacheKey);
+    }
+    throw error;
+  }
   await cacheResponse(cacheKey, payload);
   return payload;
 };
@@ -213,13 +242,23 @@ const normalizeAmount = (value: unknown): number => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+const normalizeDayOrder = (value: unknown): number | undefined => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return undefined;
+  }
+  return Math.floor(parsed);
+};
+
 const buildLocalTransaction = (
   kind: "createExpense" | "createIncome" | "createTransfer",
   payload: Record<string, unknown>,
   localId: string
 ): Transaction => {
+  const nowIso = new Date().toISOString();
   const occurredAt = String(payload.occurredAt ?? new Date().toISOString().slice(0, 10));
   const amount = normalizeAmount(payload.amount);
+  const dayOrder = normalizeDayOrder(payload.dayOrder) ?? Date.now();
   const memo = typeof payload.memo === "string" ? payload.memo : undefined;
   if (kind === "createExpense") {
     return {
@@ -228,6 +267,11 @@ const buildLocalTransaction = (
       occurredAt,
       amount,
       memo,
+      dayOrder,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+      pendingSync: true,
+      pendingOperation: "create",
       assetId: typeof payload.assetId === "string" ? payload.assetId : undefined,
       assetName: String(payload.assetName ?? ""),
       categoryId: typeof payload.categoryId === "string" ? payload.categoryId : undefined,
@@ -242,6 +286,11 @@ const buildLocalTransaction = (
       occurredAt,
       amount,
       memo,
+      dayOrder,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+      pendingSync: true,
+      pendingOperation: "create",
       assetId: typeof payload.assetId === "string" ? payload.assetId : undefined,
       assetName: String(payload.assetName ?? ""),
       categoryId: typeof payload.categoryId === "string" ? payload.categoryId : undefined,
@@ -255,6 +304,11 @@ const buildLocalTransaction = (
     occurredAt,
     amount,
     memo,
+    dayOrder,
+    createdAt: nowIso,
+    updatedAt: nowIso,
+    pendingSync: true,
+    pendingOperation: "create",
     fromAssetId: typeof payload.fromAssetId === "string" ? payload.fromAssetId : undefined,
     fromAssetName: String(payload.fromAssetName ?? ""),
     toAssetId: typeof payload.toAssetId === "string" ? payload.toAssetId : undefined,
@@ -270,7 +324,7 @@ const sortTransactions = (items: Transaction[]): Transaction[] =>
     if (dateCmp !== 0) {
       return dateCmp;
     }
-    return (b.dayOrder ?? 0) - (a.dayOrder ?? 0);
+    return compareTransactionsInDay(a, b, "desc");
   });
 
 const matchesTransactionParams = (
@@ -360,6 +414,8 @@ const applyUpdateTransactionToOfflineCache = async (
       ...target,
       ...payload,
       id: txId,
+      pendingSync: true,
+      pendingOperation: "update",
     } as Transaction;
     const nextItems = items
       .filter((item) => item.id !== txId)
@@ -387,9 +443,93 @@ const replaceTransactionIdInOfflineCache = async (
   newId: string
 ) => {
   await updateTransactionsCacheEntries(token, childId, (items) =>
-    items.map((item) => (item.id === oldId ? { ...item, id: newId } : item))
+    items.map((item) =>
+      item.id === oldId
+        ? {
+            ...item,
+            id: newId,
+            pendingSync: false,
+            pendingOperation: undefined,
+          }
+        : item
+    )
   );
   clearTransactionsCache();
+};
+
+const withQueuedTransactionOperations = async (
+  token: string,
+  childId: string | null | undefined,
+  params: Record<string, unknown>,
+  base: TransactionsResponse
+): Promise<TransactionsResponse> => {
+  const sanitizedItems = (Array.isArray(base.items) ? base.items : []).map((item) => ({
+    ...item,
+    pendingSync: false,
+    pendingOperation: undefined,
+  }));
+  const queue = (await listOperations()).filter(
+    (item) => item.token === token && (item.childId ?? null) === (childId ?? null)
+  );
+  if (queue.length === 0) {
+    return {
+      ...base,
+      items: sanitizedItems,
+    };
+  }
+
+  let items = sanitizedItems;
+  for (const op of queue) {
+    if (
+      op.kind === "createExpense" ||
+      op.kind === "createIncome" ||
+      op.kind === "createTransfer"
+    ) {
+      const localId = op.localId ?? `local:${op.idempotencyKey}`;
+      const tx = buildLocalTransaction(op.kind, op.payload, localId);
+      if (!matchesTransactionParams(tx, params)) {
+        items = items.filter((item) => item.id !== tx.id);
+        continue;
+      }
+      items = sortTransactions([tx, ...items.filter((item) => item.id !== tx.id)]);
+      continue;
+    }
+
+    if (op.kind === "updateTransaction") {
+      const targetId = op.txId;
+      if (!targetId) {
+        continue;
+      }
+      const current = items.find((item) => item.id === targetId);
+      if (!current) {
+        continue;
+      }
+      const updated = {
+        ...current,
+        ...op.payload,
+        id: targetId,
+        pendingSync: true,
+        pendingOperation: "update",
+      } as Transaction;
+      items = items.filter((item) => item.id !== targetId);
+      if (matchesTransactionParams(updated, params)) {
+        items = sortTransactions([...items, updated]);
+      }
+      continue;
+    }
+
+    if (op.kind === "deleteTransaction") {
+      if (!op.txId) {
+        continue;
+      }
+      items = items.filter((item) => item.id !== op.txId);
+    }
+  }
+
+  return {
+    ...base,
+    items,
+  };
 };
 
 const enqueueTransactionOperation = async (
@@ -400,6 +540,81 @@ const enqueueTransactionOperation = async (
     createdAt: Date.now(),
   });
   emitOfflineOperationsChanged();
+};
+
+const queueCreateTransactionOperation = async (
+  kind: "createExpense" | "createIncome" | "createTransfer",
+  token: string,
+  payload: Record<string, unknown>,
+  childId?: string | null
+): Promise<Transaction> => {
+  const idempotencyKey = createIdempotencyKey();
+  const localId = `local:${idempotencyKey}`;
+  const normalizedPayload = {
+    ...payload,
+    dayOrder: normalizeDayOrder(payload.dayOrder) ?? Date.now(),
+  };
+  const localTx = buildLocalTransaction(kind, normalizedPayload, localId);
+  await enqueueTransactionOperation({
+    id: idempotencyKey,
+    idempotencyKey,
+    kind,
+    token,
+    childId: childId ?? null,
+    localId,
+    payload: normalizedPayload,
+  });
+  await applyCreateTransactionToOfflineCache(token, childId, localTx);
+  void syncOfflineOperations();
+  return localTx;
+};
+
+const queueUpdateTransactionOperation = async (
+  token: string,
+  txId: string,
+  payload: Record<string, unknown>,
+  childId?: string | null
+): Promise<Transaction> => {
+  const idempotencyKey = createIdempotencyKey();
+  await enqueueTransactionOperation({
+    id: idempotencyKey,
+    idempotencyKey,
+    kind: "updateTransaction",
+    token,
+    childId: childId ?? null,
+    txId,
+    payload,
+  });
+  await applyUpdateTransactionToOfflineCache(token, childId, txId, payload);
+  void syncOfflineOperations();
+  return {
+    id: txId,
+    type: (payload.type as Transaction["type"] | undefined) ?? "expense",
+    occurredAt:
+      typeof payload.occurredAt === "string"
+        ? payload.occurredAt
+        : new Date().toISOString().slice(0, 10),
+    amount: normalizeAmount(payload.amount),
+  } as Transaction;
+};
+
+const queueDeleteTransactionOperation = async (
+  token: string,
+  txId: string,
+  childId?: string | null
+): Promise<void> => {
+  const idempotencyKey = createIdempotencyKey();
+  await enqueueTransactionOperation({
+    id: idempotencyKey,
+    idempotencyKey,
+    kind: "deleteTransaction",
+    token,
+    childId: childId ?? null,
+    txId,
+    payload: {},
+  });
+  await applyDeleteTransactionToOfflineCache(token, childId, txId);
+  void syncOfflineOperations();
 };
 
 const executeQueuedOperation = async (operation: TransactionOperationRecord) => {
@@ -514,6 +729,7 @@ export const startOfflineOperationsSync = () => {
     void syncOfflineOperations();
   };
   window.addEventListener("online", trigger);
+  window.setInterval(trigger, 15000);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
       trigger();
@@ -580,13 +796,21 @@ export const api = {
     if (!navigator.onLine) {
       return readOfflineOnly<BootstrapResponse>(cacheKey);
     }
-    const payload = await fetchJson<BootstrapResponse>(
-      token,
-      "/api/bootstrap",
-      { method: "POST" },
-      {},
-      childId
-    );
+    let payload: BootstrapResponse;
+    try {
+      payload = await fetchJson<BootstrapResponse>(
+        token,
+        "/api/bootstrap",
+        { method: "POST" },
+        {},
+        childId
+      );
+    } catch (error) {
+      if (isNetworkError(error)) {
+        return readOfflineOnly<BootstrapResponse>(cacheKey);
+      }
+      throw error;
+    }
     await cacheResponse(cacheKey, payload);
     return payload;
   },
@@ -631,6 +855,9 @@ export const api = {
   deleteCategory: (token: string, categoryId: string, childId?: string | null) =>
     fetchJson<void>(token, `/api/categories/${categoryId}`, { method: "DELETE" }, {}, childId),
   getTransactions: async (token: string, params: TransactionsParams, childId?: string | null) => {
+    if (navigator.onLine) {
+      void syncOfflineOperations();
+    }
     const key = transactionsCacheKey(token, { ...params, childId });
     const cached = transactionsCache.get(key);
     const offlineKey = buildOfflineCacheKey(
@@ -648,9 +875,20 @@ export const api = {
         includeOpeningBalances: params.includeOpeningBalances ? "1" : "0",
       }
     );
+    const transactionParams = {
+      from: params.from ?? "",
+      to: params.to ?? "",
+      type: params.type ?? "",
+      assetId: params.assetId ?? "",
+      categoryId: params.categoryId ?? "",
+      limit: params.limit ?? 200,
+      cursor: params.cursor ?? "",
+      includeOpeningBalances: params.includeOpeningBalances ? "1" : "0",
+    };
 
     if (!navigator.onLine) {
-      return readOfflineOnly<TransactionsResponse>(offlineKey);
+      const cached = await readOfflineTransactionsOrEmpty(offlineKey);
+      return withQueuedTransactionOperations(token, childId, transactionParams, cached);
     }
 
     const headers: Record<string, string> = {
@@ -672,14 +910,20 @@ export const api = {
         headers,
       });
     } catch (error) {
-      throw new ApiError("network", "NETWORK_ERROR");
+      const cached = await readOfflineTransactionsOrEmpty(offlineKey);
+      return withQueuedTransactionOperations(token, childId, transactionParams, cached);
     }
 
     if (res.status === 304) {
       if (!cached) {
         throw new Error("取引キャッシュがありません");
       }
-      return cached.data;
+      return withQueuedTransactionOperations(
+        token,
+        childId,
+        transactionParams,
+        cached.data
+      );
     }
 
     if (!res.ok) {
@@ -693,7 +937,7 @@ export const api = {
       transactionsCache.set(key, { lastModified, data });
     }
     await cacheResponse(offlineKey, data);
-    return data;
+    return withQueuedTransactionOperations(token, childId, transactionParams, data);
   },
   exportTransactions: (token: string, childId?: string | null) =>
     fetchJson<Transaction[]>(token, "/api/transactions/export", {}, {}, childId),
@@ -724,102 +968,84 @@ export const api = {
     payload: Record<string, unknown>,
     childId?: string | null
   ) => {
-    const idempotencyKey = createIdempotencyKey();
     if (!navigator.onLine) {
-      const localId = `local:${idempotencyKey}`;
-      const localTx = buildLocalTransaction("createExpense", payload, localId);
-      await enqueueTransactionOperation({
-        id: idempotencyKey,
-        idempotencyKey,
-        kind: "createExpense",
-        token,
-        childId: childId ?? null,
-        localId,
-        payload,
-      });
-      await applyCreateTransactionToOfflineCache(token, childId, localTx);
-      void syncOfflineOperations();
-      return localTx;
+      return queueCreateTransactionOperation("createExpense", token, payload, childId);
     }
-    return fetchJson<Transaction>(
-      token,
-      "/api/transactions/expense",
-      {
-        method: "POST",
-        headers: { "X-Idempotency-Key": idempotencyKey },
-        body: JSON.stringify(payload),
-      },
-      {},
-      childId
-    );
+    const idempotencyKey = createIdempotencyKey();
+    try {
+      return await fetchJson<Transaction>(
+        token,
+        "/api/transactions/expense",
+        {
+          method: "POST",
+          headers: { "X-Idempotency-Key": idempotencyKey },
+          body: JSON.stringify(payload),
+        },
+        {},
+        childId
+      );
+    } catch (error) {
+      if (isNetworkError(error)) {
+        return queueCreateTransactionOperation("createExpense", token, payload, childId);
+      }
+      throw error;
+    }
   },
   createIncome: async (
     token: string,
     payload: Record<string, unknown>,
     childId?: string | null
   ) => {
-    const idempotencyKey = createIdempotencyKey();
     if (!navigator.onLine) {
-      const localId = `local:${idempotencyKey}`;
-      const localTx = buildLocalTransaction("createIncome", payload, localId);
-      await enqueueTransactionOperation({
-        id: idempotencyKey,
-        idempotencyKey,
-        kind: "createIncome",
-        token,
-        childId: childId ?? null,
-        localId,
-        payload,
-      });
-      await applyCreateTransactionToOfflineCache(token, childId, localTx);
-      void syncOfflineOperations();
-      return localTx;
+      return queueCreateTransactionOperation("createIncome", token, payload, childId);
     }
-    return fetchJson<Transaction>(
-      token,
-      "/api/transactions/income",
-      {
-        method: "POST",
-        headers: { "X-Idempotency-Key": idempotencyKey },
-        body: JSON.stringify(payload),
-      },
-      {},
-      childId
-    );
+    const idempotencyKey = createIdempotencyKey();
+    try {
+      return await fetchJson<Transaction>(
+        token,
+        "/api/transactions/income",
+        {
+          method: "POST",
+          headers: { "X-Idempotency-Key": idempotencyKey },
+          body: JSON.stringify(payload),
+        },
+        {},
+        childId
+      );
+    } catch (error) {
+      if (isNetworkError(error)) {
+        return queueCreateTransactionOperation("createIncome", token, payload, childId);
+      }
+      throw error;
+    }
   },
   createTransfer: async (
     token: string,
     payload: Record<string, unknown>,
     childId?: string | null
   ) => {
-    const idempotencyKey = createIdempotencyKey();
     if (!navigator.onLine) {
-      const localId = `local:${idempotencyKey}`;
-      const localTx = buildLocalTransaction("createTransfer", payload, localId);
-      await enqueueTransactionOperation({
-        id: idempotencyKey,
-        idempotencyKey,
-        kind: "createTransfer",
-        token,
-        childId: childId ?? null,
-        localId,
-        payload,
-      });
-      await applyCreateTransactionToOfflineCache(token, childId, localTx);
-      void syncOfflineOperations();
-      return localTx;
+      return queueCreateTransactionOperation("createTransfer", token, payload, childId);
     }
-    return fetchJson<Transaction>(
-      token,
-      "/api/transactions/transfer",
-      {
-        method: "POST",
-        headers: { "X-Idempotency-Key": idempotencyKey },
-        body: JSON.stringify(payload),
-      },
-      {},
-      childId
-    );
+    const idempotencyKey = createIdempotencyKey();
+    try {
+      return await fetchJson<Transaction>(
+        token,
+        "/api/transactions/transfer",
+        {
+          method: "POST",
+          headers: { "X-Idempotency-Key": idempotencyKey },
+          body: JSON.stringify(payload),
+        },
+        {},
+        childId
+      );
+    } catch (error) {
+      if (isNetworkError(error)) {
+        return queueCreateTransactionOperation("createTransfer", token, payload, childId);
+      }
+      throw error;
+    }
   },
   updateTransaction: async (
     token: string,
@@ -827,67 +1053,53 @@ export const api = {
     payload: Record<string, unknown>,
     childId?: string | null
   ) => {
-    const idempotencyKey = createIdempotencyKey();
     if (!navigator.onLine) {
-      await enqueueTransactionOperation({
-        id: idempotencyKey,
-        idempotencyKey,
-        kind: "updateTransaction",
-        token,
-        childId: childId ?? null,
-        txId,
-        payload,
-      });
-      await applyUpdateTransactionToOfflineCache(token, childId, txId, payload);
-      void syncOfflineOperations();
-      return {
-        id: txId,
-        type: (payload.type as Transaction["type"] | undefined) ?? "expense",
-        occurredAt:
-          typeof payload.occurredAt === "string"
-            ? payload.occurredAt
-            : new Date().toISOString().slice(0, 10),
-        amount: normalizeAmount(payload.amount),
-      } as Transaction;
+      return queueUpdateTransactionOperation(token, txId, payload, childId);
     }
-    return fetchJson<Transaction>(
-      token,
-      `/api/transactions/${txId}`,
-      {
-        method: "PATCH",
-        headers: { "X-Idempotency-Key": idempotencyKey },
-        body: JSON.stringify(payload),
-      },
-      {},
-      childId
-    );
+    const idempotencyKey = createIdempotencyKey();
+    try {
+      return await fetchJson<Transaction>(
+        token,
+        `/api/transactions/${txId}`,
+        {
+          method: "PATCH",
+          headers: { "X-Idempotency-Key": idempotencyKey },
+          body: JSON.stringify(payload),
+        },
+        {},
+        childId
+      );
+    } catch (error) {
+      if (isNetworkError(error)) {
+        return queueUpdateTransactionOperation(token, txId, payload, childId);
+      }
+      throw error;
+    }
   },
   deleteTransaction: async (token: string, txId: string, childId?: string | null) => {
-    const idempotencyKey = createIdempotencyKey();
     if (!navigator.onLine) {
-      await enqueueTransactionOperation({
-        id: idempotencyKey,
-        idempotencyKey,
-        kind: "deleteTransaction",
-        token,
-        childId: childId ?? null,
-        txId,
-        payload: {},
-      });
-      await applyDeleteTransactionToOfflineCache(token, childId, txId);
-      void syncOfflineOperations();
+      await queueDeleteTransactionOperation(token, txId, childId);
       return;
     }
-    return fetchJson<void>(
-      token,
-      `/api/transactions/${txId}`,
-      {
-        method: "DELETE",
-        headers: { "X-Idempotency-Key": idempotencyKey },
-      },
-      {},
-      childId
-    );
+    const idempotencyKey = createIdempotencyKey();
+    try {
+      return await fetchJson<void>(
+        token,
+        `/api/transactions/${txId}`,
+        {
+          method: "DELETE",
+          headers: { "X-Idempotency-Key": idempotencyKey },
+        },
+        {},
+        childId
+      );
+    } catch (error) {
+      if (isNetworkError(error)) {
+        await queueDeleteTransactionOperation(token, txId, childId);
+        return;
+      }
+      throw error;
+    }
   },
   getMonthlySummary: (token: string, year: number, month: number, childId?: string | null) =>
     fetchReadModel<MonthlySummary>(

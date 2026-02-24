@@ -95,6 +95,10 @@ export type TxBase = {
   amount: number;
   memo?: string;
   dayOrder?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  pendingSync?: boolean;
+  pendingOperation?: "create" | "update";
 };
 
 export type TxExpense = TxBase & {

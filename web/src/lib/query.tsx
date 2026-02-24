@@ -1,5 +1,6 @@
+import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { OFFLINE_OPERATIONS_CHANGED_EVENT, api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import type { TransactionType, TransactionsResponse } from "@/lib/types";
 
@@ -64,7 +65,7 @@ type TransactionsFilters = {
 
 export const useTransactions = (filters: TransactionsFilters) => {
   const { token, childId } = useAuth();
-  return useQuery<TransactionsResponse>({
+  const query = useQuery<TransactionsResponse>({
     queryKey: ["transactions", filters, childId],
     queryFn: () =>
       api.getTransactions(
@@ -85,6 +86,21 @@ export const useTransactions = (filters: TransactionsFilters) => {
     staleTime: 1000 * 60,
     refetchOnWindowFocus: false,
   });
+
+  useEffect(() => {
+    if (!token) {
+      return;
+    }
+    const handler = () => {
+      void query.refetch();
+    };
+    window.addEventListener(OFFLINE_OPERATIONS_CHANGED_EVENT, handler);
+    return () => {
+      window.removeEventListener(OFFLINE_OPERATIONS_CHANGED_EVENT, handler);
+    };
+  }, [token, query.refetch]);
+
+  return query;
 };
 
 export const useMonthlySummary = (year: number, month: number) => {

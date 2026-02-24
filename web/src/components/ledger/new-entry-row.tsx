@@ -243,13 +243,13 @@ export const NewEntryRow = ({
       let created: Transaction | undefined;
       if (entry.type === "expense") {
         const resolvedAssetId =
-          entry.assetId || findAssetByName(entry.assetName)?.id;
+          fixedAssetId || entry.assetId || findAssetByName(entry.assetName)?.id;
         const resolvedCategoryId =
           entry.categoryId || findCategoryByName(entry.categoryName, "expense")?.id;
         const payload = {
           ...payloadBase,
           assetId: resolvedAssetId,
-          assetName: entry.assetName,
+          assetName: fixedAssetName || entry.assetName,
           categoryId: resolvedCategoryId,
           categoryName: entry.categoryName,
           merchant: entry.merchant || undefined,
@@ -266,13 +266,13 @@ export const NewEntryRow = ({
       }
       if (entry.type === "income") {
         const resolvedAssetId =
-          entry.assetId || findAssetByName(entry.assetName)?.id;
+          fixedAssetId || entry.assetId || findAssetByName(entry.assetName)?.id;
         const resolvedCategoryId =
           entry.categoryId || findCategoryByName(entry.categoryName, "income")?.id;
         const payload = {
           ...payloadBase,
           assetId: resolvedAssetId,
-          assetName: entry.assetName,
+          assetName: fixedAssetName || entry.assetName,
           categoryId: resolvedCategoryId,
           categoryName: entry.categoryName,
           source: entry.source || undefined,
@@ -289,15 +289,29 @@ export const NewEntryRow = ({
       }
       if (entry.type === "transfer") {
         const resolvedFromId =
-          entry.fromAssetId || findAssetByName(entry.fromAssetName)?.id;
+          (fixedAssetId && entry.transferDirection === "out"
+            ? fixedAssetId
+            : undefined) ||
+          entry.fromAssetId ||
+          findAssetByName(entry.fromAssetName)?.id;
         const resolvedToId =
-          entry.toAssetId || findAssetByName(entry.toAssetName)?.id;
+          (fixedAssetId && entry.transferDirection === "in"
+            ? fixedAssetId
+            : undefined) ||
+          entry.toAssetId ||
+          findAssetByName(entry.toAssetName)?.id;
         const payload = {
           ...payloadBase,
           fromAssetId: resolvedFromId,
-          fromAssetName: entry.fromAssetName,
+          fromAssetName:
+            (fixedAssetName && entry.transferDirection === "out"
+              ? fixedAssetName
+              : entry.fromAssetName),
           toAssetId: resolvedToId,
-          toAssetName: entry.toAssetName,
+          toAssetName:
+            (fixedAssetName && entry.transferDirection === "in"
+              ? fixedAssetName
+              : entry.toAssetName),
           fee: Number(entry.fee || 0),
           counterparty: entry.counterparty || undefined,
         };
