@@ -89,7 +89,7 @@ make deploy
 
 ## アプリ内部構造
 
-## 全体像
+### 全体像
 
 ```text
 [Browser]
