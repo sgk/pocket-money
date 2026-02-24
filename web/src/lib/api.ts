@@ -463,7 +463,9 @@ const withQueuedTransactionOperations = async (
   params: Record<string, unknown>,
   base: TransactionsResponse
 ): Promise<TransactionsResponse> => {
-  const sanitizedItems = (Array.isArray(base.items) ? base.items : []).map((item) => ({
+  const sanitizedItems: Transaction[] = (
+    Array.isArray(base.items) ? base.items : []
+  ).map((item) => ({
     ...item,
     pendingSync: false,
     pendingOperation: undefined,
@@ -478,7 +480,7 @@ const withQueuedTransactionOperations = async (
     };
   }
 
-  let items = sanitizedItems;
+  let items: Transaction[] = sanitizedItems;
   for (const op of queue) {
     if (
       op.kind === "createExpense" ||

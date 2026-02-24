@@ -19,9 +19,7 @@ export const AssetLedgerPage = () => {
   const resolvedAssetId = asset?.id;
 
   useEffect(() => {
-    console.log("AssetLedgerPage state:", { isAssetsLoading, assetsCount: assets.length, assetFound: !!asset, assetId });
     if (!isAssetsLoading && !asset && assetId) {
-      console.log("Redirecting to dashboard...");
       navigate("/", { replace: true });
     }
   }, [isAssetsLoading, assets, asset, assetId, navigate]);
