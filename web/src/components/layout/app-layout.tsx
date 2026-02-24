@@ -1,14 +1,20 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Outlet } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { UserMenu } from "@/components/layout/user-menu";
 import { useText } from "@/lib/text";
+import {
+  getOfflineOperationsCount,
+  OFFLINE_OPERATIONS_CHANGED_EVENT,
+} from "@/lib/api";
 
 export const AppLayout = () => {
   const { t } = useText();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [isOnline, setIsOnline] = useState(() => navigator.onLine);
+  const [offlineOpsCount, setOfflineOpsCount] = useState(0);
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
   const toggleSidebar = () => {
     setSidebarOpen((prev) => {
@@ -24,6 +30,38 @@ export const AppLayout = () => {
     menuButtonRef.current?.focus();
   };
 
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const refresh = () => {
+      void getOfflineOperationsCount().then((count) => {
+        if (active) {
+          setOfflineOpsCount(count);
+        }
+      });
+    };
+    refresh();
+    window.addEventListener(OFFLINE_OPERATIONS_CHANGED_EVENT, refresh);
+    window.addEventListener("online", refresh);
+    window.addEventListener("offline", refresh);
+    return () => {
+      active = false;
+      window.removeEventListener(OFFLINE_OPERATIONS_CHANGED_EVENT, refresh);
+      window.removeEventListener("online", refresh);
+      window.removeEventListener("offline", refresh);
+    };
+  }, []);
+
   return (
     <div className="page-shell h-screen overflow-hidden">
       <div className="flex h-full flex-col">
@@ -37,7 +75,19 @@ export const AppLayout = () => {
           >
             {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
-          <div className="font-display text-lg leading-none">{t("appTitle")}</div>
+          <div className="flex items-center gap-2">
+            <div className="font-display text-lg leading-none">{t("appTitle")}</div>
+            {!isOnline ? (
+              <span className="rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
+                オフライン
+              </span>
+            ) : null}
+            {offlineOpsCount > 0 ? (
+              <span className="rounded-full border border-sky-300 bg-sky-100 px-2 py-0.5 text-xs text-sky-800">
+                同期待ち {offlineOpsCount}
+              </span>
+            ) : null}
+          </div>
           <UserMenu
             compact
             isOpen={userMenuOpen}

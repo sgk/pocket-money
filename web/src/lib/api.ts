@@ -8,6 +8,17 @@ import type {
   Transaction,
   TransactionsResponse,
 } from "@/lib/types";
+import {
+  addOperation,
+  countOperations,
+  deleteOperation,
+  listCacheEntries,
+  listOperations,
+  readCache,
+  replaceOperationTxId,
+  type TransactionOperationRecord,
+  writeCache,
+} from "@/lib/offline-cache";
 
 const API_BASE_URL = window.location.origin;
 const AUTH_STORAGE_KEY = "auth.token";
@@ -134,12 +145,385 @@ const clearTransactionsCache = () => {
   transactionsCache.clear();
 };
 
+const buildOfflineCacheKey = (
+  scope: string,
+  token: string,
+  childId?: string | null,
+  params?: Record<string, unknown>
+): string =>
+  JSON.stringify({
+    scope,
+    token,
+    childId: childId ?? "",
+    params: params ?? {},
+  });
+
+const readOfflineOnly = async <T>(key: string): Promise<T> => {
+  try {
+    const cached = await readCache<T>(key);
+    if (cached !== null) {
+      return cached;
+    }
+  } catch (error) {
+    throw new ApiError("network", "NETWORK_ERROR");
+  }
+  throw new ApiError("network", "NETWORK_ERROR");
+};
+
+const cacheResponse = async (key: string, payload: unknown) => {
+  try {
+    await writeCache(key, payload);
+  } catch (error) {
+    console.warn("offline cache write failed", error);
+  }
+};
+
+const fetchReadModel = async <T>(
+  token: string,
+  cacheKey: string,
+  path: string,
+  params?: Record<string, string | number | boolean | undefined>,
+  childId?: string | null
+): Promise<T> => {
+  if (!navigator.onLine) {
+    return readOfflineOnly<T>(cacheKey);
+  }
+  const payload = await fetchJson<T>(token, path, {}, params, childId);
+  await cacheResponse(cacheKey, payload);
+  return payload;
+};
+
 const createIdempotencyKey = () => {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
   }
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
+
+const OFFLINE_OPERATIONS_CHANGED_EVENT = "offline-operations-changed";
+
+const emitOfflineOperationsChanged = () => {
+  window.dispatchEvent(new Event(OFFLINE_OPERATIONS_CHANGED_EVENT));
+};
+
+const toDateKey = (value: unknown): string => String(value ?? "").slice(0, 10);
+
+const normalizeAmount = (value: unknown): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const buildLocalTransaction = (
+  kind: "createExpense" | "createIncome" | "createTransfer",
+  payload: Record<string, unknown>,
+  localId: string
+): Transaction => {
+  const occurredAt = String(payload.occurredAt ?? new Date().toISOString().slice(0, 10));
+  const amount = normalizeAmount(payload.amount);
+  const memo = typeof payload.memo === "string" ? payload.memo : undefined;
+  if (kind === "createExpense") {
+    return {
+      id: localId,
+      type: "expense",
+      occurredAt,
+      amount,
+      memo,
+      assetId: typeof payload.assetId === "string" ? payload.assetId : undefined,
+      assetName: String(payload.assetName ?? ""),
+      categoryId: typeof payload.categoryId === "string" ? payload.categoryId : undefined,
+      categoryName: String(payload.categoryName ?? ""),
+      merchant: typeof payload.merchant === "string" ? payload.merchant : undefined,
+    };
+  }
+  if (kind === "createIncome") {
+    return {
+      id: localId,
+      type: "income",
+      occurredAt,
+      amount,
+      memo,
+      assetId: typeof payload.assetId === "string" ? payload.assetId : undefined,
+      assetName: String(payload.assetName ?? ""),
+      categoryId: typeof payload.categoryId === "string" ? payload.categoryId : undefined,
+      categoryName: String(payload.categoryName ?? ""),
+      source: typeof payload.source === "string" ? payload.source : undefined,
+    };
+  }
+  return {
+    id: localId,
+    type: "transfer",
+    occurredAt,
+    amount,
+    memo,
+    fromAssetId: typeof payload.fromAssetId === "string" ? payload.fromAssetId : undefined,
+    fromAssetName: String(payload.fromAssetName ?? ""),
+    toAssetId: typeof payload.toAssetId === "string" ? payload.toAssetId : undefined,
+    toAssetName: String(payload.toAssetName ?? ""),
+    fee: normalizeAmount(payload.fee),
+    counterparty: typeof payload.counterparty === "string" ? payload.counterparty : undefined,
+  };
+};
+
+const sortTransactions = (items: Transaction[]): Transaction[] =>
+  [...items].sort((a, b) => {
+    const dateCmp = String(b.occurredAt).localeCompare(String(a.occurredAt));
+    if (dateCmp !== 0) {
+      return dateCmp;
+    }
+    return (b.dayOrder ?? 0) - (a.dayOrder ?? 0);
+  });
+
+const matchesTransactionParams = (
+  tx: Transaction,
+  params: Record<string, unknown> | undefined
+): boolean => {
+  const normalized = params ?? {};
+  const txType = String(normalized.type ?? "");
+  if (txType && tx.type !== txType) {
+    return false;
+  }
+  const from = String(normalized.from ?? "");
+  const to = String(normalized.to ?? "");
+  const txDate = toDateKey(tx.occurredAt);
+  if (from && txDate < from) {
+    return false;
+  }
+  if (to && txDate > to) {
+    return false;
+  }
+  const assetId = String(normalized.assetId ?? "");
+  if (assetId) {
+    if (tx.type === "transfer") {
+      if (tx.fromAssetId !== assetId && tx.toAssetId !== assetId) {
+        return false;
+      }
+    } else if (tx.assetId !== assetId) {
+      return false;
+    }
+  }
+  const categoryId = String(normalized.categoryId ?? "");
+  if (categoryId) {
+    if (tx.type === "transfer" || tx.categoryId !== categoryId) {
+      return false;
+    }
+  }
+  return true;
+};
+
+const updateTransactionsCacheEntries = async (
+  token: string,
+  childId: string | null | undefined,
+  updater: (items: Transaction[], params: Record<string, unknown> | undefined) => Transaction[]
+): Promise<void> => {
+  const entries = await listCacheEntries<TransactionsResponse>(
+    "transactions",
+    token,
+    childId
+  );
+  for (const entry of entries) {
+    const current = entry.value ?? { items: [], nextCursor: null };
+    const currentItems = Array.isArray(current.items) ? current.items : [];
+    const updatedItems = updater(currentItems, entry.envelope.params);
+    await writeCache(entry.key, {
+      ...current,
+      items: updatedItems,
+    });
+  }
+};
+
+const applyCreateTransactionToOfflineCache = async (
+  token: string,
+  childId: string | null | undefined,
+  tx: Transaction
+) => {
+  await updateTransactionsCacheEntries(token, childId, (items, params) => {
+    if (!matchesTransactionParams(tx, params)) {
+      return items;
+    }
+    return sortTransactions([tx, ...items.filter((item) => item.id !== tx.id)]);
+  });
+  clearTransactionsCache();
+};
+
+const applyUpdateTransactionToOfflineCache = async (
+  token: string,
+  childId: string | null | undefined,
+  txId: string,
+  payload: Record<string, unknown>
+): Promise<void> => {
+  await updateTransactionsCacheEntries(token, childId, (items, params) => {
+    const target = items.find((item) => item.id === txId);
+    if (!target) {
+      return items;
+    }
+    const merged = {
+      ...target,
+      ...payload,
+      id: txId,
+    } as Transaction;
+    const nextItems = items
+      .filter((item) => item.id !== txId)
+      .concat(matchesTransactionParams(merged, params) ? [merged] : []);
+    return sortTransactions(nextItems);
+  });
+  clearTransactionsCache();
+};
+
+const applyDeleteTransactionToOfflineCache = async (
+  token: string,
+  childId: string | null | undefined,
+  txId: string
+): Promise<void> => {
+  await updateTransactionsCacheEntries(token, childId, (items) =>
+    items.filter((item) => item.id !== txId)
+  );
+  clearTransactionsCache();
+};
+
+const replaceTransactionIdInOfflineCache = async (
+  token: string,
+  childId: string | null | undefined,
+  oldId: string,
+  newId: string
+) => {
+  await updateTransactionsCacheEntries(token, childId, (items) =>
+    items.map((item) => (item.id === oldId ? { ...item, id: newId } : item))
+  );
+  clearTransactionsCache();
+};
+
+const enqueueTransactionOperation = async (
+  record: Omit<TransactionOperationRecord, "createdAt">
+) => {
+  await addOperation({
+    ...record,
+    createdAt: Date.now(),
+  });
+  emitOfflineOperationsChanged();
+};
+
+const executeQueuedOperation = async (operation: TransactionOperationRecord) => {
+  const headers: Record<string, string> = {
+    "X-Idempotency-Key": operation.idempotencyKey,
+  };
+  if (operation.kind === "createExpense") {
+    return fetchJson<Transaction>(
+      operation.token,
+      "/api/transactions/expense",
+      { method: "POST", headers, body: JSON.stringify(operation.payload) },
+      {},
+      operation.childId
+    );
+  }
+  if (operation.kind === "createIncome") {
+    return fetchJson<Transaction>(
+      operation.token,
+      "/api/transactions/income",
+      { method: "POST", headers, body: JSON.stringify(operation.payload) },
+      {},
+      operation.childId
+    );
+  }
+  if (operation.kind === "createTransfer") {
+    return fetchJson<Transaction>(
+      operation.token,
+      "/api/transactions/transfer",
+      { method: "POST", headers, body: JSON.stringify(operation.payload) },
+      {},
+      operation.childId
+    );
+  }
+  if (operation.kind === "updateTransaction") {
+    return fetchJson<Transaction>(
+      operation.token,
+      `/api/transactions/${operation.txId}`,
+      { method: "PATCH", headers, body: JSON.stringify(operation.payload) },
+      {},
+      operation.childId
+    );
+  }
+  await fetchJson<void>(
+    operation.token,
+    `/api/transactions/${operation.txId}`,
+    { method: "DELETE", headers },
+    {},
+    operation.childId
+  );
+  return null;
+};
+
+let syncInitialized = false;
+let syncRunning = false;
+
+const syncOfflineOperations = async (): Promise<void> => {
+  if (syncRunning || !navigator.onLine) {
+    return;
+  }
+  syncRunning = true;
+  try {
+    while (navigator.onLine) {
+      const operations = await listOperations();
+      const next = operations[0];
+      if (!next) {
+        break;
+      }
+      try {
+        const result = await executeQueuedOperation(next);
+        if (
+          next.localId &&
+          result &&
+          typeof result === "object" &&
+          "id" in result &&
+          typeof result.id === "string" &&
+          result.id !== next.localId
+        ) {
+          await replaceTransactionIdInOfflineCache(
+            next.token,
+            next.childId,
+            next.localId,
+            result.id
+          );
+          await replaceOperationTxId(
+            next.token,
+            next.childId,
+            next.localId,
+            result.id
+          );
+        }
+        await deleteOperation(next.id);
+        emitOfflineOperationsChanged();
+      } catch (error) {
+        if (isNetworkError(error)) {
+          break;
+        }
+        console.error("offline operation sync failed", error);
+        break;
+      }
+    }
+  } finally {
+    syncRunning = false;
+  }
+};
+
+export const startOfflineOperationsSync = () => {
+  if (syncInitialized) {
+    return;
+  }
+  syncInitialized = true;
+  const trigger = () => {
+    void syncOfflineOperations();
+  };
+  window.addEventListener("online", trigger);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      trigger();
+    }
+  });
+  trigger();
+};
+
+export const getOfflineOperationsCount = () => countOperations();
+export { OFFLINE_OPERATIONS_CHANGED_EVENT };
 
 export const api = {
   loginWithGoogle: async (credential: string) => {
@@ -166,7 +550,11 @@ export const api = {
     return data.token;
   },
   getOnboardingStatus: (token: string) =>
-    fetchJson<OnboardingStatus>(token, "/api/onboarding/status"),
+    fetchReadModel<OnboardingStatus>(
+      token,
+      buildOfflineCacheKey("onboarding", token),
+      "/api/onboarding/status"
+    ),
   agreeTerms: (token: string, payload: { ageGroup?: string }) =>
     fetchJson<OnboardingStatus>(token, "/api/onboarding/agree-terms", {
       method: "POST",
@@ -187,10 +575,29 @@ export const api = {
     }),
   cancelInvite: (token: string, inviteId: string) =>
     fetchJson<void>(token, `/api/invites/${inviteId}`, { method: "DELETE" }),
-  bootstrap: (token: string, childId?: string | null) =>
-    fetchJson<BootstrapResponse>(token, "/api/bootstrap", { method: "POST" }, {}, childId),
+  bootstrap: async (token: string, childId?: string | null) => {
+    const cacheKey = buildOfflineCacheKey("bootstrap", token, childId);
+    if (!navigator.onLine) {
+      return readOfflineOnly<BootstrapResponse>(cacheKey);
+    }
+    const payload = await fetchJson<BootstrapResponse>(
+      token,
+      "/api/bootstrap",
+      { method: "POST" },
+      {},
+      childId
+    );
+    await cacheResponse(cacheKey, payload);
+    return payload;
+  },
   getAssets: (token: string, childId?: string | null) =>
-    fetchJson<Asset[]>(token, "/api/assets", {}, {}, childId),
+    fetchReadModel<Asset[]>(
+      token,
+      buildOfflineCacheKey("assets", token, childId),
+      "/api/assets",
+      {},
+      childId
+    ),
   createAsset: (token: string, payload: Partial<Asset>, childId?: string | null) =>
     fetchJson<Asset>(token, "/api/assets", {
       method: "POST",
@@ -204,7 +611,13 @@ export const api = {
   deleteAsset: (token: string, assetId: string, childId?: string | null) =>
     fetchJson<void>(token, `/api/assets/${assetId}`, { method: "DELETE" }, {}, childId),
   getCategories: (token: string, childId?: string | null) =>
-    fetchJson<Category[]>(token, "/api/categories", {}, {}, childId),
+    fetchReadModel<Category[]>(
+      token,
+      buildOfflineCacheKey("categories", token, childId),
+      "/api/categories",
+      {},
+      childId
+    ),
   createCategory: (token: string, payload: Partial<Category>, childId?: string | null) =>
     fetchJson<Category>(token, "/api/categories", {
       method: "POST",
@@ -220,6 +633,25 @@ export const api = {
   getTransactions: async (token: string, params: TransactionsParams, childId?: string | null) => {
     const key = transactionsCacheKey(token, { ...params, childId });
     const cached = transactionsCache.get(key);
+    const offlineKey = buildOfflineCacheKey(
+      "transactions",
+      token,
+      childId,
+      {
+        from: params.from ?? "",
+        to: params.to ?? "",
+        type: params.type ?? "",
+        assetId: params.assetId ?? "",
+        categoryId: params.categoryId ?? "",
+        limit: params.limit ?? 200,
+        cursor: params.cursor ?? "",
+        includeOpeningBalances: params.includeOpeningBalances ? "1" : "0",
+      }
+    );
+
+    if (!navigator.onLine) {
+      return readOfflineOnly<TransactionsResponse>(offlineKey);
+    }
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -260,6 +692,7 @@ export const api = {
     if (lastModified) {
       transactionsCache.set(key, { lastModified, data });
     }
+    await cacheResponse(offlineKey, data);
     return data;
   },
   exportTransactions: (token: string, childId?: string | null) =>
@@ -286,46 +719,183 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify(payload),
     }, {}, childId),
-  createExpense: (token: string, payload: Record<string, unknown>, childId?: string | null) =>
-    fetchJson<Transaction>(token, "/api/transactions/expense", {
-      method: "POST",
-      headers: {
-        "X-Idempotency-Key": createIdempotencyKey(),
+  createExpense: async (
+    token: string,
+    payload: Record<string, unknown>,
+    childId?: string | null
+  ) => {
+    const idempotencyKey = createIdempotencyKey();
+    if (!navigator.onLine) {
+      const localId = `local:${idempotencyKey}`;
+      const localTx = buildLocalTransaction("createExpense", payload, localId);
+      await enqueueTransactionOperation({
+        id: idempotencyKey,
+        idempotencyKey,
+        kind: "createExpense",
+        token,
+        childId: childId ?? null,
+        localId,
+        payload,
+      });
+      await applyCreateTransactionToOfflineCache(token, childId, localTx);
+      void syncOfflineOperations();
+      return localTx;
+    }
+    return fetchJson<Transaction>(
+      token,
+      "/api/transactions/expense",
+      {
+        method: "POST",
+        headers: { "X-Idempotency-Key": idempotencyKey },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify(payload),
-    }, {}, childId),
-  createIncome: (token: string, payload: Record<string, unknown>, childId?: string | null) =>
-    fetchJson<Transaction>(token, "/api/transactions/income", {
-      method: "POST",
-      headers: {
-        "X-Idempotency-Key": createIdempotencyKey(),
+      {},
+      childId
+    );
+  },
+  createIncome: async (
+    token: string,
+    payload: Record<string, unknown>,
+    childId?: string | null
+  ) => {
+    const idempotencyKey = createIdempotencyKey();
+    if (!navigator.onLine) {
+      const localId = `local:${idempotencyKey}`;
+      const localTx = buildLocalTransaction("createIncome", payload, localId);
+      await enqueueTransactionOperation({
+        id: idempotencyKey,
+        idempotencyKey,
+        kind: "createIncome",
+        token,
+        childId: childId ?? null,
+        localId,
+        payload,
+      });
+      await applyCreateTransactionToOfflineCache(token, childId, localTx);
+      void syncOfflineOperations();
+      return localTx;
+    }
+    return fetchJson<Transaction>(
+      token,
+      "/api/transactions/income",
+      {
+        method: "POST",
+        headers: { "X-Idempotency-Key": idempotencyKey },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify(payload),
-    }, {}, childId),
-  createTransfer: (token: string, payload: Record<string, unknown>, childId?: string | null) =>
-    fetchJson<Transaction>(token, "/api/transactions/transfer", {
-      method: "POST",
-      headers: {
-        "X-Idempotency-Key": createIdempotencyKey(),
+      {},
+      childId
+    );
+  },
+  createTransfer: async (
+    token: string,
+    payload: Record<string, unknown>,
+    childId?: string | null
+  ) => {
+    const idempotencyKey = createIdempotencyKey();
+    if (!navigator.onLine) {
+      const localId = `local:${idempotencyKey}`;
+      const localTx = buildLocalTransaction("createTransfer", payload, localId);
+      await enqueueTransactionOperation({
+        id: idempotencyKey,
+        idempotencyKey,
+        kind: "createTransfer",
+        token,
+        childId: childId ?? null,
+        localId,
+        payload,
+      });
+      await applyCreateTransactionToOfflineCache(token, childId, localTx);
+      void syncOfflineOperations();
+      return localTx;
+    }
+    return fetchJson<Transaction>(
+      token,
+      "/api/transactions/transfer",
+      {
+        method: "POST",
+        headers: { "X-Idempotency-Key": idempotencyKey },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify(payload),
-    }, {}, childId),
-  updateTransaction: (token: string, txId: string, payload: Record<string, unknown>, childId?: string | null) =>
-    fetchJson<Transaction>(token, `/api/transactions/${txId}`, {
-      method: "PATCH",
-      headers: {
-        "X-Idempotency-Key": createIdempotencyKey(),
+      {},
+      childId
+    );
+  },
+  updateTransaction: async (
+    token: string,
+    txId: string,
+    payload: Record<string, unknown>,
+    childId?: string | null
+  ) => {
+    const idempotencyKey = createIdempotencyKey();
+    if (!navigator.onLine) {
+      await enqueueTransactionOperation({
+        id: idempotencyKey,
+        idempotencyKey,
+        kind: "updateTransaction",
+        token,
+        childId: childId ?? null,
+        txId,
+        payload,
+      });
+      await applyUpdateTransactionToOfflineCache(token, childId, txId, payload);
+      void syncOfflineOperations();
+      return {
+        id: txId,
+        type: (payload.type as Transaction["type"] | undefined) ?? "expense",
+        occurredAt:
+          typeof payload.occurredAt === "string"
+            ? payload.occurredAt
+            : new Date().toISOString().slice(0, 10),
+        amount: normalizeAmount(payload.amount),
+      } as Transaction;
+    }
+    return fetchJson<Transaction>(
+      token,
+      `/api/transactions/${txId}`,
+      {
+        method: "PATCH",
+        headers: { "X-Idempotency-Key": idempotencyKey },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify(payload),
-    }, {}, childId),
-  deleteTransaction: (token: string, txId: string, childId?: string | null) =>
-    fetchJson<void>(token, `/api/transactions/${txId}`, {
-      method: "DELETE",
-      headers: {
-        "X-Idempotency-Key": createIdempotencyKey(),
+      {},
+      childId
+    );
+  },
+  deleteTransaction: async (token: string, txId: string, childId?: string | null) => {
+    const idempotencyKey = createIdempotencyKey();
+    if (!navigator.onLine) {
+      await enqueueTransactionOperation({
+        id: idempotencyKey,
+        idempotencyKey,
+        kind: "deleteTransaction",
+        token,
+        childId: childId ?? null,
+        txId,
+        payload: {},
+      });
+      await applyDeleteTransactionToOfflineCache(token, childId, txId);
+      void syncOfflineOperations();
+      return;
+    }
+    return fetchJson<void>(
+      token,
+      `/api/transactions/${txId}`,
+      {
+        method: "DELETE",
+        headers: { "X-Idempotency-Key": idempotencyKey },
       },
-    }, {}, childId),
+      {},
+      childId
+    );
+  },
   getMonthlySummary: (token: string, year: number, month: number, childId?: string | null) =>
-    fetchJson<MonthlySummary>(token, "/api/summary/monthly", {}, { year, month }, childId),
+    fetchReadModel<MonthlySummary>(
+      token,
+      buildOfflineCacheKey("summary", token, childId, { year, month }),
+      "/api/summary/monthly",
+      { year, month },
+      childId
+    ),
   clearTransactionsCache,
 };

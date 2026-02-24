@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import { ApiError } from "@/lib/api";
+import { ApiError, isNetworkError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useBootstrap, useOnboardingStatus } from "@/lib/query";
 import { RoutesConfig } from "@/routes";
@@ -18,6 +18,20 @@ const LoadingScreen = () => {
   );
 };
 
+const OfflineUnavailableScreen = () => {
+  const { t } = useText();
+  return (
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="max-w-md rounded-lg border bg-card p-6 shadow-sm">
+        <p className="text-sm text-muted-foreground">{t("loading")}</p>
+        <p className="mt-2 text-sm">
+          オフラインで表示できるキャッシュがありません。通信可能な状態で一度読み込んでください。
+        </p>
+      </div>
+    </div>
+  );
+};
+
 export const App = () => {
   const { token, childId, setChildId, logout } = useAuth();
   const navigate = useNavigate();
@@ -28,14 +42,20 @@ export const App = () => {
 
   useEffect(() => {
     if (onboarding.isError) {
+      if (isNetworkError(onboarding.error)) {
+        return;
+      }
       logout();
       navigate("/login", { replace: true });
     }
-  }, [onboarding.isError, logout, navigate]);
+  }, [onboarding.error, onboarding.isError, logout, navigate]);
 
   useEffect(() => {
     if (bootstrap.isError) {
       const error = bootstrap.error;
+      if (isNetworkError(error)) {
+        return;
+      }
       const isStaleChildContextError =
         childId &&
         error instanceof ApiError &&
@@ -56,6 +76,10 @@ export const App = () => {
     return <LoadingScreen />;
   }
 
+  if (token && onboarding.isError && isNetworkError(onboarding.error)) {
+    return <OfflineUnavailableScreen />;
+  }
+
   if (!token && location.pathname !== "/login") {
     return <Navigate to="/login" replace />;
   }
@@ -66,6 +90,10 @@ export const App = () => {
 
   if (token && bootstrap.isLoading) {
     return <LoadingScreen />;
+  }
+
+  if (token && bootstrap.isError && isNetworkError(bootstrap.error)) {
+    return <OfflineUnavailableScreen />;
   }
 
   if (token && onboarding.data?.profile?.ageGroup === "child") {
