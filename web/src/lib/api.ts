@@ -134,6 +134,13 @@ const clearTransactionsCache = () => {
   transactionsCache.clear();
 };
 
+const createIdempotencyKey = () => {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
+
 export const api = {
   loginWithGoogle: async (credential: string) => {
     let res: Response;
@@ -282,25 +289,42 @@ export const api = {
   createExpense: (token: string, payload: Record<string, unknown>, childId?: string | null) =>
     fetchJson<Transaction>(token, "/api/transactions/expense", {
       method: "POST",
+      headers: {
+        "X-Idempotency-Key": createIdempotencyKey(),
+      },
       body: JSON.stringify(payload),
     }, {}, childId),
   createIncome: (token: string, payload: Record<string, unknown>, childId?: string | null) =>
     fetchJson<Transaction>(token, "/api/transactions/income", {
       method: "POST",
+      headers: {
+        "X-Idempotency-Key": createIdempotencyKey(),
+      },
       body: JSON.stringify(payload),
     }, {}, childId),
   createTransfer: (token: string, payload: Record<string, unknown>, childId?: string | null) =>
     fetchJson<Transaction>(token, "/api/transactions/transfer", {
       method: "POST",
+      headers: {
+        "X-Idempotency-Key": createIdempotencyKey(),
+      },
       body: JSON.stringify(payload),
     }, {}, childId),
   updateTransaction: (token: string, txId: string, payload: Record<string, unknown>, childId?: string | null) =>
     fetchJson<Transaction>(token, `/api/transactions/${txId}`, {
       method: "PATCH",
+      headers: {
+        "X-Idempotency-Key": createIdempotencyKey(),
+      },
       body: JSON.stringify(payload),
     }, {}, childId),
   deleteTransaction: (token: string, txId: string, childId?: string | null) =>
-    fetchJson<void>(token, `/api/transactions/${txId}`, { method: "DELETE" }, {}, childId),
+    fetchJson<void>(token, `/api/transactions/${txId}`, {
+      method: "DELETE",
+      headers: {
+        "X-Idempotency-Key": createIdempotencyKey(),
+      },
+    }, {}, childId),
   getMonthlySummary: (token: string, year: number, month: number, childId?: string | null) =>
     fetchJson<MonthlySummary>(token, "/api/summary/monthly", {}, { year, month }, childId),
   clearTransactionsCache,

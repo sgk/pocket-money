@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from email.utils import format_datetime, parsedate_to_datetime
-from typing import Optional, List
+from typing import Optional, List, Callable
 
 from fastapi import APIRouter, Depends, Header, Query, Response
 
@@ -13,7 +13,7 @@ from app.models.transactions import (
     TransactionOut,
     TransactionUpdate,
 )
-from app.services import transactions_service
+from app.services import transactions_service, idempotency_service
 
 
 router = APIRouter(prefix="/api/transactions", tags=["transactions"])
@@ -59,6 +59,35 @@ def _is_not_modified(last_modified: datetime, if_modified_since: Optional[dateti
     return _to_utc(last_modified).replace(microsecond=0) < if_modified_since
 
 
+def _run_idempotent_write(
+    uid: str,
+    method: str,
+    path: str,
+    idempotency_key: Optional[str],
+    payload: dict,
+    handler: Callable[[], dict],
+) -> dict:
+    decision = idempotency_service.begin_request(
+        uid, method, path, idempotency_key, payload
+    )
+    if decision.mode == "replay":
+        return decision.response_body or {}
+
+    try:
+        result = handler()
+    except Exception:
+        try:
+            idempotency_service.abort_request(uid, method, path, idempotency_key)
+        except Exception:
+            pass
+        raise
+
+    idempotency_service.complete_request(
+        uid, method, path, idempotency_key, result, status_code=200
+    )
+    return result
+
+
 @router.get("", response_model=dict)
 def list_transactions(
     response: Response,
@@ -99,18 +128,57 @@ def list_transactions(
 
 
 @router.post("/expense", response_model=TransactionOut)
-def create_expense(payload: ExpenseCreate, user=Depends(get_ready_user)):
-    return transactions_service.create_expense(user.uid, payload)
+def create_expense(
+    payload: ExpenseCreate,
+    user=Depends(get_ready_user),
+    idempotency_key: Optional[str] = Header(None, alias="X-Idempotency-Key"),
+):
+    path = "/api/transactions/expense"
+    body = payload.dict()
+    return _run_idempotent_write(
+        user.uid,
+        "POST",
+        path,
+        idempotency_key,
+        body,
+        lambda: transactions_service.create_expense(user.uid, payload),
+    )
 
 
 @router.post("/income", response_model=TransactionOut)
-def create_income(payload: IncomeCreate, user=Depends(get_ready_user)):
-    return transactions_service.create_income(user.uid, payload)
+def create_income(
+    payload: IncomeCreate,
+    user=Depends(get_ready_user),
+    idempotency_key: Optional[str] = Header(None, alias="X-Idempotency-Key"),
+):
+    path = "/api/transactions/income"
+    body = payload.dict()
+    return _run_idempotent_write(
+        user.uid,
+        "POST",
+        path,
+        idempotency_key,
+        body,
+        lambda: transactions_service.create_income(user.uid, payload),
+    )
 
 
 @router.post("/transfer", response_model=TransactionOut)
-def create_transfer(payload: TransferCreate, user=Depends(get_ready_user)):
-    return transactions_service.create_transfer(user.uid, payload)
+def create_transfer(
+    payload: TransferCreate,
+    user=Depends(get_ready_user),
+    idempotency_key: Optional[str] = Header(None, alias="X-Idempotency-Key"),
+):
+    path = "/api/transactions/transfer"
+    body = payload.dict()
+    return _run_idempotent_write(
+        user.uid,
+        "POST",
+        path,
+        idempotency_key,
+        body,
+        lambda: transactions_service.create_transfer(user.uid, payload),
+    )
 
 
 @router.get("/export", response_model=List[dict])
@@ -130,10 +198,36 @@ def delete_all_transactions_route(user=Depends(get_ready_user)):
 
 
 @router.patch("/{tx_id}", response_model=TransactionOut)
-def update_transaction(tx_id: str, payload: TransactionUpdate, user=Depends(get_ready_user)):
-    return transactions_service.update_transaction(user.uid, tx_id, payload)
+def update_transaction(
+    tx_id: str,
+    payload: TransactionUpdate,
+    user=Depends(get_ready_user),
+    idempotency_key: Optional[str] = Header(None, alias="X-Idempotency-Key"),
+):
+    path = f"/api/transactions/{tx_id}"
+    body = payload.dict(exclude_unset=True)
+    return _run_idempotent_write(
+        user.uid,
+        "PATCH",
+        path,
+        idempotency_key,
+        body,
+        lambda: transactions_service.update_transaction(user.uid, tx_id, payload),
+    )
 
 
 @router.delete("/{tx_id}", response_model=TransactionOut)
-def delete_transaction(tx_id: str, user=Depends(get_ready_user)):
-    return transactions_service.delete_transaction(user.uid, tx_id)
+def delete_transaction(
+    tx_id: str,
+    user=Depends(get_ready_user),
+    idempotency_key: Optional[str] = Header(None, alias="X-Idempotency-Key"),
+):
+    path = f"/api/transactions/{tx_id}"
+    return _run_idempotent_write(
+        user.uid,
+        "DELETE",
+        path,
+        idempotency_key,
+        {},
+        lambda: transactions_service.delete_transaction(user.uid, tx_id),
+    )

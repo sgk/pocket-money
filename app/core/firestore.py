@@ -73,6 +73,14 @@ def balance_snapshot_doc(uid: str, month_key: str):
     return balance_snapshots_collection(uid).document(month_key)
 
 
+def idempotency_keys_collection(uid: str):
+    return user_doc(uid).collection("idempotencyKeys")
+
+
+def idempotency_key_doc(uid: str, key_hash: str):
+    return idempotency_keys_collection(uid).document(key_hash)
+
+
 def error_logs_collection():
     return get_client().collection("errorLogs")
 
