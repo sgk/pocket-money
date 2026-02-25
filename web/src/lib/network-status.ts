@@ -5,7 +5,6 @@ export type NetworkReachabilityChangedDetail = {
   source: "api-success" | "api-failure" | "probe" | "navigator-offline";
 };
 
-const ONLINE_PROBE_INTERVAL_MS = 15000;
 const OFFLINE_PROBE_INTERVAL_MS = 3000;
 const HTML_PROBE_QUERY_KEY = "__network_probe__";
 
@@ -45,7 +44,10 @@ const clearProbeTimer = () => {
 
 const scheduleProbe = () => {
   clearProbeTimer();
-  const intervalMs = reachable ? ONLINE_PROBE_INTERVAL_MS : OFFLINE_PROBE_INTERVAL_MS;
+  if (reachable) {
+    return;
+  }
+  const intervalMs = OFFLINE_PROBE_INTERVAL_MS;
   probeTimerId = window.setTimeout(() => {
     void runReachabilityProbe();
   }, intervalMs);
@@ -77,7 +79,9 @@ const buildHtmlProbeUrl = (): string => {
 
 const runReachabilityProbe = async () => {
   if (probing) {
-    scheduleProbe();
+    if (!reachable) {
+      scheduleProbe();
+    }
     return;
   }
   probing = true;
@@ -100,22 +104,21 @@ const runReachabilityProbe = async () => {
     setReachable(apiOk || htmlOk, "probe");
   } finally {
     probing = false;
-    scheduleProbe();
+    if (!reachable) {
+      scheduleProbe();
+    }
   }
-};
-
-const triggerProbeNow = () => {
-  clearProbeTimer();
-  void runReachabilityProbe();
 };
 
 export const reportNetworkSuccess = () => {
   setReachable(true, "api-success");
+  clearProbeTimer();
 };
 
 export const reportNetworkFailure = () => {
   setReachable(false, "api-failure");
-  triggerProbeNow();
+  clearProbeTimer();
+  void runReachabilityProbe();
 };
 
 export const isNetworkReachable = () => reachable;
@@ -127,15 +130,20 @@ export const startNetworkReachabilityMonitor = () => {
   monitorStarted = true;
 
   const handleOnline = () => {
-    triggerProbeNow();
+    if (!reachable) {
+      clearProbeTimer();
+      void runReachabilityProbe();
+    }
   };
   const handleOffline = () => {
     setReachable(false, "navigator-offline");
-    scheduleProbe();
+    clearProbeTimer();
+    void runReachabilityProbe();
   };
   const handleVisibilityChange = () => {
-    if (document.visibilityState === "visible") {
-      triggerProbeNow();
+    if (document.visibilityState === "visible" && !reachable) {
+      clearProbeTimer();
+      void runReachabilityProbe();
     }
   };
 
@@ -143,5 +151,8 @@ export const startNetworkReachabilityMonitor = () => {
   window.addEventListener("offline", handleOffline);
   document.addEventListener("visibilitychange", handleVisibilityChange);
 
-  triggerProbeNow();
+  if (!reachable) {
+    clearProbeTimer();
+    void runReachabilityProbe();
+  }
 };
