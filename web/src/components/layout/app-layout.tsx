@@ -8,13 +8,18 @@ import {
   getOfflineOperationsCount,
   OFFLINE_OPERATIONS_CHANGED_EVENT,
 } from "@/lib/api";
+import {
+  isNetworkReachable,
+  NETWORK_REACHABILITY_CHANGED_EVENT,
+  startNetworkReachabilityMonitor,
+  type NetworkReachabilityChangedDetail,
+} from "@/lib/network-status";
 
 export const AppLayout = () => {
   const { t } = useText();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [isOnline, setIsOnline] = useState(() => navigator.onLine);
-  const [isServerReachable, setIsServerReachable] = useState(() => navigator.onLine);
+  const [isReachable, setIsReachable] = useState(() => isNetworkReachable());
   const [offlineOpsCount, setOfflineOpsCount] = useState(0);
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
   const toggleSidebar = () => {
@@ -32,60 +37,21 @@ export const AppLayout = () => {
   };
 
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
+    startNetworkReachabilityMonitor();
+    setIsReachable(isNetworkReachable());
+    const handleReachabilityChanged = (event: Event) => {
+      const detail = (event as CustomEvent<NetworkReachabilityChangedDetail>).detail;
+      setIsReachable(detail.reachable);
+    };
+    window.addEventListener(
+      NETWORK_REACHABILITY_CHANGED_EVENT,
+      handleReachabilityChanged
+    );
     return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    const checkServerReachable = async () => {
-      if (!navigator.onLine) {
-        if (active) {
-          setIsServerReachable(false);
-        }
-        return;
-      }
-      try {
-        const response = await fetch("/healthz", {
-          method: "GET",
-          cache: "no-store",
-        });
-        if (active) {
-          setIsServerReachable(response.ok);
-        }
-      } catch {
-        if (active) {
-          setIsServerReachable(false);
-        }
-      }
-    };
-
-    const trigger = () => {
-      void checkServerReachable();
-    };
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        trigger();
-      }
-    };
-
-    trigger();
-    const timerId = window.setInterval(trigger, 15000);
-    window.addEventListener("online", trigger);
-    window.addEventListener("offline", trigger);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      active = false;
-      window.clearInterval(timerId);
-      window.removeEventListener("online", trigger);
-      window.removeEventListener("offline", trigger);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener(
+        NETWORK_REACHABILITY_CHANGED_EVENT,
+        handleReachabilityChanged
+      );
     };
   }, []);
 
@@ -110,7 +76,7 @@ export const AppLayout = () => {
     };
   }, []);
 
-  const isOffline = !isOnline || !isServerReachable;
+  const isOffline = !isReachable;
   const showStatus = isOffline || offlineOpsCount > 0;
   const statusText =
     isOffline && offlineOpsCount > 0
@@ -146,7 +112,6 @@ export const AppLayout = () => {
                   <WifiOff
                     className="h-3.5 w-3.5 text-amber-700"
                     aria-label="オフライン"
-                    title="オフライン"
                   />
                 ) : null}
                 {offlineOpsCount > 0 ? (

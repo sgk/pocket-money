@@ -9,6 +9,7 @@ import type {
   TransactionsResponse,
 } from "@/lib/types";
 import { compareTransactionsInDay } from "@/lib/transaction-order";
+import { reportNetworkFailure, reportNetworkSuccess } from "@/lib/network-status";
 import {
   addOperation,
   countOperations,
@@ -78,6 +79,7 @@ const fetchJson = async <T>(
       headers,
     });
   } catch (error) {
+    reportNetworkFailure();
     throw new ApiError("network", "NETWORK_ERROR");
   }
 
@@ -103,6 +105,7 @@ const fetchJson = async <T>(
     throw new ApiError("http", message || "API エラーが発生しました");
   }
 
+  reportNetworkSuccess();
   if (res.status === 204) {
     return undefined as T;
   }
@@ -746,20 +749,23 @@ export { OFFLINE_OPERATIONS_CHANGED_EVENT };
 export const api = {
   loginWithGoogle: async (credential: string) => {
     let res: Response;
-    try {
-      res = await fetch(buildUrl("/api/login"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ credential }),
-      });
-    } catch (error) {
-      throw new ApiError("network", "NETWORK_ERROR");
-    }
+  try {
+    res = await fetch(buildUrl("/api/login"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ credential }),
+    });
+  } catch (error) {
+    reportNetworkFailure();
+    throw new ApiError("network", "NETWORK_ERROR");
+  }
 
-    if (!res.ok) {
-      const message = await res.text();
-      throw new ApiError("http", message || "ログインに失敗しました");
-    }
+  if (!res.ok) {
+    const message = await res.text();
+    throw new ApiError("http", message || "ログインに失敗しました");
+  }
+
+  reportNetworkSuccess();
 
     const data = (await res.json()) as { token?: string };
     if (!data.token) {
@@ -912,11 +918,13 @@ export const api = {
         headers,
       });
     } catch (error) {
+      reportNetworkFailure();
       const cached = await readOfflineTransactionsOrEmpty(offlineKey);
       return withQueuedTransactionOperations(token, childId, transactionParams, cached);
     }
 
     if (res.status === 304) {
+      reportNetworkSuccess();
       if (!cached) {
         throw new Error("取引キャッシュがありません");
       }
@@ -932,6 +940,8 @@ export const api = {
       const message = await res.text();
       throw new ApiError("http", message || "API エラーが発生しました");
     }
+
+    reportNetworkSuccess();
 
     const data = (await res.json()) as TransactionsResponse;
     const lastModified = res.headers.get("Last-Modified");
