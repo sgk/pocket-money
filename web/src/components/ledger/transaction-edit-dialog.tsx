@@ -315,9 +315,13 @@ export const TransactionEditDialog = ({
       return;
     }
     try {
-      await api.deleteTransaction(token, transaction.id, childId);
+      const result = await api.deleteTransaction(token, transaction.id, childId);
       toast.success(t("toastEntryDeleted"));
-      invalidate(transaction.id);
+      if (result.pendingSync) {
+        invalidate();
+      } else {
+        invalidate(transaction.id);
+      }
       onOpenChange(false);
     } catch (error) {
       toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));

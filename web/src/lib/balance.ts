@@ -38,6 +38,10 @@ export const computeRunningBalances = (
 
   const ordered = sortAsc(transactions);
   ordered.forEach((tx) => {
+    if (tx.pendingOperation === "delete") {
+      balancesById[tx.id] = running;
+      return;
+    }
     if (mode.type === "all") {
       if (tx.type === "expense") {
         running -= tx.amount;
@@ -92,6 +96,9 @@ export const computeEndingBalance = (
 
   const ordered = sortAsc(transactions);
   ordered.forEach((tx) => {
+    if (tx.pendingOperation === "delete") {
+      return;
+    }
     if (mode.type === "all") {
       if (tx.type === "expense") {
         running -= tx.amount;

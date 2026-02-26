@@ -98,7 +98,7 @@ export type TxBase = {
   createdAt?: string;
   updatedAt?: string;
   pendingSync?: boolean;
-  pendingOperation?: "create" | "update";
+  pendingOperation?: "create" | "update" | "delete";
 };
 
 export type TxExpense = TxBase & {

@@ -347,10 +347,14 @@ const EditableRow = ({
     }
     try {
       setIsSaving(true);
-      await api.deleteTransaction(token, transaction.id, childId);
+      const result = await api.deleteTransaction(token, transaction.id, childId);
       toast.success(t("toastEntryDeleted"));
-      onDeleted?.(transaction.id);
-      invalidate(transaction.id);
+      if (!result.pendingSync) {
+        onDeleted?.(transaction.id);
+        invalidate(transaction.id);
+      } else {
+        invalidate();
+      }
       onCancel();
     } catch (error) {
       toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));
@@ -1452,6 +1456,7 @@ export const LedgerTable = ({
             const hasMemo = rawMemo.trim() !== "";
             const amountValue = cellMap.get("amount") ?? "-";
             const balanceValue = cellMap.get("balance") ?? "-";
+            const isPendingDelete = row.original.pendingOperation === "delete";
 
             if (isMobile) {
               return (
@@ -1459,7 +1464,9 @@ export const LedgerTable = ({
                   key={row.id}
                   className={`border-t hover:bg-secondary/30 ledger-row ledger-row--mobile ${dropClass} ${
                     selectedId === row.original.id ? "bg-secondary/40" : ""
-                  } ${draggingId === row.original.id ? "opacity-40" : ""}`}
+                  } ${draggingId === row.original.id ? "opacity-40" : ""} ${
+                    isPendingDelete ? "line-through text-muted-foreground/80" : ""
+                  }`}
                   onClick={() => {
                     setSelectedId(row.original.id);
                     setEditingId(row.original.id);
@@ -1543,7 +1550,11 @@ export const LedgerTable = ({
                 key={row.id}
                 className={`border-t hover:bg-secondary/30 ledger-row ${dropClass} ${
                   selectedId === row.original.id ? "bg-secondary/40" : ""
-                } ${draggingId === row.original.id ? "opacity-40" : ""}`}
+                } ${draggingId === row.original.id ? "opacity-40" : ""} ${
+                  row.original.pendingOperation === "delete"
+                    ? "line-through text-muted-foreground/80"
+                    : ""
+                }`}
                 onClick={() => {
                   setSelectedId(row.original.id);
                   setEditingId(row.original.id);

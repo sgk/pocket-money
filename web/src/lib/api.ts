@@ -470,6 +470,25 @@ const applyDeleteTransactionToOfflineCache = async (
   txId: string
 ): Promise<void> => {
   await updateTransactionsCacheEntries(token, childId, (items) =>
+    items.map((item) =>
+      item.id === txId
+        ? {
+            ...item,
+            pendingSync: true,
+            pendingOperation: "delete",
+          }
+        : item
+    )
+  );
+  clearTransactionsCache();
+};
+
+const removeTransactionFromOfflineCache = async (
+  token: string,
+  childId: string | null | undefined,
+  txId: string
+): Promise<void> => {
+  await updateTransactionsCacheEntries(token, childId, (items) =>
     items.filter((item) => item.id !== txId)
   );
   clearTransactionsCache();
@@ -563,7 +582,15 @@ const withQueuedTransactionOperations = async (
       if (!op.txId) {
         continue;
       }
-      items = items.filter((item) => item.id !== op.txId);
+      items = items.map((item) =>
+        item.id === op.txId
+          ? {
+              ...item,
+              pendingSync: true,
+              pendingOperation: "delete",
+            }
+          : item
+      );
     }
   }
 
@@ -754,6 +781,9 @@ const syncOfflineOperations = async (): Promise<void> => {
             next.localId,
             result.id
           );
+        }
+        if (next.kind === "deleteTransaction" && next.txId) {
+          await removeTransactionFromOfflineCache(next.token, next.childId, next.txId);
         }
         await deleteOperation(next.id);
         emitOfflineOperationsChanged();
@@ -1151,11 +1181,11 @@ export const api = {
   deleteTransaction: async (token: string, txId: string, childId?: string | null) => {
     if (!navigator.onLine) {
       await queueDeleteTransactionOperation(token, txId, childId);
-      return;
+      return { pendingSync: true };
     }
     const idempotencyKey = createIdempotencyKey();
     try {
-      return await fetchJson<void>(
+      await fetchJson<void>(
         token,
         `/api/transactions/${txId}`,
         {
@@ -1165,10 +1195,11 @@ export const api = {
         {},
         childId
       );
+      return { pendingSync: false };
     } catch (error) {
       if (isNetworkError(error)) {
         await queueDeleteTransactionOperation(token, txId, childId);
-        return;
+        return { pendingSync: true };
       }
       throw error;
     }

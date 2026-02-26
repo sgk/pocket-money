@@ -95,6 +95,9 @@ export const AssetLedgerPage = () => {
   const assetSummary = useMemo(() => {
     return filtered.reduce(
       (acc, tx) => {
+        if (tx.pendingOperation === "delete") {
+          return acc;
+        }
         if (tx.type === "expense") {
           acc.expenseTotal += tx.amount;
           acc.net -= tx.amount;
