@@ -323,7 +323,7 @@ export const NewEntryRow = ({
       }
       if (created) {
         toast.success(t("toastEntryAdded"));
-        invalidate();
+        invalidate(undefined, created);
         resetEntry();
       }
     } catch (error) {

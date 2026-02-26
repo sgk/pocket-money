@@ -9,7 +9,13 @@ import type {
   TransactionsResponse,
 } from "@/lib/types";
 import { compareTransactionsInDay } from "@/lib/transaction-order";
-import { reportNetworkFailure, reportNetworkSuccess } from "@/lib/network-status";
+import {
+  NETWORK_REACHABILITY_CHANGED_EVENT,
+  type NetworkReachabilityChangedDetail,
+  isNetworkReachable,
+  reportNetworkFailure,
+  reportNetworkSuccess,
+} from "@/lib/network-status";
 import {
   addOperation,
   countOperations,
@@ -59,7 +65,7 @@ const fetchJson = async <T>(
   params?: Record<string, string | number | boolean | undefined>,
   childId?: string | null
 ): Promise<T> => {
-  if (navigator.onLine) {
+  if (navigator.onLine && isNetworkReachable()) {
     void syncOfflineOperations();
   }
   let res: Response;
@@ -233,9 +239,39 @@ const createIdempotencyKey = () => {
 };
 
 const OFFLINE_OPERATIONS_CHANGED_EVENT = "offline-operations-changed";
+const OFFLINE_SYNC_STATUS_CHANGED_EVENT = "offline-sync-status-changed";
+
+export type OfflineSyncStatus = {
+  isSyncing: boolean;
+  syncingTxId: string | null;
+};
+
+let offlineSyncStatus: OfflineSyncStatus = {
+  isSyncing: false,
+  syncingTxId: null,
+};
 
 const emitOfflineOperationsChanged = () => {
   window.dispatchEvent(new Event(OFFLINE_OPERATIONS_CHANGED_EVENT));
+};
+
+const emitOfflineSyncStatusChanged = () => {
+  window.dispatchEvent(
+    new CustomEvent<OfflineSyncStatus>(OFFLINE_SYNC_STATUS_CHANGED_EVENT, {
+      detail: offlineSyncStatus,
+    })
+  );
+};
+
+const setOfflineSyncStatus = (next: OfflineSyncStatus) => {
+  if (
+    offlineSyncStatus.isSyncing === next.isSyncing &&
+    offlineSyncStatus.syncingTxId === next.syncingTxId
+  ) {
+    return;
+  }
+  offlineSyncStatus = next;
+  emitOfflineSyncStatusChanged();
 };
 
 const toDateKey = (value: unknown): string => String(value ?? "").slice(0, 10);
@@ -674,19 +710,28 @@ const executeQueuedOperation = async (operation: TransactionOperationRecord) => 
 
 let syncInitialized = false;
 let syncRunning = false;
+const canSyncOfflineOperations = () => navigator.onLine && isNetworkReachable();
 
 const syncOfflineOperations = async (): Promise<void> => {
-  if (syncRunning || !navigator.onLine) {
+  if (syncRunning || !canSyncOfflineOperations()) {
     return;
   }
   syncRunning = true;
+  setOfflineSyncStatus({
+    isSyncing: true,
+    syncingTxId: null,
+  });
   try {
-    while (navigator.onLine) {
+    while (canSyncOfflineOperations()) {
       const operations = await listOperations();
       const next = operations[0];
       if (!next) {
         break;
       }
+      setOfflineSyncStatus({
+        isSyncing: true,
+        syncingTxId: next.localId ?? next.txId ?? null,
+      });
       try {
         const result = await executeQueuedOperation(next);
         if (
@@ -722,6 +767,10 @@ const syncOfflineOperations = async (): Promise<void> => {
     }
   } finally {
     syncRunning = false;
+    setOfflineSyncStatus({
+      isSyncing: false,
+      syncingTxId: null,
+    });
   }
 };
 
@@ -733,7 +782,17 @@ export const startOfflineOperationsSync = () => {
   const trigger = () => {
     void syncOfflineOperations();
   };
+  const handleReachabilityChanged = (event: Event) => {
+    const detail = (event as CustomEvent<NetworkReachabilityChangedDetail>).detail;
+    if (detail.reachable) {
+      trigger();
+    }
+  };
   window.addEventListener("online", trigger);
+  window.addEventListener(
+    NETWORK_REACHABILITY_CHANGED_EVENT,
+    handleReachabilityChanged
+  );
   window.setInterval(trigger, 15000);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
@@ -744,7 +803,8 @@ export const startOfflineOperationsSync = () => {
 };
 
 export const getOfflineOperationsCount = () => countOperations();
-export { OFFLINE_OPERATIONS_CHANGED_EVENT };
+export const getOfflineSyncStatus = () => offlineSyncStatus;
+export { OFFLINE_OPERATIONS_CHANGED_EVENT, OFFLINE_SYNC_STATUS_CHANGED_EVENT };
 
 export const api = {
   loginWithGoogle: async (credential: string) => {
@@ -863,7 +923,7 @@ export const api = {
   deleteCategory: (token: string, categoryId: string, childId?: string | null) =>
     fetchJson<void>(token, `/api/categories/${categoryId}`, { method: "DELETE" }, {}, childId),
   getTransactions: async (token: string, params: TransactionsParams, childId?: string | null) => {
-    if (navigator.onLine) {
+    if (navigator.onLine && isNetworkReachable()) {
       void syncOfflineOperations();
     }
     const key = transactionsCacheKey(token, { ...params, childId });

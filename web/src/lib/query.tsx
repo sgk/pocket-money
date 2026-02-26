@@ -2,7 +2,9 @@ import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { OFFLINE_OPERATIONS_CHANGED_EVENT, api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import type { TransactionType, TransactionsResponse } from "@/lib/types";
+import { toDateKey } from "@/lib/date";
+import { compareTransactionsInDay } from "@/lib/transaction-order";
+import type { Transaction, TransactionType, TransactionsResponse } from "@/lib/types";
 
 export const useBootstrap = (enabled = true) => {
   const { token, childId } = useAuth();
@@ -63,6 +65,49 @@ type TransactionsFilters = {
   includeOpeningBalances?: boolean;
 };
 
+const sortTransactionsDesc = (items: Transaction[]): Transaction[] =>
+  [...items].sort((a, b) => {
+    const dateCmp = toDateKey(b.occurredAt).localeCompare(toDateKey(a.occurredAt));
+    if (dateCmp !== 0) {
+      return dateCmp;
+    }
+    return compareTransactionsInDay(a, b, "desc");
+  });
+
+const matchesTransactionsFilters = (
+  tx: Transaction,
+  filters?: TransactionsFilters
+): boolean => {
+  if (!filters) {
+    return true;
+  }
+  if (filters.type && filters.type !== "all" && tx.type !== filters.type) {
+    return false;
+  }
+  const txDate = toDateKey(tx.occurredAt);
+  if (filters.from && txDate < filters.from) {
+    return false;
+  }
+  if (filters.to && txDate > filters.to) {
+    return false;
+  }
+  if (filters.assetId) {
+    if (tx.type === "transfer") {
+      if (tx.fromAssetId !== filters.assetId && tx.toAssetId !== filters.assetId) {
+        return false;
+      }
+    } else if (tx.assetId !== filters.assetId) {
+      return false;
+    }
+  }
+  if (filters.categoryId) {
+    if (tx.type === "transfer" || tx.categoryId !== filters.categoryId) {
+      return false;
+    }
+  }
+  return true;
+};
+
 export const useTransactions = (filters: TransactionsFilters) => {
   const { token, childId } = useAuth();
   const query = useQuery<TransactionsResponse>({
@@ -114,8 +159,32 @@ export const useMonthlySummary = (year: number, month: number) => {
 
 export const useInvalidateLedger = () => {
   const queryClient = useQueryClient();
-  return (deletedTxId?: string) => {
+  return (deletedTxId?: string, createdTx?: Transaction) => {
     api.clearTransactionsCache();
+    if (createdTx) {
+      const queries = queryClient.getQueriesData<TransactionsResponse>({
+        queryKey: ["transactions"],
+      });
+      queries.forEach(([queryKey, current]) => {
+        if (!current || !Array.isArray(queryKey)) {
+          return;
+        }
+        const filters =
+          queryKey.length > 1 && typeof queryKey[1] === "object" && queryKey[1] !== null
+            ? (queryKey[1] as TransactionsFilters)
+            : undefined;
+        if (!matchesTransactionsFilters(createdTx, filters)) {
+          return;
+        }
+        const deduped = current.items.filter((tx) => tx.id !== createdTx.id);
+        const sorted = sortTransactionsDesc([createdTx, ...deduped]);
+        const limit = typeof filters?.limit === "number" ? filters.limit : undefined;
+        queryClient.setQueryData<TransactionsResponse>(queryKey, {
+          ...current,
+          items: limit ? sorted.slice(0, limit) : sorted,
+        });
+      });
+    }
     if (deletedTxId) {
       queryClient.setQueriesData<TransactionsResponse>(
         { queryKey: ["transactions"] },
@@ -128,11 +197,19 @@ export const useInvalidateLedger = () => {
             : current
       );
     }
-    void queryClient.invalidateQueries({
-      queryKey: ["transactions"],
-      exact: false,
-      refetchType: "active",
-    });
+    if (createdTx) {
+      void queryClient.invalidateQueries({
+        queryKey: ["transactions"],
+        exact: false,
+        refetchType: "none",
+      });
+    } else {
+      void queryClient.invalidateQueries({
+        queryKey: ["transactions"],
+        exact: false,
+        refetchType: "active",
+      });
+    }
     void queryClient.invalidateQueries({ queryKey: ["summary"] });
     void queryClient.invalidateQueries({ queryKey: ["assets"] });
   };

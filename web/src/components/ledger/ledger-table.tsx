@@ -10,7 +10,13 @@ import type { Asset, Category, Transaction } from "@/lib/types";
 import { formatDateSlash, toDateKey } from "@/lib/date";
 import { formatJPYPlain } from "@/lib/money";
 import { compareTransactionsInDay } from "@/lib/transaction-order";
-import { api, isNetworkError } from "@/lib/api";
+import {
+  api,
+  getOfflineSyncStatus,
+  isNetworkError,
+  OFFLINE_SYNC_STATUS_CHANGED_EVENT,
+  type OfflineSyncStatus,
+} from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useInvalidateLedger } from "@/lib/query";
 import { Button } from "@/components/ui/button";
@@ -828,6 +834,9 @@ export const LedgerTable = ({
   const [indicator, setIndicator] = useState<{ dateKey: string; index: number } | null>(
     null
   );
+  const [syncStatus, setSyncStatus] = useState<OfflineSyncStatus>(() =>
+    getOfflineSyncStatus()
+  );
   const isMobile = useMediaQuery("(max-width: 900px)");
 
   const openingBalanceValue = useMemo(() => {
@@ -867,6 +876,24 @@ export const LedgerTable = ({
   useEffect(() => {
     onEditingChange?.(editingId !== null);
   }, [editingId, onEditingChange]);
+
+  useEffect(() => {
+    setSyncStatus(getOfflineSyncStatus());
+    const handleSyncStatusChanged = (event: Event) => {
+      const detail = (event as CustomEvent<OfflineSyncStatus>).detail;
+      setSyncStatus(detail);
+    };
+    window.addEventListener(
+      OFFLINE_SYNC_STATUS_CHANGED_EVENT,
+      handleSyncStatusChanged
+    );
+    return () => {
+      window.removeEventListener(
+        OFFLINE_SYNC_STATUS_CHANGED_EVENT,
+        handleSyncStatusChanged
+      );
+    };
+  }, []);
 
   const visibleTransactions = useMemo(
     () => transactions.filter((tx) => !deletedIds.has(tx.id)),
@@ -1016,6 +1043,10 @@ export const LedgerTable = ({
           }
           const isPending =
             Boolean(row.original.pendingSync || row.original.pendingOperation);
+          const isSyncingThisRow =
+            isPending &&
+            syncStatus.isSyncing &&
+            syncStatus.syncingTxId === row.original.id;
           return (
             <span className="inline-flex w-full items-center justify-end gap-1.5">
               {isPending ? (
@@ -1024,7 +1055,11 @@ export const LedgerTable = ({
                   title="同期待ち"
                   aria-label="同期待ち"
                 >
-                  <RefreshCw className="h-3.5 w-3.5" />
+                  <RefreshCw
+                    className={`h-3.5 w-3.5 ${
+                      isSyncingThisRow ? "animate-spin" : ""
+                    }`}
+                  />
                 </span>
               ) : null}
               <span>{formatJPYPlain(value)}</span>
@@ -1039,7 +1074,7 @@ export const LedgerTable = ({
         },
       },
     ],
-    [balancesById, fixedAssetId, fixedAssetName, t]
+    [balancesById, fixedAssetId, fixedAssetName, syncStatus, t]
   );
 
   const sorted = useMemo(() => {

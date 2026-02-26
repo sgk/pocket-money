@@ -5,8 +5,11 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { UserMenu } from "@/components/layout/user-menu";
 import { useText } from "@/lib/text";
 import {
+  type OfflineSyncStatus,
   getOfflineOperationsCount,
+  getOfflineSyncStatus,
   OFFLINE_OPERATIONS_CHANGED_EVENT,
+  OFFLINE_SYNC_STATUS_CHANGED_EVENT,
 } from "@/lib/api";
 import {
   isNetworkReachable,
@@ -21,6 +24,9 @@ export const AppLayout = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isReachable, setIsReachable] = useState(() => isNetworkReachable());
   const [offlineOpsCount, setOfflineOpsCount] = useState(0);
+  const [syncStatus, setSyncStatus] = useState<OfflineSyncStatus>(() =>
+    getOfflineSyncStatus()
+  );
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
   const toggleSidebar = () => {
     setSidebarOpen((prev) => {
@@ -76,6 +82,24 @@ export const AppLayout = () => {
     };
   }, []);
 
+  useEffect(() => {
+    setSyncStatus(getOfflineSyncStatus());
+    const handleSyncStatusChanged = (event: Event) => {
+      const detail = (event as CustomEvent<OfflineSyncStatus>).detail;
+      setSyncStatus(detail);
+    };
+    window.addEventListener(
+      OFFLINE_SYNC_STATUS_CHANGED_EVENT,
+      handleSyncStatusChanged
+    );
+    return () => {
+      window.removeEventListener(
+        OFFLINE_SYNC_STATUS_CHANGED_EVENT,
+        handleSyncStatusChanged
+      );
+    };
+  }, []);
+
   const isOffline = !isReachable;
   const showStatus = isOffline || offlineOpsCount > 0;
   const statusText =
@@ -116,7 +140,12 @@ export const AppLayout = () => {
                 ) : null}
                 {offlineOpsCount > 0 ? (
                   <>
-                    <RefreshCw className="h-3.5 w-3.5 text-sky-700" aria-hidden />
+                    <RefreshCw
+                      className={`h-3.5 w-3.5 text-sky-700 ${
+                        syncStatus.isSyncing && !isOffline ? "animate-spin" : ""
+                      }`}
+                      aria-hidden
+                    />
                     <span className="tabular-nums text-foreground">{offlineOpsCount}</span>
                   </>
                 ) : null}
