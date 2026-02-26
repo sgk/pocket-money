@@ -1247,11 +1247,9 @@ export const LedgerTable = ({
     }
 
     try {
-      await Promise.all(
-        updates.map((update) =>
-          api.updateTransaction(token, update.id, update.payload, childId)
-        )
-      );
+      for (const update of updates) {
+        await api.updateTransaction(token, update.id, update.payload, childId);
+      }
       invalidate();
     } catch (error) {
       toast.error(isNetworkError(error) ? t("toastNetworkError") : t("toastUnexpectedError"));

@@ -75,6 +75,19 @@ def _run_idempotent_write(
 
     try:
         result = handler()
+    except ValueError as exc:
+        # Firestore のトランザクション競合がリトライ上限で失敗した場合は 409 を返す。
+        if "Failed to commit transaction in" in str(exc):
+            try:
+                idempotency_service.abort_request(uid, method, path, idempotency_key)
+            except Exception:
+                pass
+            raise AppError(409, "同時更新が競合しました。少し待ってから再試行してください。") from exc
+        try:
+            idempotency_service.abort_request(uid, method, path, idempotency_key)
+        except Exception:
+            pass
+        raise
     except Exception:
         try:
             idempotency_service.abort_request(uid, method, path, idempotency_key)
