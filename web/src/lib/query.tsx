@@ -9,7 +9,7 @@ import type { Transaction, TransactionType, TransactionsResponse } from "@/lib/t
 export const useBootstrap = (enabled = true) => {
   const { token, childId } = useAuth();
   return useQuery({
-    queryKey: ["bootstrap", childId],
+    queryKey: ["bootstrap", token, childId],
     queryFn: () => api.bootstrap(token ?? "", childId),
     enabled: Boolean(token) && enabled,
     staleTime: 1000 * 60 * 5,
@@ -20,7 +20,7 @@ export const useBootstrap = (enabled = true) => {
 export const useOnboardingStatus = () => {
   const { token } = useAuth();
   return useQuery({
-    queryKey: ["onboarding"],
+    queryKey: ["onboarding", token],
     queryFn: () => api.getOnboardingStatus(token ?? ""),
     enabled: Boolean(token),
     retry: false,
@@ -30,7 +30,7 @@ export const useOnboardingStatus = () => {
 export const useInvites = (enabled = true) => {
   const { token } = useAuth();
   return useQuery({
-    queryKey: ["invites"],
+    queryKey: ["invites", token],
     queryFn: () => api.getInvites(token ?? ""),
     enabled: Boolean(token) && enabled,
     retry: false,
@@ -40,7 +40,7 @@ export const useInvites = (enabled = true) => {
 export const useAssets = () => {
   const { token, childId } = useAuth();
   return useQuery({
-    queryKey: ["assets", childId],
+    queryKey: ["assets", token, childId],
     queryFn: () => api.getAssets(token ?? "", childId),
     enabled: Boolean(token),
   });
@@ -49,7 +49,7 @@ export const useAssets = () => {
 export const useCategories = () => {
   const { token, childId } = useAuth();
   return useQuery({
-    queryKey: ["categories", childId],
+    queryKey: ["categories", token, childId],
     queryFn: () => api.getCategories(token ?? "", childId),
     enabled: Boolean(token),
   });
@@ -111,7 +111,7 @@ const matchesTransactionsFilters = (
 export const useTransactions = (filters: TransactionsFilters) => {
   const { token, childId } = useAuth();
   const query = useQuery<TransactionsResponse>({
-    queryKey: ["transactions", filters, childId],
+    queryKey: ["transactions", token, filters, childId],
     queryFn: () =>
       api.getTransactions(
         token ?? "",
@@ -151,7 +151,7 @@ export const useTransactions = (filters: TransactionsFilters) => {
 export const useMonthlySummary = (year: number, month: number) => {
   const { token, childId } = useAuth();
   return useQuery({
-    queryKey: ["summary", year, month, childId],
+    queryKey: ["summary", token, year, month, childId],
     queryFn: () => api.getMonthlySummary(token ?? "", year, month, childId),
     enabled: Boolean(token),
   });

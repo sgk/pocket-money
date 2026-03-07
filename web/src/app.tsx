@@ -41,6 +41,9 @@ export const App = () => {
   const bootstrap = useBootstrap(isReady);
 
   useEffect(() => {
+    if (!token) {
+      return;
+    }
     if (onboarding.isError) {
       if (isNetworkError(onboarding.error)) {
         return;
@@ -48,9 +51,12 @@ export const App = () => {
       logout();
       navigate("/login", { replace: true });
     }
-  }, [onboarding.error, onboarding.isError, logout, navigate]);
+  }, [token, onboarding.error, onboarding.isError, logout, navigate]);
 
   useEffect(() => {
+    if (!token) {
+      return;
+    }
     if (bootstrap.isError) {
       const error = bootstrap.error;
       if (isNetworkError(error)) {
@@ -70,7 +76,7 @@ export const App = () => {
       logout();
       navigate("/login", { replace: true });
     }
-  }, [bootstrap.error, bootstrap.isError, childId, setChildId, logout, navigate]);
+  }, [token, bootstrap.error, bootstrap.isError, childId, setChildId, logout, navigate]);
 
   if (token && onboarding.isLoading) {
     return <LoadingScreen />;
